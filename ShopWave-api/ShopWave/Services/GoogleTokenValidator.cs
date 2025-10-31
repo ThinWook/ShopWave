@@ -1,0 +1,61 @@
+using Google.Apis.Auth;
+using System.Linq;
+
+namespace ShopWave.Services
+{
+    public class GoogleTokenValidator
+    {
+        private readonly IConfiguration _config;
+        private static readonly string[] AllowedIssuers = new[]
+        {
+            "https://accounts.google.com",
+            "accounts.google.com"
+        };
+
+        public GoogleTokenValidator(IConfiguration config)
+        {
+            _config = config;
+        }
+
+        public async Task<GoogleJsonWebSignature.Payload?> ValidateIdTokenAsync(string idToken)
+        {
+            var clientIds = _config.GetSection("GoogleAuth:ClientIds").Get<string[]>() ?? Array.Empty<string>();
+            var settings = new GoogleJsonWebSignature.ValidationSettings
+            {
+                Audience = clientIds
+            };
+            try
+            {
+                var payload = await GoogleJsonWebSignature.ValidateAsync(idToken, settings);
+
+                // Extra defense-in-depth checks
+                if (payload == null) return null;
+
+                // Validate issuer strictly
+                if (string.IsNullOrWhiteSpace(payload.Issuer) || !AllowedIssuers.Contains(payload.Issuer))
+                {
+                    return null;
+                }
+
+                // Normalize audience to string (library represents it as object)
+                string? aud = payload.Audience is string s ? s : payload.Audience?.ToString();
+                if (string.IsNullOrWhiteSpace(aud) || !clientIds.Contains(aud))
+                {
+                    return null;
+                }
+
+                // Ensure email is verified
+                if (payload.EmailVerified != true)
+                {
+                    return null;
+                }
+
+                return payload;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+    }
+}

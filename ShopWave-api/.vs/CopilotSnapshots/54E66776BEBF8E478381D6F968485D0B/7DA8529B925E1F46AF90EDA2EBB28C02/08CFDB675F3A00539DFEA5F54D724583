@@ -1,0 +1,193 @@
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ShopWave.Models;
+using ShopWave.Models.DTOs;
+using ShopWave.Models.Requests;
+using ShopWave.Models.Responses;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+
+namespace ShopWave.Controllers
+{
+    [ApiController]
+    [Route("api/v1/[controller]")]
+    [Authorize]
+    public class CartController : ControllerBase
+    {
+        private readonly ShopWaveDbContext _context;
+        private readonly ILogger<CartController> _logger;
+
+        public CartController(ShopWaveDbContext context, ILogger<CartController> logger)
+        {
+            _context = context;
+            _logger = logger;
+        }
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> GetCart()
+        {
+            try
+            {
+                var uid = User.FindFirstValue("uid") ?? User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+                if (!Guid.TryParse(uid, out var userId))
+                {
+                    return Unauthorized(EnvelopeBuilder.Fail<object>(HttpContext, "UNAUTHORIZED", new[] { new ErrorItem("auth", "Unauthorized", "UNAUTHORIZED") }, 401));
+                }
+
+                var cartItems = await _context.CartItems.Include(ci => ci.Product)
+                    .Where(ci => ci.UserId == userId)
+                    .Select(ci => new CartItemDto
+                    {
+                        Id = ci.Id,
+                        ProductId = ci.ProductId,
+                        ProductName = ci.Product.Name,
+                        ProductImageUrl = null,
+                        UnitPrice = ci.UnitPrice,
+                        Quantity = ci.Quantity,
+                        TotalPrice = ci.Quantity * ci.UnitPrice,
+                        StockQuantity = ci.Product.StockQuantity
+                    }).ToListAsync();
+
+                var subTotal = cartItems.Sum(ci => ci.TotalPrice);
+                var shipping = CalculateShippingFee(subTotal);
+                var cart = new CartResponse
+                {
+                    Items = cartItems,
+                    TotalItems = cartItems.Sum(ci => ci.Quantity),
+                    SubTotal = subTotal,
+                    ShippingFee = shipping,
+                    Total = subTotal + shipping
+                };
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "CART_RETRIEVED", cart));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving cart");
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500));
+            }
+        }
+
+        [Authorize]
+        [HttpPost("add")]
+        public async Task<IActionResult> AddToCart([FromBody] AddToCartRequest request)
+        {
+            try
+            {
+                var uid = User.FindFirstValue("uid") ?? User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+                if (!Guid.TryParse(uid, out var userId)) return Unauthorized(EnvelopeBuilder.Fail<object>(HttpContext, "UNAUTHORIZED", new[] { new ErrorItem("auth", "Unauthorized", "UNAUTHORIZED") }, 401));
+
+                var product = await _context.Products.FindAsync(request.ProductId);
+                if (product == null || !product.IsActive)
+                {
+                    return NotFound(EnvelopeBuilder.Fail<object>(HttpContext, "NOT_FOUND", new[] { new ErrorItem("product", "Product not found", "NOT_FOUND") }, 404));
+                }
+                if (product.StockQuantity < request.Quantity)
+                {
+                    return BadRequest(EnvelopeBuilder.Fail<object>(HttpContext, "OUT_OF_STOCK", new[] { new ErrorItem("stock", "Insufficient stock", "OUT_OF_STOCK") }, 400));
+                }
+
+                var existing = await _context.CartItems.FirstOrDefaultAsync(ci => ci.UserId == userId && ci.ProductId == request.ProductId);
+                if (existing != null)
+                {
+                    existing.Quantity += request.Quantity;
+                    existing.UpdatedAt = DateTime.UtcNow;
+                }
+                else
+                {
+                    var cartItem = new CartItem { UserId = userId, ProductId = request.ProductId, Quantity = request.Quantity, UnitPrice = product.Price, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+                    _context.CartItems.Add(cartItem);
+                }
+                await _context.SaveChangesAsync();
+                return StatusCode(201, EnvelopeBuilder.Ok(HttpContext, "CART_ITEM_ADDED", new { }));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding cart item");
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500));
+            }
+        }
+
+        [Authorize]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateCartItem(Guid id, [FromBody] UpdateCartItemRequest request)
+        {
+            try
+            {
+                var uid = User.FindFirstValue("uid") ?? User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+                if (!Guid.TryParse(uid, out var userId)) return Unauthorized(EnvelopeBuilder.Fail<object>(HttpContext, "UNAUTHORIZED", new[] { new ErrorItem("auth", "Unauthorized", "UNAUTHORIZED") }, 401));
+
+                var cartItem = await _context.CartItems.Include(ci => ci.Product).FirstOrDefaultAsync(ci => ci.Id == id && ci.UserId == userId);
+                if (cartItem == null)
+                {
+                    return NotFound(EnvelopeBuilder.Fail<object>(HttpContext, "NOT_FOUND", new[] { new ErrorItem("id", "Cart item not found", "NOT_FOUND") }, 404));
+                }
+                if (cartItem.Product.StockQuantity < request.Quantity)
+                {
+                    return BadRequest(EnvelopeBuilder.Fail<object>(HttpContext, "OUT_OF_STOCK", new[] { new ErrorItem("stock", "Insufficient stock", "OUT_OF_STOCK") }, 400));
+                }
+
+                cartItem.Quantity = request.Quantity;
+                cartItem.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "CART_ITEM_UPDATED", new { }));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating cart item");
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500));
+            }
+        }
+
+        [Authorize]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> RemoveFromCart(Guid id)
+        {
+            try
+            {
+                var uid = User.FindFirstValue("uid") ?? User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+                if (!Guid.TryParse(uid, out var userId)) return Unauthorized(EnvelopeBuilder.Fail<object>(HttpContext, "UNAUTHORIZED", new[] { new ErrorItem("auth", "Unauthorized", "UNAUTHORIZED") }, 401));
+                var cartItem = await _context.CartItems.FirstOrDefaultAsync(ci => ci.Id == id && ci.UserId == userId);
+                if (cartItem == null)
+                {
+                    return NotFound(EnvelopeBuilder.Fail<object>(HttpContext, "NOT_FOUND", new[] { new ErrorItem("id", "Cart item not found", "NOT_FOUND") }, 404));
+                }
+                _context.CartItems.Remove(cartItem);
+                await _context.SaveChangesAsync();
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "CART_ITEM_REMOVED", new { }));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error removing cart item");
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500));
+            }
+        }
+
+        [Authorize]
+        [HttpDelete("clear")]
+        public async Task<IActionResult> ClearCart()
+        {
+            try
+            {
+                var uid = User.FindFirstValue("uid") ?? User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+                if (!Guid.TryParse(uid, out var userId)) return Unauthorized(EnvelopeBuilder.Fail<object>(HttpContext, "UNAUTHORIZED", new[] { new ErrorItem("auth", "Unauthorized", "UNAUTHORIZED") }, 401));
+
+                var items = await _context.CartItems.Where(ci => ci.UserId == userId).ToListAsync();
+                if (items.Count > 0)
+                {
+                    _context.CartItems.RemoveRange(items);
+                    await _context.SaveChangesAsync();
+                }
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "CART_CLEARED", new { }));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error clearing cart");
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500));
+            }
+        }
+
+        private decimal CalculateShippingFee(decimal subTotal) => subTotal >= 500000 ? 0 : 30000;
+    }
+}

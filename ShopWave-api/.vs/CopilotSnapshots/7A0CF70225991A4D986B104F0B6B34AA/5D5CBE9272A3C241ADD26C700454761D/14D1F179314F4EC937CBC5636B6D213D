@@ -1,0 +1,12 @@
+﻿{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=DESKTOP-GMAM0VA;Database=ShopWaveDB;Trusted_Connection=True;TrustServerCertificate=True;"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*"
+}

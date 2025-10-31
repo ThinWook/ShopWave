@@ -1,0 +1,63 @@
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace ShopWave.Models
+{
+    public class Product
+    {
+        [Key]
+        public Guid Id { get; set; } = Guid.NewGuid();
+
+        [Required]
+        [MaxLength(255)]
+        public string Name { get; set; } = string.Empty;
+
+        [MaxLength(2000)]
+        public string? Description { get; set; }
+
+        [Required]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal Price { get; set; }
+
+        [Required]
+        public Guid CategoryId { get; set; }
+
+        [ForeignKey("Media")]
+        [Column(TypeName = "bigint")]
+        public long? MediaId { get; set; }
+        public virtual Media? Media { get; set; }
+
+        [MaxLength(50)]
+        public string? Size { get; set; }
+
+        [Range(0.0, 5.0)]
+        public double Rating { get; set; } = 0;
+
+        public int ReviewsCount { get; set; } = 0;
+
+        public int Popularity { get; set; } = 0;
+
+        [Column(TypeName = "nvarchar(max)")]
+        public string? Attributes { get; set; } // JSON string
+
+        public bool IsActive { get; set; } = true;
+
+        public int StockQuantity { get; set; } = 0;
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        // Navigation properties
+        [ForeignKey("CategoryId")]
+        public virtual Category Category { get; set; } = null!;
+
+        public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
+        public virtual ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
+        public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+        public virtual ICollection<WishlistItem> WishlistItems { get; set; } = new List<WishlistItem>();
+        public virtual ICollection<ProductRecommendation> ProductRecommendations { get; set; } = new List<ProductRecommendation>();
+        public virtual ICollection<BrowsingHistory> BrowsingHistory { get; set; } = new List<BrowsingHistory>();
+        public virtual ICollection<ProductMedia> ProductMedia { get; set; } = new List<ProductMedia>();
+    }
+}

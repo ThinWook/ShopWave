@@ -1,0 +1,13 @@
+
+{
+  "name": "ShopWave",
+  "short_name": "ShopWave",
+  "description": "Your Ultimate Shopping Destination. Discover a wide range of products, personalized suggestions, and seamless shopping experience.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F5F5F5",
+  "theme_color": "#3F51B5",
+  "icons": [
+    
+  ]
+}

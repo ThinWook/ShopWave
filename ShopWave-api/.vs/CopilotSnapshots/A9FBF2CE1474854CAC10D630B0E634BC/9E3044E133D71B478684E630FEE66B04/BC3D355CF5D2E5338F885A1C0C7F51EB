@@ -1,0 +1,54 @@
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace ShopWave.Models
+{
+    public class Order
+    {
+        [Key]
+        public int Id { get; set; }
+
+        [Required]
+        public int UserId { get; set; }
+
+        [Required]
+        [MaxLength(50)]
+        public string OrderNumber { get; set; } = string.Empty;
+
+        [Required]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal TotalAmount { get; set; }
+
+        [Required]
+        [MaxLength(50)]
+        public string Status { get; set; } = "Pending";
+
+        [Column(TypeName = "nvarchar(max)")]
+        public string? ShippingAddress { get; set; } // JSON string
+
+        [Column(TypeName = "nvarchar(max)")]
+        public string? BillingAddress { get; set; } // JSON string
+
+        [MaxLength(100)]
+        public string? PaymentMethod { get; set; }
+
+        [MaxLength(50)]
+        public string PaymentStatus { get; set; } = "Pending";
+
+        public DateTime OrderDate { get; set; } = DateTime.UtcNow;
+
+        public DateTime? ShippedDate { get; set; }
+
+        public DateTime? DeliveredDate { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        // Navigation properties
+        [ForeignKey("UserId")]
+        public virtual User User { get; set; } = null!;
+
+        public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+    }
+}

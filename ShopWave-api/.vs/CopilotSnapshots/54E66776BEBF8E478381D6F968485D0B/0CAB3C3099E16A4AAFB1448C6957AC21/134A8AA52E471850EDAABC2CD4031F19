@@ -1,0 +1,231 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ShopWave.Models;
+using ShopWave.Models.DTOs;
+using ShopWave.Models.Responses;
+using System.Security.Cryptography;
+using System.Text;
+
+namespace ShopWave.Controllers
+{
+    [ApiController]
+    [Route("api/v1/[controller]")]
+    public class CategoriesController : ControllerBase
+    {
+        private readonly ShopWaveDbContext _context;
+        private readonly ILogger<CategoriesController> _logger;
+
+        public CategoriesController(ShopWaveDbContext context, ILogger<CategoriesController> logger)
+        {
+            _context = context;
+            _logger = logger;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetCategories()
+        {
+            try
+            {
+                var categoriesQuery = _context.Categories
+                    .Include(c => c.ParentCategory)
+                    .Where(c => c.IsActive)
+                    .OrderBy(c => c.SortOrder)
+                    .ThenBy(c => c.Name);
+
+                var lastUpdated = await categoriesQuery.MaxAsync(c => (DateTime?)c.UpdatedAt) ?? DateTime.MinValue;
+                var total = await categoriesQuery.CountAsync();
+                var etagRaw = $"{total}-{lastUpdated:O}";
+                var etag = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(etagRaw)));
+
+                if (Request.Headers.TryGetValue("If-None-Match", out var inm) && inm == etag)
+                {
+                    return StatusCode(StatusCodes.Status304NotModified);
+                }
+
+                var categories = await categoriesQuery
+                    .Select(c => new CategoryDto
+                    {
+                        Id = c.Id,
+                        Name = c.Name,
+                        Description = c.Description,
+                        ParentId = c.ParentId,
+                        ParentName = c.ParentCategory != null ? c.ParentCategory.Name : null,
+                        IsActive = c.IsActive,
+                        ProductCount = c.Products.Count(p => p.IsActive)
+                    })
+                    .ToListAsync();
+
+                Response.Headers.ETag = etag;
+
+                var envelope = EnvelopeBuilder.Ok(HttpContext, "CATEGORY_LIST_RETRIEVED", new
+                {
+                    data = categories,
+                    currentPage = 1,
+                    totalPages = 1,
+                    pageSize = categories.Count,
+                    totalRecords = categories.Count,
+                    hasPreviousPage = false,
+                    hasNextPage = false,
+                    appliedFilters = new { }
+                });
+
+                return Ok(envelope);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting categories");
+                var envelope = EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500);
+                return StatusCode(500, envelope);
+            }
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetCategory(Guid id)
+        {
+            try
+            {
+                var category = await _context.Categories
+                    .Include(c => c.ParentCategory)
+                    .Where(c => c.Id == id && c.IsActive)
+                    .Select(c => new CategoryDto
+                    {
+                        Id = c.Id,
+                        Name = c.Name,
+                        Description = c.Description,
+                        ParentId = c.ParentId,
+                        ParentName = c.ParentCategory != null ? c.ParentCategory.Name : null,
+                        IsActive = c.IsActive,
+                        ProductCount = c.Products.Count(p => p.IsActive)
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (category == null)
+                {
+                    var nf = EnvelopeBuilder.Fail<object>(HttpContext, "NOT_FOUND", new[] { new ErrorItem("id", "Category not found", "NOT_FOUND") }, 404);
+                    return NotFound(nf);
+                }
+
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "CATEGORY_DETAIL_RETRIEVED", category));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting category {CategoryId}", id);
+                var envelope = EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500);
+                return StatusCode(500, envelope);
+            }
+        }
+
+        [HttpGet("tree")]
+        public async Task<IActionResult> GetCategoryTree()
+        {
+            try
+            {
+                var list = await _context.Categories
+                    .Where(c => c.IsActive)
+                    .OrderBy(c => c.SortOrder)
+                    .ThenBy(c => c.Name)
+                    .ToListAsync();
+
+                var tree = BuildCategoryTree(list, null);
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "CATEGORY_TREE_RETRIEVED", tree));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting category tree");
+                var envelope = EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500);
+                return StatusCode(500, envelope);
+            }
+        }
+
+        [HttpGet("{id}/products")]
+        public async Task<IActionResult> GetCategoryProducts(Guid id, [FromQuery] int page = 1, [FromQuery] int pageSize = 12)
+        {
+            try
+            {
+                var category = await _context.Categories.FindAsync(id);
+                if (category == null || !category.IsActive)
+                {
+                    var nf = EnvelopeBuilder.Fail<object>(HttpContext, "NOT_FOUND", new[] { new ErrorItem("id", "Category not found", "NOT_FOUND") }, 404);
+                    return NotFound(nf);
+                }
+
+                if (page < 1) page = 1;
+                if (pageSize <= 0 || pageSize > 100) pageSize = 12;
+
+                var baseQuery = _context.Products
+                    .Include(p => p.Category)
+                    .Where(p => p.CategoryId == id && p.IsActive);
+
+                var latestUpdated = await baseQuery.MaxAsync(p => (DateTime?)p.UpdatedAt) ?? DateTime.MinValue;
+                var totalRecords = await baseQuery.CountAsync();
+                var totalPages = totalRecords == 0 ? 0 : (int)Math.Ceiling((double)totalRecords / pageSize);
+                if (totalPages > 0 && page > totalPages) page = totalPages;
+
+                var products = await baseQuery
+                    .OrderByDescending(p => p.Popularity)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(p => new ProductDto
+                    {
+                        Id = p.Id,
+                        Name = p.Name,
+                        Description = p.Description,
+                        Price = p.Price,
+                        CategoryName = p.Category.Name,
+                        MediaId = p.ImageUrl,
+                        Size = p.Size,
+                        Rating = p.Rating,
+                        ReviewsCount = p.ReviewsCount,
+                        StockQuantity = p.StockQuantity,
+                        IsActive = p.IsActive
+                    })
+                    .ToListAsync();
+
+                var etagRaw = $"{id}-{totalRecords}-{latestUpdated:O}-{page}-{pageSize}";
+                var etag = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(etagRaw)));
+                if (Request.Headers.TryGetValue("If-None-Match", out var inm) && inm == etag)
+                {
+                    return StatusCode(StatusCodes.Status304NotModified);
+                }
+                Response.Headers.ETag = etag;
+
+                var paged = new PagedResult<ProductDto>(
+                    Data: products,
+                    CurrentPage: page,
+                    TotalPages: totalPages,
+                    PageSize: pageSize,
+                    TotalRecords: totalRecords,
+                    HasPreviousPage: page > 1,
+                    HasNextPage: page < totalPages,
+                    AppliedFilters: new { categoryId = id, sort = "popularity_desc" },
+                    LastUpdatedAt: latestUpdated
+                );
+
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "CATEGORY_PRODUCTS_RETRIEVED", paged));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting category products {CategoryId}", id);
+                var envelope = EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500);
+                return StatusCode(500, envelope);
+            }
+        }
+
+        private List<object> BuildCategoryTree(List<Category> categories, Guid? parentId)
+        {
+            return categories
+                .Where(c => c.ParentId == parentId)
+                .Select(c => new
+                {
+                    id = c.Id,
+                    name = c.Name,
+                    description = c.Description,
+                    imageUrl = c.ImageUrl,
+                    productCount = c.Products.Count(p => p.IsActive),
+                    children = BuildCategoryTree(categories, c.Id)
+                })
+                .Cast<object>()
+                .ToList();
+        }
+    }
+}

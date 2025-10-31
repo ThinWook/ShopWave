@@ -1,0 +1,69 @@
+﻿using System.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
+using ShopWave.Models;
+using Microsoft.EntityFrameworkCore;
+using ShopWave.Models.DTOs;
+using ShopWave.Models.Responses;
+
+namespace ShopWave.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class HomeController : ControllerBase
+    {
+        private readonly ShopWaveDbContext _context;
+        private readonly ILogger<HomeController> _logger;
+
+        public HomeController(ShopWaveDbContext context, ILogger<HomeController> logger)
+        {
+            _context = context;
+            _logger = logger;
+        }
+
+        [HttpGet("dashboard")]
+        public async Task<ActionResult<ApiResponse<object>>> GetDashboard()
+        {
+            try
+            {
+                var stats = new
+                {
+                    TotalProducts = await _context.Products.CountAsync(),
+                    TotalCategories = await _context.Categories.CountAsync(),
+                    TotalUsers = await _context.Users.CountAsync(),
+                    TotalOrders = await _context.Orders.CountAsync(),
+                    FeaturedProducts = await _context.Products
+                        .Where(p => p.IsActive && p.Rating >= 4.0)
+                        .OrderByDescending(p => p.Popularity)
+                        .Take(8)
+                        .Select(p => new ProductDto
+                        {
+                            Id = p.Id,
+                            Name = p.Name,
+                            Description = p.Description,
+                            Price = p.Price,
+                            CategoryName = p.Category.Name,
+                            MediaId = p.ImageUrl,
+                            Rating = p.Rating,
+                            ReviewsCount = p.ReviewsCount,
+                            StockQuantity = p.StockQuantity,
+                            IsActive = p.IsActive
+                        })
+                        .ToListAsync()
+                };
+
+                return Ok(ApiResponse<object>.SuccessResult(stats, "L?y thông tin dashboard thành công"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "L?i khi l?y thông tin dashboard");
+                return StatusCode(500, ApiResponse<object>.ErrorResult("Có l?i x?y ra khi l?y thông tin dashboard"));
+            }
+        }
+
+        [HttpGet("health")]
+        public IActionResult HealthCheck()
+        {
+            return Ok(new { status = "healthy", timestamp = DateTime.UtcNow });
+        }
+    }
+}

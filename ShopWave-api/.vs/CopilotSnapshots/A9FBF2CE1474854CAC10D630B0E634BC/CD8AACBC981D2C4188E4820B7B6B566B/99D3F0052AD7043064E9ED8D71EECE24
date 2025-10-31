@@ -1,0 +1,369 @@
+﻿# ShopWave API
+
+ShopWave là một Web API cho ứng dụng thương mại điện tử được xây dựng bằng ASP.NET Core 8.0, được thiết kế để làm việc với frontend Next.js.
+
+## Cấu trúc Project
+
+```
+ShopWave/
+├── Controllers/              # API Controllers
+│   ├── AuthController.cs        # Authentication endpoints
+│   ├── CartController.cs        # Shopping cart management
+│   ├── CategoriesController.cs  # Product categories
+│   ├── HomeController.cs        # Dashboard & health check
+│   ├── OrdersController.cs      # Order management
+│   ├── ProductsController.cs    # Product management
+│   ├── ReviewsController.cs     # Product reviews
+│   ├── UsersController.cs       # User profile management
+│   └── WishlistController.cs    # Wishlist management
+├── Models/                   # Data models
+│   ├── DTOs/                 # Data Transfer Objects
+│   ├── Requests/             # API Request models
+│   ├── Responses/            # API Response models
+│   └── [Entity Models]       # Database entities
+├── Extensions/               # Extension methods
+├── Repositories/             # Repository interfaces
+└── Program.cs               # Application entry point
+```
+
+## Tính năng chính
+
+- ✅ **Authentication**: Đăng ký, đăng nhập, logout, refresh token
+- ✅ **User Management**: Profile, change password, admin user listing
+- ✅ **Product Management**: CRUD operations, search, filter, pagination
+- ✅ **Category Management**: Quản lý danh mục sản phẩm với tree structure
+- ✅ **Shopping Cart**: Thêm, sửa, xóa sản phẩm trong giỏ hàng
+- ✅ **Order Management**: Tạo đơn hàng, xem lịch sử, hủy đơn
+- ✅ **Product Reviews**: Đánh giá sản phẩm, quản lý reviews
+- ✅ **Wishlist**: Danh sách yêu thích, move to cart
+- ✅ **Database Seeding**: Tạo dữ liệu mẫu tự động
+- ✅ **CORS Support**: Hỗ trợ Next.js frontend
+- ✅ **Swagger Documentation**: API documentation tự động
+
+## API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - Đăng ký người dùng mới
+- `POST /api/auth/login` - Đăng nhập
+- `POST /api/auth/refresh` - Làm mới token
+- `POST /api/auth/logout` - Đăng xuất
+- `GET /api/auth/me` - Lấy thông tin người dùng hiện tại
+
+### Users
+- `GET /api/users/me` - Lấy profile của user hiện tại
+- `PUT /api/users/me` - Cập nhật profile
+- `PUT /api/users/me/password` - Đổi mật khẩu
+- `GET /api/users/{id}` - Lấy thông tin user (Admin only)
+- `GET /api/users` - Lấy danh sách users (Admin only)
+
+### Products
+- `GET /api/products` - Lấy danh sách sản phẩm (có phân trang, tìm kiếm, lọc)
+- `GET /api/products/{id}` - Lấy chi tiết sản phẩm
+- `GET /api/products/{id}/reviews` - Lấy đánh giá sản phẩm
+- `GET /api/products/featured` - Lấy sản phẩm nổi bật
+- `GET /api/products/{id}/related` - Lấy sản phẩm liên quan
+
+### Categories
+- `GET /api/categories` - Lấy danh sách danh mục
+- `GET /api/categories/{id}` - Lấy chi tiết danh mục
+- `GET /api/categories/tree` - Lấy cây danh mục
+- `GET /api/categories/{id}/products` - Lấy sản phẩm theo danh mục
+
+### Reviews
+- `POST /api/reviews` - Tạo đánh giá sản phẩm
+- `PUT /api/reviews/{id}` - Cập nhật đánh giá
+- `DELETE /api/reviews/{id}` - Xóa đánh giá
+- `GET /api/reviews/user/me` - Lấy danh sách đánh giá của user
+
+### Shopping Cart
+- `GET /api/cart` - Lấy giỏ hàng
+- `POST /api/cart/add` - Thêm sản phẩm vào giỏ hàng
+- `PUT /api/cart/{id}` - Cập nhật số lượng sản phẩm
+- `DELETE /api/cart/{id}` - Xóa sản phẩm khỏi giỏ hàng
+- `DELETE /api/cart/clear` - Xóa toàn bộ giỏ hàng
+
+### Orders
+- `POST /api/orders` - Tạo đơn hàng từ giỏ hàng
+- `GET /api/orders` - Lấy danh sách đơn hàng của user
+- `GET /api/orders/{id}` - Lấy chi tiết đơn hàng
+- `PUT /api/orders/{id}/cancel` - Hủy đơn hàng
+
+### Wishlist
+- `GET /api/wishlist` - Lấy danh sách yêu thích
+- `POST /api/wishlist` - Thêm sản phẩm vào wishlist
+- `DELETE /api/wishlist/{productId}` - Xóa sản phẩm khỏi wishlist
+- `GET /api/wishlist/check/{productId}` - Kiểm tra sản phẩm có trong wishlist
+- `DELETE /api/wishlist/clear` - Xóa toàn bộ wishlist
+- `POST /api/wishlist/move-to-cart/{productId}` - Chuyển từ wishlist sang cart
+
+### Dashboard
+- `GET /api/home/dashboard` - Lấy thống kê dashboard
+- `GET /api/home/health` - Health check
+
+## Cấu hình CORS
+
+API đã được cấu hình CORS để hỗ trợ Next.js frontend:
+- Development: `http://localhost:3000`
+- Production: `https://localhost:3001`
+
+## Database Models
+
+### Core Entities
+- **User**: Quản lý người dùng với roles và sessions
+- **Category**: Danh mục sản phẩm (hỗ trợ cây danh mục)
+- **Product**: Sản phẩm với rating, stock, attributes
+- **Review**: Đánh giá sản phẩm với verified status
+- **CartItem**: Giỏ hàng
+- **Order & OrderItem**: Đơn hàng với order tracking
+- **WishlistItem**: Danh sách yêu thích
+- **ProductRecommendation**: Gợi ý sản phẩm
+- **BrowsingHistory**: Lịch sử duyệt
+- **Notification**: Thông báo
+- **UserSetting**: Cài đặt người dùng
+- **UserSession**: Phiên đăng nhập
+
+## Authentication
+
+API sử dụng session-based authentication:
+1. Register/Login để nhận session token
+2. Gửi token trong header `Authorization: Bearer <token>`
+3. Token có thời hạn 30 ngày
+4. Refresh token để gia hạn phiên
+
+## Ví dụ sử dụng với Next.js
+
+### Authentication Flow
+```javascript
+// Register
+const register = async (userData) => {
+  const response = await fetch('/api/auth/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(userData),
+  });
+  return await response.json();
+};
+
+// Login
+const login = async (email, password) => {
+  const response = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  
+  const data = await response.json();
+  if (data.success) {
+    localStorage.setItem('token', data.token);
+  }
+  return data;
+};
+```
+
+### Product Operations
+```javascript
+// Get products with filters
+const getProducts = async (filters = {}) => {
+  const params = new URLSearchParams({
+    page: filters.page || 1,
+    pageSize: filters.pageSize || 12,
+    ...filters
+  });
+  
+  const response = await fetch(`/api/products?${params}`);
+  return await response.json();
+};
+
+// Get product details
+const getProduct = async (id) => {
+  const response = await fetch(`/api/products/${id}`);
+  return await response.json();
+};
+```
+
+### Cart Operations
+```javascript
+// Add to cart
+const addToCart = async (productId, quantity) => {
+  const token = localStorage.getItem('token');
+  
+  const response = await fetch('/api/cart/add', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ productId, quantity }),
+  });
+  
+  return await response.json();
+};
+
+// Get cart
+const getCart = async () => {
+  const token = localStorage.getItem('token');
+  
+  const response = await fetch('/api/cart', {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  
+  return await response.json();
+};
+```
+
+### Order Management
+```javascript
+// Create order
+const createOrder = async (orderData) => {
+  const token = localStorage.getItem('token');
+  
+  const response = await fetch('/api/orders', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify(orderData),
+  });
+  
+  return await response.json();
+};
+
+// Get user orders
+const getMyOrders = async () => {
+  const token = localStorage.getItem('token');
+  
+  const response = await fetch('/api/orders', {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  
+  return await response.json();
+};
+```
+
+### Wishlist Operations
+```javascript
+// Add to wishlist
+const addToWishlist = async (productId) => {
+  const token = localStorage.getItem('token');
+  
+  const response = await fetch('/api/wishlist', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ productId }),
+  });
+  
+  return await response.json();
+};
+
+// Move from wishlist to cart
+const moveToCart = async (productId) => {
+  const token = localStorage.getItem('token');
+  
+  const response = await fetch(`/api/wishlist/move-to-cart/${productId}`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  
+  return await response.json();
+};
+```
+
+## Error Handling
+
+API sử dụng chuẩn HTTP status codes:
+- `200` - Success
+- `400` - Bad Request (validation errors)
+- `401` - Unauthorized (need login)
+- `403` - Forbidden (insufficient permissions)
+- `404` - Not Found
+- `409` - Conflict (duplicate data)
+- `500` - Internal Server Error
+
+Response format:
+```json
+{
+  "success": true/false,
+  "message": "Descriptive message",
+  "data": {...}, // Only on success
+  "errors": [...] // Only on error
+}
+```
+
+## Security Features
+
+- ✅ Password hashing với BCrypt
+- ✅ Session management với token expiry
+- ✅ Input validation với Data Annotations
+- ✅ SQL injection protection với EF Core
+- ✅ CORS configuration
+- ✅ Authorization policies
+
+## Performance Features
+
+- ✅ Database indexing cho performance
+- ✅ Pagination cho large datasets
+- ✅ Efficient queries với projection
+- ✅ Lazy loading control
+- ✅ Connection pooling
+
+## Development Notes
+
+- Database được seed với dữ liệu mẫu khi khởi động
+- Logging được cấu hình với Serilog
+- API documentation tự động với Swagger
+- Error handling được xử lý tập trung
+- Validation messages bằng tiếng Việt
+
+## Triển khai Production
+
+### Cài đặt
+```bash
+# Clone repository
+git clone [your-repo-url]
+cd ShopWave
+
+# Restore packages
+dotnet restore
+
+# Update connection string in appsettings.json
+# Run migrations
+dotnet ef migrations add InitialCreate
+dotnet ef database update
+
+# Run application
+dotnet run
+```
+
+### Environment Variables
+```bash
+ASPNETCORE_ENVIRONMENT=Production
+CONNECTION_STRING=your_production_connection_string
+CORS_ORIGINS=https://yourdomain.com
+```
+
+## Next Steps
+
+1. ✅ Implement Admin Controllers cho management
+2. ✅ Add JWT authentication thay vì session
+3. ✅ Implement caching layer (Redis)
+4. ✅ Add email service cho notifications
+5. ✅ File upload cho product images
+6. ✅ Payment integration
+7. ✅ Real-time notifications với SignalR
+8. ✅ Unit tests
+9. ✅ Rate limiting
+10. ✅ Search với Elasticsearch
+
+## License
+
+MIT License

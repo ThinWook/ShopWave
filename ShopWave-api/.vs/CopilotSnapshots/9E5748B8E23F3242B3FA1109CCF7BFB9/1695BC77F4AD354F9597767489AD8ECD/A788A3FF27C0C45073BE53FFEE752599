@@ -1,0 +1,11 @@
+﻿using Microsoft.AspNetCore.Http;
+using ShopWave.Models;
+
+namespace ShopWave.Services
+{
+    public interface IMediaService
+    {
+        Task<Media> UploadFileAsync(IFormFile file, string? category);
+        Task<List<Media>> UploadFilesAsync(IEnumerable<IFormFile> files, string? category);
+    }
+}

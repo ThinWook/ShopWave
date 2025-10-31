@@ -1,0 +1,88 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using ShopWave.Services;
+using ShopWave.Models.Responses;
+
+namespace ShopWave.Controllers
+{
+    [ApiController]
+    [Route("api/v1/[controller]")]
+    public class DatabaseController : ControllerBase
+    {
+        private readonly DatabaseTestService _databaseTestService;
+        private readonly ILogger<DatabaseController> _logger;
+
+        public DatabaseController(DatabaseTestService databaseTestService, ILogger<DatabaseController> logger)
+        {
+            _databaseTestService = databaseTestService;
+            _logger = logger;
+        }
+
+        [HttpGet("test-connection")]
+        public async Task<IActionResult> TestConnection()
+        {
+            try
+            {
+                var isConnected = await _databaseTestService.TestConnectionAsync();
+                if (isConnected)
+                {
+                    return Ok(EnvelopeBuilder.Ok(HttpContext, "DB_CONNECTION_OK", new { connected = true }));
+                }
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "DB_CONNECTION_FAILED", new[] { new ErrorItem("database", "Cannot connect to database", "DB_CONNECTION_FAILED") }, 500));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Database connection test failed");
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", ex.Message, "INTERNAL_ERROR") }, 500));
+            }
+        }
+
+        [HttpGet("info")]
+        public async Task<IActionResult> GetDatabaseInfo()
+        {
+            try
+            {
+                var dbInfo = await _databaseTestService.GetDatabaseInfoAsync();
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "DB_INFO_RETRIEVED", dbInfo));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get database info");
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", ex.Message, "INTERNAL_ERROR") }, 500));
+            }
+        }
+
+        [HttpGet("tables")]
+        public async Task<IActionResult> GetTables()
+        {
+            try
+            {
+                var tables = await _databaseTestService.GetTableNamesAsync();
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "DB_TABLES_RETRIEVED", tables));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get table names");
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", ex.Message, "INTERNAL_ERROR") }, 500));
+            }
+        }
+
+        [HttpPost("ensure-created")]
+        public async Task<IActionResult> EnsureDatabaseCreated()
+        {
+            try
+            {
+                var success = await _databaseTestService.EnsureDatabaseCreatedAsync();
+                if (success)
+                {
+                    return StatusCode(201, EnvelopeBuilder.Ok(HttpContext, "DB_ENSURE_CREATED", new { created = true }));
+                }
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "DB_ENSURE_FAILED", new[] { new ErrorItem("database", "Cannot create database", "DB_ENSURE_FAILED") }, 500));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to ensure database created");
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", ex.Message, "INTERNAL_ERROR") }, 500));
+            }
+        }
+    }
+}

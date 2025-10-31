@@ -1,0 +1,695 @@
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ShopWave.Models;
+using ShopWave.Models.DTOs;
+using ShopWave.Models.Requests;
+using ShopWave.Models.Responses;
+using ShopWave.Services;
+using System.Security.Cryptography;
+using System.Text;
+
+namespace ShopWave.Controllers
+{
+    [ApiController]
+    [Route("api/v1/[controller]")]
+    public class ProductsController : ControllerBase
+    {
+        private readonly ShopWaveDbContext _context;
+        private readonly ILogger<ProductsController> _logger;
+
+        public ProductsController(ShopWaveDbContext context, ILogger<ProductsController> logger)
+        {
+            _context = context;
+            _logger = logger;
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost]
+        public async Task<IActionResult> CreateProduct([FromBody] ProductCreateRequest request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(EnvelopeBuilder.Fail<object>(HttpContext, "VALIDATION_ERROR", new[] { new ErrorItem("request", "Invalid payload", "VALIDATION_ERROR") }, 400));
+                }
+
+                await using var tx = await _context.Database.BeginTransactionAsync();
+
+                // 1. Tạo sản phẩm cha (không set Price, StockQuantity)
+                var product = new Product
+                {
+                    Name = request.Name.Trim(),
+                    Description = request.Description?.Trim(),
+                    CategoryId = request.CategoryId,
+                    MediaId = request.MainImageId,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                };
+                _context.Products.Add(product);
+                await _context.SaveChangesAsync();
+
+                // 2. Lưu gallery media
+                if (request.GalleryMedia != null && request.GalleryMedia.Count > 0)
+                {
+                    var existingMediaIds = await _context.Media
+                        .Where(m => request.GalleryMedia.Select(g => g.MediaId).Contains(m.Id))
+                        .Select(m => m.Id)
+                        .ToListAsync();
+
+                    var toInsert = request.GalleryMedia
+                        .Where(g => existingMediaIds.Contains(g.MediaId))
+                        .Select(g => new ProductMedia
+                        {
+                            ProductId = product.Id,
+                            MediaId = g.MediaId,
+                            DisplayOrder = g.SortOrder
+                        })
+                        .ToList();
+
+                    if (toInsert.Count > 0)
+                    {
+                        _context.ProductMedia.AddRange(toInsert);
+                        await _context.SaveChangesAsync();
+                    }
+                }
+
+                // 3. Lưu các biến thể
+                if (request.Variants != null && request.Variants.Count > 0)
+                {
+                    for (int i = 0; i < request.Variants.Count; i++)
+                    {
+                        var v = request.Variants[i];
+                        string sku = v.Sku;
+                        if (string.IsNullOrWhiteSpace(sku))
+                        {
+                            var nameSlug = ToSlug(request.Name);
+                            var categoryId = request.CategoryId.ToString("N").ToUpper();
+                            var sizeSlug = ToSlug(v.Size ?? "");
+                            var colorSlug = ToSlug(v.Color ?? "");
+                            sku = $"{nameSlug}-{categoryId}-{sizeSlug}-{colorSlug}-{i + 1}";
+                        }
+
+                        var variant = new ProductVariant
+                        {
+                            ProductId = product.Id,
+                            Sku = sku,
+                            Price = v.Price,
+                            Stock = v.Stock,
+                            ImageId = v.ImageId,
+                            Size = v.Size,
+                            Color = v.Color
+                        };
+                        _context.ProductVariants.Add(variant);
+                        await _context.SaveChangesAsync();
+                    }
+                }
+
+                await tx.CommitAsync();
+                return StatusCode(201, EnvelopeBuilder.Ok(HttpContext, "PRODUCT_CREATED", new { id = product.Id }));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating variable product");
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500));
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetProducts([FromQuery] ProductSearchRequest request)
+        {
+            try
+            {
+                if (request.Page < 1) request.Page = 1;
+                if (request.PageSize <= 0 || request.PageSize > 100) request.PageSize = 12;
+
+                var query = _context.Products
+                    .Include(p => p.Category)
+                    .Include(p => p.Media)
+                    .Include(p => p.ProductMedia)
+                        .ThenInclude(pm => pm.Media)
+                    .Include(p => p.ProductVariants)
+                    .Where(p => p.IsActive);
+
+                if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+                {
+                    query = query.Where(p => p.Name.Contains(request.SearchTerm) || (p.Description != null && p.Description.Contains(request.SearchTerm)));
+                }
+                if (request.CategoryId.HasValue)
+                    query = query.Where(p => p.CategoryId == request.CategoryId.Value);
+                if (request.MinPrice.HasValue)
+                    query = query.Where(p => p.Price >= request.MinPrice.Value);
+                if (request.MaxPrice.HasValue)
+                    query = query.Where(p => p.Price <= request.MaxPrice.Value);
+                if (request.MinRating.HasValue)
+                    query = query.Where(p => p.Rating >= request.MinRating.Value);
+
+                var sortKey = request.SortBy.ToLower();
+                query = sortKey switch
+                {
+                    "price" => request.SortDirection == "desc" ? query.OrderByDescending(p => p.Price) : query.OrderBy(p => p.Price),
+                    "rating" => request.SortDirection == "desc" ? query.OrderByDescending(p => p.Rating) : query.OrderBy(p => p.Rating),
+                    "popularity" => request.SortDirection == "desc" ? query.OrderByDescending(p => p.Popularity) : query.OrderBy(p => p.Popularity),
+                    _ => request.SortDirection == "desc" ? query.OrderByDescending(p => p.Name) : query.OrderBy(p => p.Name)
+                };
+
+                var latestUpdated = await query.MaxAsync(p => (DateTime?)p.UpdatedAt) ?? DateTime.MinValue;
+                var totalRecords = await query.CountAsync();
+                var totalPages = totalRecords == 0 ? 0 : (int)Math.Ceiling(totalRecords / (double)request.PageSize);
+                if (totalPages > 0 && request.Page > totalPages) request.Page = totalPages;
+
+                var etagRaw = $"{totalRecords}-{latestUpdated:O}-{request.Page}-{request.PageSize}-{sortKey}-{request.SortDirection}-{request.SearchTerm}-{request.CategoryId}-{request.MinPrice}-{request.MaxPrice}-{request.MinRating}";
+                var etag = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(etagRaw)));
+                if (Request.Headers.TryGetValue("If-None-Match", out var inm) && inm == etag)
+                {
+                    return StatusCode(StatusCodes.Status304NotModified);
+                }
+
+                var products = await query
+                    .Skip((request.Page - 1) * request.PageSize)
+                    .Take(request.PageSize)
+                    .ToListAsync();
+
+                var items = products.Select(p => new
+                {
+                    id = p.Id,
+                    name = p.Name,
+                    description = p.Description,
+                    price = p.Price,
+                    categoryName = p.Category != null ? p.Category.Name : null,
+                    imageUrl = p.Media != null ? p.Media.Url : null,
+                    rating = p.Rating,
+                    reviewsCount = p.ReviewsCount,
+                    stockQuantity = p.StockQuantity,
+                    isActive = p.IsActive,
+                    size = p.Size,
+                    slug = ToSlug(p.Name),
+                    createdAt = p.CreatedAt,
+                    mainImage = p.Media != null ? new
+                    {
+                        id = p.Media.Id,
+                        url = p.Media.Url,
+                        altText = p.Name
+                    } : null,
+                    galleryImages = p.ProductMedia != null ? p.ProductMedia
+                        .OrderBy(pm => pm.DisplayOrder)
+                        .Select(pm => new { id = pm.Media.Id, url = pm.Media.Url, sortOrder = pm.DisplayOrder })
+                        .ToList() : new List<object>(),
+                    variants = p.ProductVariants != null ? p.ProductVariants.Select(v => new
+                    {
+                        id = v.Id,
+                        sku = v.Sku,
+                        price = v.Price,
+                        stock = v.Stock,
+                        imageId = v.ImageId,
+                        size = v.Size,
+                        color = v.Color
+                    }).ToList() : new List<object>()
+                }).ToList();
+
+                Response.Headers.ETag = etag;
+
+                var paged = new
+                {
+                    items,
+                    currentPage = request.Page,
+                    totalPages = totalPages,
+                    pageSize = request.PageSize,
+                    totalRecords = totalRecords,
+                    hasPreviousPage = request.Page > 1,
+                    hasNextPage = request.Page < totalPages,
+                    appliedFilters = new
+                    {
+                        searchTerm = request.SearchTerm,
+                        categoryId = request.CategoryId,
+                        minPrice = request.MinPrice,
+                        maxPrice = request.MaxPrice,
+                        minRating = request.MinRating,
+                        sort = new { field = sortKey, direction = request.SortDirection }
+                    },
+                    lastUpdatedAt = latestUpdated
+                };
+
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "PRODUCT_LIST_RETRIEVED", paged));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving products");
+                var env = EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500);
+                return StatusCode(500, env);
+            }
+        }
+
+        [Authorize]
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetProduct(Guid id)
+        {
+            try
+            {
+                var product = await _context.Products
+                    .Include(p => p.Category)
+                    .Include(p => p.Media)
+                    .Include(p => p.ProductMedia)
+                        .ThenInclude(pm => pm.Media)
+                    .Where(p => p.Id == id && p.IsActive)
+                    .FirstOrDefaultAsync();
+
+                if (product == null)
+                {
+                    return NotFound(EnvelopeBuilder.Fail<object>(HttpContext, "NOT_FOUND", new[] { new ErrorItem("id", "Product not found", "NOT_FOUND") }, 404));
+                }
+
+                var mainImage = product.Media != null ? new
+                {
+                    id = product.Media.Id,
+                    url = product.Media.Url,
+                    altText = product.Name
+                } : null;
+
+                var galleryImages = product.ProductMedia
+                    .OrderBy(pm => pm.DisplayOrder)
+                    .Select(pm => new
+                    {
+                        id = pm.Media.Id,
+                        url = pm.Media.Url,
+                        sortOrder = pm.DisplayOrder
+                    }).ToList();
+
+                // Nếu có bảng ProductVariant thì lấy ở đây, còn không thì trả về 1 phần tử
+                var variants = _context.ProductVariants.Where(v => v.ProductId == product.Id).Select(v => new
+                {
+                    id = v.Id,
+                    sku = v.Sku,
+                    price = v.Price,
+                    stock = v.Stock,
+                    imageId = v.ImageId,
+                    size = v.Size,
+                    color = v.Color
+                }).ToList();
+
+                var result = new
+                {
+                    id = product.Id,
+                    name = product.Name,
+                    description = product.Description,
+                    price = product.Price,
+                    slug = ToSlug(product.Name),
+                    rating = product.Rating,
+                    reviewsCount = product.ReviewsCount,
+                    category = new
+                    {
+                        id = product.Category.Id,
+                        name = product.Category.Name
+                    },
+                    mainImage,
+                    galleryImages,
+                    variants
+                };
+
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "PRODUCT_DETAIL_RETRIEVED", result));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving product {ProductId}", id);
+                var env = EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500);
+                return StatusCode(500, env);
+            }
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateProduct(Guid id, [FromBody] UpdateProductRequest request)
+        {
+            try
+            {
+                var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
+                if (product == null)
+                {
+                    return NotFound(EnvelopeBuilder.Fail<object>(HttpContext, "NOT_FOUND", new[] { new ErrorItem("id", "Product not found", "NOT_FOUND") }, 404));
+                }
+
+                var category = await _context.Categories.FirstOrDefaultAsync(c => c.Id == request.CategoryId && c.IsActive);
+                if (category == null)
+                {
+                    return BadRequest(EnvelopeBuilder.Fail<object>(HttpContext, "CATEGORY_INVALID", new[] { new ErrorItem("categoryId", "Category not found or inactive", "CATEGORY_INVALID") }, 400));
+                }
+
+                product.Name = request.Name.Trim();
+                product.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
+                product.Price = request.Price;
+                product.CategoryId = request.CategoryId;
+                product.Size = string.IsNullOrWhiteSpace(request.Size) ? null : request.Size.Trim();
+                product.StockQuantity = request.StockQuantity;
+                product.IsActive = request.IsActive;
+                product.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                // Xử lý variants
+                if (request.Variants != null)
+                {
+                    // Xóa các variants cũ không còn trong request
+                    var oldVariants = await _context.ProductVariants.Where(v => v.ProductId == product.Id).ToListAsync();
+                    var requestSkus = request.Variants.Where(v => !string.IsNullOrWhiteSpace(v.Sku)).Select(v => v.Sku).ToHashSet();
+                    var toRemove = oldVariants.Where(v => !requestSkus.Contains(v.Sku)).ToList();
+                    if (toRemove.Count > 0)
+                    {
+                        _context.ProductVariants.RemoveRange(toRemove);
+                        await _context.SaveChangesAsync();
+                    }
+
+                    // Thêm mới hoặc cập nhật variants
+                    foreach (var v in request.Variants)
+                    {
+                        var variant = oldVariants.FirstOrDefault(x => x.Sku == v.Sku);
+                        if (variant == null)
+                        {
+                            // Thêm mới
+                            variant = new ProductVariant
+                            {
+                                ProductId = product.Id,
+                                Sku = v.Sku ?? Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper(),
+                                Price = v.Price,
+                                Stock = v.Stock,
+                                ImageId = v.ImageId,
+                                Size = v.Size,
+                                Color = v.Color
+                            };
+                            _context.ProductVariants.Add(variant);
+                            await _context.SaveChangesAsync();
+                        }
+                        else
+                        {
+                            // Cập nhật
+                            variant.Price = v.Price;
+                            variant.Stock = v.Stock;
+                            variant.ImageId = v.ImageId;
+                            variant.Size = v.Size;
+                            variant.Color = v.Color;
+                            await _context.SaveChangesAsync();
+                        }
+                    }
+                }
+
+                var dto = new ProductDto
+                {
+                    Id = product.Id,
+                    Name = product.Name,
+                    Description = product.Description,
+                    Price = product.Price,
+                    CategoryName = category.Name,
+                    Size = product.Size,
+                    Rating = product.Rating,
+                    ReviewsCount = product.ReviewsCount,
+                    StockQuantity = product.StockQuantity,
+                    IsActive = product.IsActive
+                };
+
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "PRODUCT_UPDATED", dto));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating product {ProductId}", id);
+                var env = EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500);
+                return StatusCode(500, env);
+            }
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteProduct(Guid id)
+        {
+            try
+            {
+                var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
+                if (product == null)
+                {
+                    return NotFound(EnvelopeBuilder.Fail<object>(HttpContext, "NOT_FOUND", new[] { new ErrorItem("id", "Product not found", "NOT_FOUND") }, 404));
+                }
+
+                // Soft delete
+                if (!product.IsActive)
+                {
+                    return Ok(EnvelopeBuilder.Ok(HttpContext, "PRODUCT_ALREADY_INACTIVE", new { id }));
+                }
+
+                product.IsActive = false;
+                product.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "PRODUCT_DEACTIVATED", new { id }));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting product {ProductId}", id);
+                var env = EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500);
+                return StatusCode(500, env);
+            }
+        }
+
+        [HttpGet("{id}/reviews")]
+        public async Task<IActionResult> GetProductReviews(Guid id, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                if (page < 1) page = 1;
+                if (pageSize <= 0 || pageSize > 100) pageSize = 10;
+
+                var baseQuery = _context.Reviews.Where(r => r.ProductId == id).OrderByDescending(r => r.CreatedAt);
+                var total = await baseQuery.CountAsync();
+                var totalPages = total == 0 ? 0 : (int)Math.Ceiling(total / (double)pageSize);
+                if (totalPages > 0 && page > totalPages) page = totalPages;
+
+                var items = await baseQuery
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(r => new ReviewDto
+                    {
+                        Id = r.Id,
+                        UserName = r.UserName,
+                        Rating = r.Rating,
+                        Comment = r.Comment,
+                        Date = r.Date,
+                        IsVerified = r.IsVerified
+                    }).ToListAsync();
+
+                var paged = new PagedResult<ReviewDto>(
+                    Data: items,
+                    CurrentPage: page,
+                    TotalPages: totalPages,
+                    PageSize: pageSize,
+                    TotalRecords: total,
+                    HasPreviousPage: page > 1,
+                    HasNextPage: page < totalPages,
+                    AppliedFilters: new { productId = id }
+                );
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "PRODUCT_REVIEWS_RETRIEVED", paged));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving product reviews {ProductId}", id);
+                var env = EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500);
+                return StatusCode(500, env);
+            }
+        }
+
+        [HttpGet("featured")]
+        public async Task<IActionResult> GetFeaturedProducts([FromQuery] int take = 8)
+        {
+            try
+            {
+                if (take <= 0 || take > 50) take = 8;
+                var products = await _context.Products
+                    .Include(p => p.Category)
+                    .Where(p => p.IsActive && p.Rating >= 4.0)
+                    .OrderByDescending(p => p.Popularity)
+                    .Take(take)
+                    .Select(p => new ProductDto
+                    {
+                        Id = p.Id,
+                        Name = p.Name,
+                        Description = p.Description,
+                        Price = p.Price,
+                        CategoryName = p.Category.Name,
+
+                        Size = p.Size,
+                        Rating = p.Rating,
+                        ReviewsCount = p.ReviewsCount,
+                        StockQuantity = p.StockQuantity,
+                        IsActive = p.IsActive
+                    })
+                    .ToListAsync();
+
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "PRODUCT_FEATURED_RETRIEVED", products));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving featured products");
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500));
+            }
+        }
+
+        [HttpGet("{id}/related")]
+        public async Task<IActionResult> GetRelatedProducts(Guid id, [FromQuery] int take = 4)
+        {
+            try
+            {
+                var product = await _context.Products.FindAsync(id);
+                if (product == null)
+                {
+                    return NotFound(EnvelopeBuilder.Fail<object>(HttpContext, "NOT_FOUND", new[] { new ErrorItem("id", "Product not found", "NOT_FOUND") }, 404));
+                }
+                if (take <= 0 || take > 20) take = 4;
+
+                var related = await _context.Products
+                    .Include(p => p.Category)
+                    .Where(p => p.CategoryId == product.CategoryId && p.Id != id && p.IsActive)
+                    .OrderByDescending(p => p.Rating)
+                    .Take(take)
+                    .Select(p => new ProductDto
+                    {
+                        Id = p.Id,
+                        Name = p.Name,
+                        Description = p.Description,
+                        Price = p.Price,
+                        CategoryName = p.Category.Name,
+                        Size = p.Size,
+                        Rating = p.Rating,
+                        ReviewsCount = p.ReviewsCount,
+                        StockQuantity = p.StockQuantity,
+                        IsActive = p.IsActive
+                    })
+                    .ToListAsync();
+
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "PRODUCT_RELATED_RETRIEVED", related));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving related products {ProductId}", id);
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500));
+            }
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost("{productId}/variants")]
+        public async Task<IActionResult> AddVariant(Guid productId, [FromBody] ProductVariantRequest request)
+        {
+            try
+            {
+                var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == productId && p.IsActive);
+                if (product == null)
+                {
+                    return NotFound(EnvelopeBuilder.Fail<object>(HttpContext, "NOT_FOUND", new[] { new ErrorItem("productId", "Product not found", "NOT_FOUND") }, 404));
+                }
+                string sku = string.IsNullOrWhiteSpace(request.Sku)
+                    ? $"{ToSlug(product.Name)}-{Guid.NewGuid().ToString("N").Substring(0, 5).ToUpper()}"
+                    : request.Sku;
+                var variant = new ProductVariant
+                {
+                    ProductId = productId,
+                    Sku = sku,
+                    Price = request.Price,
+                    Stock = request.Stock,
+                    ImageId = request.ImageId,
+                    Size = request.Size,
+                    Color = request.Color
+                };
+                _context.ProductVariants.Add(variant);
+                await _context.SaveChangesAsync();
+                return StatusCode(201, EnvelopeBuilder.Ok(HttpContext, "VARIANT_CREATED", new { id = variant.Id }));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding variant for product {ProductId}", productId);
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500));
+            }
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPut("{productId}/variants/{variantId}")]
+        public async Task<IActionResult> UpdateVariant(Guid productId, Guid variantId, [FromBody] ProductVariantRequest request)
+        {
+            try
+            {
+                var variant = await _context.ProductVariants.FirstOrDefaultAsync(v => v.Id == variantId && v.ProductId == productId);
+                if (variant == null)
+                {
+                    return NotFound(EnvelopeBuilder.Fail<object>(HttpContext, "NOT_FOUND", new[] { new ErrorItem("variantId", "Variant not found", "NOT_FOUND") }, 404));
+                }
+                variant.Price = request.Price;
+                variant.Stock = request.Stock;
+                variant.ImageId = request.ImageId;
+                variant.Size = request.Size;
+                variant.Color = request.Color;
+                if (!string.IsNullOrWhiteSpace(request.Sku))
+                    variant.Sku = request.Sku;
+                await _context.SaveChangesAsync();
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "VARIANT_UPDATED", new { id = variant.Id }));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating variant {VariantId}", variantId);
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500));
+            }
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("{productId}/variants/{variantId}")]
+        public async Task<IActionResult> DeleteVariant(Guid productId, Guid variantId)
+        {
+            try
+            {
+                var variant = await _context.ProductVariants.FirstOrDefaultAsync(v => v.Id == variantId && v.ProductId == productId);
+                if (variant == null)
+                {
+                    return NotFound(EnvelopeBuilder.Fail<object>(HttpContext, "NOT_FOUND", new[] { new ErrorItem("variantId", "Variant not found", "NOT_FOUND") }, 404));
+                }
+                _context.ProductVariants.Remove(variant);
+                await _context.SaveChangesAsync();
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "VARIANT_DELETED", new { id = variantId }));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting variant {VariantId}", variantId);
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500));
+            }
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost("variants/{variantId}/upload-image")]
+        public async Task<IActionResult> UploadVariantImage(Guid variantId, IFormFile file, [FromServices] IMediaService mediaService)
+        {
+            var variant = await _context.ProductVariants.FindAsync(variantId);
+            if (variant == null)
+                return NotFound(EnvelopeBuilder.Fail<object>(HttpContext, "NOT_FOUND", new[] { new ErrorItem("variantId", "Variant not found", "NOT_FOUND") }, 404));
+            if (file == null || file.Length == 0)
+                return BadRequest(EnvelopeBuilder.Fail<object>(HttpContext, "NO_FILE", new[] { new ErrorItem("file", "No file uploaded", "NO_FILE") }, 400));
+
+            var media = await mediaService.SaveMediaAsync(file);
+            variant.ImageId = media.Id;
+            await _context.SaveChangesAsync();
+
+            return Ok(EnvelopeBuilder.Ok(HttpContext, "VARIANT_IMAGE_UPLOADED", new { imageId = media.Id, imageUrl = media.Url }));
+        }
+
+        // Slug generator (simple, dùng cho cả controller)
+        private static string ToSlug(string str)
+        {
+            if (string.IsNullOrWhiteSpace(str)) return string.Empty;
+            var slug = str.ToLowerInvariant()
+                .Replace(" ", "-")
+                .Replace("đ", "d")
+                .Replace("á", "a").Replace("à", "a").Replace("ả", "a").Replace("ã", "a").Replace("ạ", "a")
+                .Replace("é", "e").Replace("è", "e").Replace("ẻ", "e").Replace("ẽ", "e").Replace("ẹ", "e")
+                .Replace("í", "i").Replace("ì", "i").Replace("ỉ", "i").Replace("ĩ", "i").Replace("ị", "i")
+                .Replace("ó", "o").Replace("ò", "o").Replace("ỏ", "o").Replace("õ", "o").Replace("ọ", "o")
+                .Replace("ú", "u").Replace("ù", "u").Replace("ủ", "u").Replace("ũ", "u").Replace("ụ", "u")
+                .Replace("ý", "y").Replace("ỳ", "y").Replace("ỷ", "y").Replace("ỹ", "y").Replace("ỵ", "y");
+            slug = System.Text.RegularExpressions.Regex.Replace(slug, "[^a-z0-9-]", "");
+            slug = System.Text.RegularExpressions.Regex.Replace(slug, "-+", "-");
+            return slug.Trim('-');
+        }
+    }
+}

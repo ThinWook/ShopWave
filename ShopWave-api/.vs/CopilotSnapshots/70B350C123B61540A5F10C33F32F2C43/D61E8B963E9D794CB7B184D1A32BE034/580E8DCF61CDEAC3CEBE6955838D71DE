@@ -1,0 +1,14 @@
+﻿using ShopWave.Models;
+using ShopWave.Models.DTOs;
+
+namespace ShopWave.Repositories
+{
+    public interface IRecommendationRepository
+    {
+        // POC: load precomputed JSON for item-similar and popularity
+        Task<bool> IsReadyAsync(CancellationToken ct = default);
+        Task<List<string>> GetPopularAsync(int k, CancellationToken ct = default);
+        Task<List<(Guid id, double score)>> GetItemSimilarAsync(Guid productId, int k, CancellationToken ct = default);
+        Task<List<(Guid id, double score)>> GetPersonalizedAsync(Guid userId, int k, CancellationToken ct = default);
+    }
+}

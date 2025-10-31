@@ -1,0 +1,146 @@
+﻿using Microsoft.Extensions.Caching.Memory;
+using ShopWave.Repositories;
+using ShopWave.Models.DTOs;
+
+namespace ShopWave.Services
+{
+    public class RecommendationService : IRecommendationService
+    {
+        private readonly IRecommendationRepository _repo;
+        private readonly IMemoryCache _cache;
+        private readonly ILogger<RecommendationService> _logger;
+        private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(5);
+
+        public RecommendationService(IRecommendationRepository repo, IMemoryCache cache, ILogger<RecommendationService> logger)
+        {
+            _repo = repo;
+            _cache = cache;
+            _logger = logger;
+        }
+
+        public async Task<RecommendationsResponse> GetRecommendationsAsync(Guid? userId, Guid? productId, int k, CancellationToken ct = default)
+        {
+            if (k <= 0 || k > 50) throw new ArgumentOutOfRangeException(nameof(k));
+
+            string fallbackUsed = "";
+            var items = new List<RecommendationDto>();
+
+            // Try item-similar if productId provided
+            if (productId.HasValue)
+            {
+                var cacheKey = $"itemsim:{productId}:{k}";
+                if (!_cache.TryGetValue(cacheKey, out List<RecommendationDto>? cached))
+                {
+                    var sim = await _repo.GetItemSimilarAsync(productId.Value, k, ct);
+                    if (sim != null && sim.Count > 0)
+                    {
+                        // TODO: fetch product metadata (title, price, imageUrl) from DB. Here we mock values.
+                        items = sim.Select(s => new RecommendationDto
+                        {
+                            Id = s.id,
+                            Title = $"Product {s.id}",
+                            Price = 0m, // TODO replace with real price
+                            ImageUrl = null,
+                            Score = s.score,
+                            Reason = "co-view"
+                        }).ToList();
+
+                        _cache.Set(cacheKey, items, CacheTtl);
+                        fallbackUsed = "item-similar";
+                    }
+                }
+                else
+                {
+                    items = cached;
+                    fallbackUsed = "item-similar";
+                }
+
+                if (items.Count > 0)
+                {
+                    _logger.LogInformation("Recommendations: used fallback {Fallback}", fallbackUsed);
+                    return new RecommendationsResponse { Recommendations = items.Take(k).ToList(), FallbackUsed = fallbackUsed };
+                }
+            }
+
+            // Try personalized if userId provided
+            if (userId.HasValue)
+            {
+                var cacheKey = $"personal:{userId}:{k}";
+                if (!_cache.TryGetValue(cacheKey, out List<RecommendationDto>? cached))
+                {
+                    var pres = await _repo.GetPersonalizedAsync(userId.Value, k, ct);
+                    if (pres != null && pres.Count > 0)
+                    {
+                        items = pres.Select(s => new RecommendationDto
+                        {
+                            Id = s.id,
+                            Title = $"Product {s.id}",
+                            Price = 0m,
+                            ImageUrl = null,
+                            Score = s.score,
+                            Reason = "personalized"
+                        }).ToList();
+
+                        _cache.Set(cacheKey, items, CacheTtl);
+                        fallbackUsed = "personalized";
+                    }
+                }
+                else
+                {
+                    items = cached;
+                    fallbackUsed = "personalized";
+                }
+
+                if (items.Count > 0)
+                {
+                    _logger.LogInformation("Recommendations: used fallback {Fallback}", fallbackUsed);
+                    return new RecommendationsResponse { Recommendations = items.Take(k).ToList(), FallbackUsed = fallbackUsed };
+                }
+            }
+
+            // Finally global popularity
+            try
+            {
+                var cacheKey = $"popular:{k}";
+                if (!_cache.TryGetValue(cacheKey, out List<RecommendationDto>? cached))
+                {
+                    var pop = await _repo.GetPopularAsync(k, ct);
+                    if (pop != null && pop.Count > 0)
+                    {
+                        items = pop.Select((idStr, idx) =>
+                        {
+                            Guid.TryParse(idStr, out var gid);
+                            return new RecommendationDto
+                            {
+                                Id = gid,
+                                Title = $"Product {idStr}",
+                                Price = 0m,
+                                ImageUrl = null,
+                                Score = 1.0 - (idx / (double)k),
+                                Reason = "popular"
+                            };
+                        }).ToList();
+
+                        _cache.Set(cacheKey, items, CacheTtl);
+                        fallbackUsed = "popularity";
+                    }
+                }
+                else
+                {
+                    items = cached;
+                    fallbackUsed = "popularity";
+                }
+
+                _logger.LogInformation("Recommendations: used fallback {Fallback}", fallbackUsed);
+                return new RecommendationsResponse { Recommendations = items.Take(k).ToList(), FallbackUsed = fallbackUsed };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting popularity recommendations");
+                // As last resort return empty with fallback
+                fallbackUsed = "popularity";
+                return new RecommendationsResponse { Recommendations = new List<RecommendationDto>(), FallbackUsed = fallbackUsed };
+            }
+        }
+    }
+}

@@ -1,0 +1,383 @@
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ShopWave.Models;
+using ShopWave.Models.DTOs;
+using ShopWave.Models.Responses;
+using System.ComponentModel.DataAnnotations;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using BCrypt.Net;
+using ShopWave.Services;
+using Google.Apis.Auth;
+
+namespace ShopWave.Controllers
+{
+    [ApiController]
+    [Route("api/v1/[controller]")]
+    public class AuthController : ControllerBase
+    {
+        private readonly ShopWaveDbContext _context;
+        private readonly ILogger<AuthController> _logger;
+        private readonly JwtTokenService _jwt;
+        private readonly GoogleTokenValidator _google;
+
+        public AuthController(ShopWaveDbContext context, ILogger<AuthController> logger, JwtTokenService jwt, GoogleTokenValidator google)
+        {
+            _context = context;
+            _logger = logger;
+            _jwt = jwt;
+            _google = google;
+        }
+
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+        {
+            try
+            {
+                // Validation
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(EnvelopeBuilder.Fail<object>(HttpContext, "VALIDATION_ERROR", ModelState
+                        .SelectMany(kv => kv.Value!.Errors.Select(e => new ErrorItem(kv.Key, e.ErrorMessage, "INVALID"))), 400));
+                }
+
+                // Check if email already exists
+                if (await _context.Users.AnyAsync(u => u.Email == request.Email))
+                {
+                    return Conflict(EnvelopeBuilder.Fail<object>(HttpContext, "EMAIL_EXISTS", new[] { new ErrorItem("email", "Email đã được sử dụng", "EMAIL_EXISTS") }, 409));
+                }
+
+                // Create new user
+                var user = new User
+                {
+                    Email = request.Email.ToLowerInvariant(),
+                    FullName = request.FullName.Trim(),
+                    Phone = request.Phone?.Trim(),
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                    Role = "Customer",
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+
+                // create refresh session
+                var refresh = Guid.NewGuid().ToString();
+                var session = new UserSession
+                {
+                    UserId = user.Id,
+                    SessionToken = refresh,
+                    ExpiresAt = DateTime.UtcNow.AddDays(_jwt.GetRefreshTokenDays()),
+                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    UserAgent = HttpContext.Request.Headers.UserAgent.ToString(),
+                    CreatedAt = DateTime.UtcNow,
+                    LastActivity = DateTime.UtcNow
+                };
+                _context.UserSessions.Add(session);
+                await _context.SaveChangesAsync();
+
+                var (accessToken, accessExp) = _jwt.GenerateAccessToken(user);
+
+                var userDto = new UserDto
+                {
+                    Id = user.Id,
+                    Email = user.Email,
+                    FullName = user.FullName,
+                    Phone = user.Phone,
+                    AvatarUrl = user.AvatarUrl,
+                    Role = user.Role,
+                    IsActive = user.IsActive,
+                    CreatedAt = user.CreatedAt
+                };
+
+                var data = new
+                {
+                    accessToken,
+                    accessTokenExpiresAt = accessExp,
+                    refreshToken = refresh,
+                    refreshTokenExpiresAt = session.ExpiresAt,
+                    user = userDto
+                };
+
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "REGISTER_SUCCESS", data));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Register error for {Email}", request.Email);
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500));
+            }
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequest request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(EnvelopeBuilder.Fail<object>(HttpContext, "VALIDATION_ERROR", ModelState
+                        .SelectMany(kv => kv.Value!.Errors.Select(e => new ErrorItem(kv.Key, e.ErrorMessage, "INVALID"))), 400));
+                }
+
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email.ToLowerInvariant() && u.IsActive);
+                if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+                {
+                    await Task.Delay(TimeSpan.FromMilliseconds(400));
+                    return Unauthorized(EnvelopeBuilder.Fail<object>(HttpContext, "INVALID_CREDENTIALS", new[] { new ErrorItem("auth", "Email hoặc mật khẩu không đúng", "INVALID_CREDENTIALS") }, 401));
+                }
+
+                // keep last 5 sessions
+                var oldSessions = await _context.UserSessions
+                    .Where(s => s.UserId == user.Id)
+                    .OrderByDescending(s => s.CreatedAt)
+                    .Skip(4)
+                    .ToListAsync();
+                if (oldSessions.Any()) _context.UserSessions.RemoveRange(oldSessions);
+
+                var refresh = Guid.NewGuid().ToString();
+                var session = new UserSession
+                {
+                    UserId = user.Id,
+                    SessionToken = refresh,
+                    ExpiresAt = DateTime.UtcNow.AddDays(_jwt.GetRefreshTokenDays()),
+                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    UserAgent = HttpContext.Request.Headers.UserAgent.ToString(),
+                    CreatedAt = DateTime.UtcNow,
+                    LastActivity = DateTime.UtcNow
+                };
+                _context.UserSessions.Add(session);
+                await _context.SaveChangesAsync();
+
+                var (accessToken, accessExp) = _jwt.GenerateAccessToken(user);
+
+                var userDto = new UserDto
+                {
+                    Id = user.Id,
+                    Email = user.Email,
+                    FullName = user.FullName,
+                    Phone = user.Phone,
+                    AvatarUrl = user.AvatarUrl,
+                    Role = user.Role,
+                    IsActive = user.IsActive,
+                    CreatedAt = user.CreatedAt
+                };
+
+                var data = new
+                {
+                    accessToken,
+                    accessTokenExpiresAt = accessExp,
+                    refreshToken = refresh,
+                    refreshTokenExpiresAt = session.ExpiresAt,
+                    user = userDto
+                };
+
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "LOGIN_SUCCESS", data));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Login error for {Email}", request.Email);
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500));
+            }
+        }
+
+        [HttpPost("refresh")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.RefreshToken))
+                {
+                    return BadRequest(EnvelopeBuilder.Fail<object>(HttpContext, "REFRESH_TOKEN_REQUIRED", new[] { new ErrorItem("refreshToken", "Refresh token là bắt buộc", "REQUIRED") }, 400));
+                }
+
+                var session = await _context.UserSessions.Include(s => s.User)
+                    .FirstOrDefaultAsync(s => s.SessionToken == request.RefreshToken && s.ExpiresAt > DateTime.UtcNow);
+
+                if (session == null || !session.User.IsActive)
+                {
+                    return Unauthorized(EnvelopeBuilder.Fail<object>(HttpContext, "REFRESH_TOKEN_INVALID", new[] { new ErrorItem("refreshToken", "Refresh token không hợp lệ hoặc đã hết hạn", "INVALID") }, 401));
+                }
+
+                session.LastActivity = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+
+                var (accessToken, accessExp) = _jwt.GenerateAccessToken(session.User);
+
+                var data = new
+                {
+                    accessToken,
+                    accessTokenExpiresAt = accessExp,
+                    refreshToken = session.SessionToken,
+                    refreshTokenExpiresAt = session.ExpiresAt
+                };
+
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "REFRESH_SUCCESS", data));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Refresh token error");
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500));
+            }
+        }
+
+        [Authorize]
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            try
+            {
+                var bearer = HttpContext.Request.Headers["Authorization"].ToString();
+                var raw = bearer.Replace("Bearer ", "");
+                // attempt to remove by refresh token too (client may send refresh)
+                var sess = await _context.UserSessions.FirstOrDefaultAsync(s => s.SessionToken == raw);
+                if (sess != null)
+                {
+                    _context.UserSessions.Remove(sess);
+                    await _context.SaveChangesAsync();
+                }
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "LOGOUT_SUCCESS", new { }));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Logout error");
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500));
+            }
+        }
+
+        [Authorize]
+        [HttpGet("me")]
+        public async Task<IActionResult> GetCurrentUser()
+        {
+            try
+            {
+                var uid = User.FindFirstValue("uid") ?? User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+                if (!Guid.TryParse(uid, out var userId))
+                {
+                    return Unauthorized(EnvelopeBuilder.Fail<object>(HttpContext, "UNAUTHORIZED", new[] { new ErrorItem("auth", "Invalid token", "UNAUTHORIZED") }, 401));
+                }
+
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId && u.IsActive);
+                if (user == null)
+                {
+                    return Unauthorized(EnvelopeBuilder.Fail<object>(HttpContext, "UNAUTHORIZED", new[] { new ErrorItem("auth", "User not found", "UNAUTHORIZED") }, 401));
+                }
+
+                var userDto = new UserDto
+                {
+                    Id = user.Id,
+                    Email = user.Email,
+                    FullName = user.FullName,
+                    Phone = user.Phone,
+                    AvatarUrl = user.AvatarUrl,
+                    Role = user.Role,
+                    IsActive = user.IsActive,
+                    CreatedAt = user.CreatedAt
+                };
+
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "CURRENT_USER", userDto));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Get current user error");
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500));
+            }
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(EnvelopeBuilder.Fail<object>(HttpContext, "VALIDATION_ERROR", ModelState
+                        .SelectMany(kv => kv.Value!.Errors.Select(e => new ErrorItem(kv.Key, e.ErrorMessage, "INVALID"))), 400));
+                }
+
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email.ToLowerInvariant() && u.IsActive);
+                if (user == null)
+                {
+                    // tránh leak user existence
+                    return Ok(EnvelopeBuilder.Ok(HttpContext, "FORGOT_PASSWORD_SENT", new { }));
+                }
+
+                var (token, expires) = _jwt.GeneratePasswordResetToken(user);
+                // TODO: gửi email kèm token (ngoài scope patch)
+                _logger.LogInformation("Password reset token for {Email} exp at {Exp}", user.Email, expires);
+
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "FORGOT_PASSWORD_SENT", new { expiresAt = expires }));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Forgot password error");
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500));
+            }
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(EnvelopeBuilder.Fail<object>(HttpContext, "VALIDATION_ERROR", ModelState
+                        .SelectMany(kv => kv.Value!.Errors.Select(e => new ErrorItem(kv.Key, e.ErrorMessage, "INVALID"))), 400));
+                }
+
+                if (!_jwt.TryValidatePasswordResetToken(request.Token, out var userId))
+                {
+                    return BadRequest(EnvelopeBuilder.Fail<object>(HttpContext, "TOKEN_INVALID", new[] { new ErrorItem("token", "Token không hợp lệ hoặc đã hết hạn", "TOKEN_INVALID") }, 400));
+                }
+
+                var user = await _context.Users.FindAsync(userId);
+                if (user == null || !user.IsActive)
+                {
+                    return BadRequest(EnvelopeBuilder.Fail<object>(HttpContext, "USER_INVALID", new[] { new ErrorItem("user", "Người dùng không hợp lệ", "USER_INVALID") }, 400));
+                }
+
+                user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+                user.UpdatedAt = DateTime.UtcNow;
+                // revoke all sessions
+                var sessions = await _context.UserSessions.Where(s => s.UserId == user.Id).ToListAsync();
+                if (sessions.Any()) _context.UserSessions.RemoveRange(sessions);
+                await _context.SaveChangesAsync();
+
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "PASSWORD_RESET_SUCCESS", new { }));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Reset password error");
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500));
+            }
+        }
+
+        [HttpPost("google")]
+        public async Task<IActionResult> LoginWithGoogle([FromBody] GoogleLoginRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.IdToken))
+                {
+                    return BadRequest(EnvelopeBuilder.Fail<object>(HttpContext, "ID_TOKEN_REQUIRED", new[] { new ErrorItem("idToken", "Thiếu idToken", "REQUIRED") }, 400));
+                }
+
+                var payload = await _google.ValidateIdTokenAsync(request.IdToken);
+                if (payload == null)
+                {
+                    return Unauthorized(EnvelopeBuilder.Fail<object>(HttpContext, "GOOGLE_TOKEN_INVALID", new[] { new ErrorItem("idToken", "Google token không hợp lệ hoặc email chưa được xác minh", "INVALID") }, 401));
+                }
+
+                // Note: EmailVerified already enforced by validator; this is an extra explicit check
+                if (payload.EmailVerified != true)
+                {
+                    return Unauthorized(EnvelopeBuilder.Fail<object>(HttpContext, "EMAIL_NOT_VERIFIED", new[] { new ErrorItem("idToken", "Email Google chưa được xác minh", "UNVERIFIED_EMAIL") }, 401));
+                }
+
+                var email = payload.Email.ToLowerInvariant();
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+
+                if

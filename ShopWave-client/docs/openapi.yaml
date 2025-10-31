@@ -1,0 +1,239 @@
+openapi: 3.0.3
+info:
+  title: Ecommerce API
+  version: 1.0.0
+  description: |
+    Standardized API spec (envelope + meta + ETag) for Products, Categories (subset).
+servers:
+  - url: http://localhost:5000/api/v1
+components:
+  schemas:
+    ApiFieldError:
+      type: object
+      properties:
+        field:
+          type: string
+          nullable: true
+        message:
+          type: string
+        code:
+          type: string
+          nullable: true
+    ApiMeta:
+      type: object
+      properties:
+        durationMs: { type: integer }
+        traceId: { type: string }
+        generatedAt: { type: string, format: date-time }
+    Envelope:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string }
+        data: {}
+        errors:
+          type: array
+          items: { $ref: "#/components/schemas/ApiFieldError" }
+        meta:
+          $ref: "#/components/schemas/ApiMeta"
+      required: [success, message, data, errors]
+    Category:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        imageUrl: { type: string, nullable: true }
+        parentId: { type: string, nullable: true }
+        parentName: { type: string, nullable: true }
+        isActive: { type: boolean }
+        productCount: { type: integer }
+    CategoryTreeNode:
+      allOf:
+        - $ref: "#/components/schemas/Category"
+        - type: object
+          properties:
+            children:
+              type: array
+              items: { $ref: "#/components/schemas/CategoryTreeNode" }
+    Product:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        price: { type: number }
+        categoryName: { type: string }
+        imageUrl: { type: string, nullable: true }
+        rating: { type: number }
+        reviewsCount: { type: integer }
+        stockQuantity: { type: integer }
+        isActive: { type: boolean }
+    PagedResponseCategory:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/Category" }
+        currentPage: { type: integer }
+        totalPages: { type: integer }
+        pageSize: { type: integer }
+        totalRecords: { type: integer }
+        hasPreviousPage: { type: boolean }
+        hasNextPage: { type: boolean }
+        appliedFilters: { type: object }
+    PagedResponseProduct:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/Product" }
+        currentPage: { type: integer }
+        totalPages: { type: integer }
+        pageSize: { type: integer }
+        totalRecords: { type: integer }
+        hasPreviousPage: { type: boolean }
+        hasNextPage: { type: boolean }
+        appliedFilters: { type: object }
+        lastUpdatedAt: { type: string, format: date-time, nullable: true }
+        partial: { type: boolean, nullable: true }
+        locale: { type: string, nullable: true }
+        warnings: { type: string, nullable: true }
+  parameters:
+    PagingPage:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1 }
+    PagingSize:
+      name: pageSize
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 200 }
+paths:
+  /categories:
+    get:
+      summary: List categories
+      parameters:
+        - $ref: "#/components/parameters/PagingPage"
+        - $ref: "#/components/parameters/PagingSize"
+      responses:
+        "200":
+          description: OK
+          headers:
+            ETag:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        { $ref: "#/components/schemas/PagedResponseCategory" }
+        "304":
+          description: Not Modified
+        "500":
+          description: Error
+  /categories/{id}:
+    get:
+      summary: Category detail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data: { $ref: "#/components/schemas/Category" }
+        "404": { description: Not Found }
+  /categories/tree:
+    get:
+      summary: Category tree
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/CategoryTreeNode" }
+  /categories/{id}/products:
+    get:
+      summary: Products by category
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/PagingPage"
+        - $ref: "#/components/parameters/PagingSize"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        { $ref: "#/components/schemas/PagedResponseProduct" }
+        "404": { description: Not Found }
+  /products:
+    get:
+      summary: Product catalog
+      parameters:
+        - $ref: "#/components/parameters/PagingPage"
+        - $ref: "#/components/parameters/PagingSize"
+      responses:
+        "200":
+          description: OK (either envelope or plain paged; envelope preferred)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - allOf:
+                      - $ref: "#/components/schemas/Envelope"
+                      - type: object
+                        properties:
+                          data:
+                            {
+                              $ref: "#/components/schemas/PagedResponseProduct",
+                            }
+                  - $ref: "#/components/schemas/PagedResponseProduct"
+  /products/{id}:
+    get:
+      summary: Product detail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - allOf:
+                      - $ref: "#/components/schemas/Envelope"
+                      - type: object
+                        properties:
+                          data: { $ref: "#/components/schemas/Product" }
+                  - $ref: "#/components/schemas/Product"
+        "404": { description: Not Found }

@@ -1,0 +1,239 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ShopWave.Models;
+using ShopWave.Models.DTOs;
+using ShopWave.Models.Requests;
+using ShopWave.Models.Responses;
+
+namespace ShopWave.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class CartController : ControllerBase
+    {
+        private readonly ShopWaveDbContext _context;
+        private readonly ILogger<CartController> _logger;
+
+        public CartController(ShopWaveDbContext context, ILogger<CartController> logger)
+        {
+            _context = context;
+            _logger = logger;
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<CartResponse>> GetCart([FromHeader(Name = "Authorization")] string? token)
+        {
+            try
+            {
+                var userId = await GetUserIdFromToken(token);
+                if (userId == null)
+                {
+                    return Unauthorized(new CartResponse());
+                }
+
+                var cartItems = await _context.CartItems
+                    .Include(ci => ci.Product)
+                    .Where(ci => ci.UserId == userId.Value)
+                    .Select(ci => new CartItemDto
+                    {
+                        Id = ci.Id,
+                        ProductId = ci.ProductId,
+                        ProductName = ci.Product.Name,
+                        ProductImageUrl = ci.Product.ImageUrl,
+                        UnitPrice = ci.UnitPrice,
+                        Quantity = ci.Quantity,
+                        TotalPrice = ci.Quantity * ci.UnitPrice,
+                        StockQuantity = ci.Product.StockQuantity
+                    })
+                    .ToListAsync();
+
+                var response = new CartResponse
+                {
+                    Items = cartItems,
+                    TotalItems = cartItems.Sum(ci => ci.Quantity),
+                    SubTotal = cartItems.Sum(ci => ci.TotalPrice),
+                    ShippingFee = CalculateShippingFee(cartItems.Sum(ci => ci.TotalPrice)),
+                    Total = cartItems.Sum(ci => ci.TotalPrice) + CalculateShippingFee(cartItems.Sum(ci => ci.TotalPrice))
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "L?i khi l?y gi? hàng");
+                return StatusCode(500, new CartResponse());
+            }
+        }
+
+        [HttpPost("add")]
+        public async Task<ActionResult<ApiResponse<object>>> AddToCart([FromBody] AddToCartRequest request, [FromHeader(Name = "Authorization")] string? token)
+        {
+            try
+            {
+                var userId = await GetUserIdFromToken(token);
+                if (userId == null)
+                {
+                    return Unauthorized(ApiResponse<object>.ErrorResult("Vui lòng ??ng nh?p"));
+                }
+
+                var product = await _context.Products.FindAsync(request.ProductId);
+                if (product == null || !product.IsActive)
+                {
+                    return NotFound(ApiResponse<object>.ErrorResult("Không tìm th?y s?n ph?m"));
+                }
+
+                if (product.StockQuantity < request.Quantity)
+                {
+                    return BadRequest(ApiResponse<object>.ErrorResult("S? l??ng s?n ph?m không ??"));
+                }
+
+                var existingCartItem = await _context.CartItems
+                    .FirstOrDefaultAsync(ci => ci.UserId == userId.Value && ci.ProductId == request.ProductId);
+
+                if (existingCartItem != null)
+                {
+                    existingCartItem.Quantity += request.Quantity;
+                    existingCartItem.UpdatedAt = DateTime.UtcNow;
+                }
+                else
+                {
+                    var cartItem = new CartItem
+                    {
+                        UserId = userId.Value,
+                        ProductId = request.ProductId,
+                        Quantity = request.Quantity,
+                        UnitPrice = product.Price,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                    _context.CartItems.Add(cartItem);
+                }
+
+                await _context.SaveChangesAsync();
+
+                return Ok(ApiResponse<object>.SuccessResult(null, "?ã thêm s?n ph?m vào gi? hàng"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "L?i khi thêm s?n ph?m vào gi? hàng");
+                return StatusCode(500, ApiResponse<object>.ErrorResult("Có l?i x?y ra khi thêm s?n ph?m vào gi? hàng"));
+            }
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult<ApiResponse<object>>> UpdateCartItem(int id, [FromBody] UpdateCartItemRequest request, [FromHeader(Name = "Authorization")] string? token)
+        {
+            try
+            {
+                var userId = await GetUserIdFromToken(token);
+                if (userId == null)
+                {
+                    return Unauthorized(ApiResponse<object>.ErrorResult("Vui lòng ??ng nh?p"));
+                }
+
+                var cartItem = await _context.CartItems
+                    .Include(ci => ci.Product)
+                    .FirstOrDefaultAsync(ci => ci.Id == id && ci.UserId == userId.Value);
+
+                if (cartItem == null)
+                {
+                    return NotFound(ApiResponse<object>.ErrorResult("Không tìm th?y s?n ph?m trong gi? hàng"));
+                }
+
+                if (cartItem.Product.StockQuantity < request.Quantity)
+                {
+                    return BadRequest(ApiResponse<object>.ErrorResult("S? l??ng s?n ph?m không ??"));
+                }
+
+                cartItem.Quantity = request.Quantity;
+                cartItem.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                return Ok(ApiResponse<object>.SuccessResult(null, "?ã c?p nh?t gi? hàng"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "L?i khi c?p nh?t gi? hàng");
+                return StatusCode(500, ApiResponse<object>.ErrorResult("Có l?i x?y ra khi c?p nh?t gi? hàng"));
+            }
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<ActionResult<ApiResponse<object>>> RemoveFromCart(int id, [FromHeader(Name = "Authorization")] string? token)
+        {
+            try
+            {
+                var userId = await GetUserIdFromToken(token);
+                if (userId == null)
+                {
+                    return Unauthorized(ApiResponse<object>.ErrorResult("Vui lòng ??ng nh?p"));
+                }
+
+                var cartItem = await _context.CartItems
+                    .FirstOrDefaultAsync(ci => ci.Id == id && ci.UserId == userId.Value);
+
+                if (cartItem == null)
+                {
+                    return NotFound(ApiResponse<object>.ErrorResult("Không tìm th?y s?n ph?m trong gi? hàng"));
+                }
+
+                _context.CartItems.Remove(cartItem);
+                await _context.SaveChangesAsync();
+
+                return Ok(ApiResponse<object>.SuccessResult(null, "?ã xóa s?n ph?m kh?i gi? hàng"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "L?i khi xóa s?n ph?m kh?i gi? hàng");
+                return StatusCode(500, ApiResponse<object>.ErrorResult("Có l?i x?y ra khi xóa s?n ph?m kh?i gi? hàng"));
+            }
+        }
+
+        [HttpDelete("clear")]
+        public async Task<ActionResult<ApiResponse<object>>> ClearCart([FromHeader(Name = "Authorization")] string? token)
+        {
+            try
+            {
+                var userId = await GetUserIdFromToken(token);
+                if (userId == null)
+                {
+                    return Unauthorized(ApiResponse<object>.ErrorResult("Vui lòng ??ng nh?p"));
+                }
+
+                var cartItems = await _context.CartItems
+                    .Where(ci => ci.UserId == userId.Value)
+                    .ToListAsync();
+
+                _context.CartItems.RemoveRange(cartItems);
+                await _context.SaveChangesAsync();
+
+                return Ok(ApiResponse<object>.SuccessResult(null, "?ã xóa t?t c? s?n ph?m kh?i gi? hàng"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "L?i khi xóa gi? hàng");
+                return StatusCode(500, ApiResponse<object>.ErrorResult("Có l?i x?y ra khi xóa gi? hàng"));
+            }
+        }
+
+        private async Task<int?> GetUserIdFromToken(string? token)
+        {
+            if (string.IsNullOrEmpty(token))
+                return null;
+
+            token = token.Replace("Bearer ", "");
+
+            var session = await _context.UserSessions
+                .FirstOrDefaultAsync(s => s.SessionToken == token && s.ExpiresAt > DateTime.UtcNow);
+
+            return session?.UserId;
+        }
+
+        private decimal CalculateShippingFee(decimal subTotal)
+        {
+            // Free shipping for orders over 500,000 VND
+            return subTotal >= 500000 ? 0 : 30000;
+        }
+    }
+}

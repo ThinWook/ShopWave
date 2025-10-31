@@ -1,0 +1,268 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ShopWave.Models;
+using ShopWave.Models.DTOs;
+using ShopWave.Models.Requests;
+using ShopWave.Models.Responses;
+
+namespace ShopWave.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class ProductsController : ControllerBase
+    {
+        private readonly ShopWaveDbContext _context;
+        private readonly ILogger<ProductsController> _logger;
+
+        public ProductsController(ShopWaveDbContext context, ILogger<ProductsController> logger)
+        {
+            _context = context;
+            _logger = logger;
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<PagedResponse<ProductDto>>> GetProducts([FromQuery] ProductSearchRequest request)
+        {
+            try
+            {
+                var query = _context.Products
+                    .Include(p => p.Category)
+                    .Where(p => p.IsActive);
+
+                if (!string.IsNullOrEmpty(request.SearchTerm))
+                {
+                    query = query.Where(p => p.Name.Contains(request.SearchTerm) ||
+                                           (p.Description != null && p.Description.Contains(request.SearchTerm)));
+                }
+
+                if (request.CategoryId.HasValue)
+                {
+                    query = query.Where(p => p.CategoryId == request.CategoryId.Value);
+                }
+
+                if (request.MinPrice.HasValue)
+                {
+                    query = query.Where(p => p.Price >= request.MinPrice.Value);
+                }
+
+                if (request.MaxPrice.HasValue)
+                {
+                    query = query.Where(p => p.Price <= request.MaxPrice.Value);
+                }
+
+                if (request.MinRating.HasValue)
+                {
+                    query = query.Where(p => p.Rating >= request.MinRating.Value);
+                }
+
+                query = request.SortBy.ToLower() switch
+                {
+                    "price" => request.SortDirection == "desc"
+                        ? query.OrderByDescending(p => p.Price)
+                        : query.OrderBy(p => p.Price),
+                    "rating" => request.SortDirection == "desc"
+                        ? query.OrderByDescending(p => p.Rating)
+                        : query.OrderBy(p => p.Rating),
+                    "popularity" => request.SortDirection == "desc"
+                        ? query.OrderByDescending(p => p.Popularity)
+                        : query.OrderBy(p => p.Popularity),
+                    _ => request.SortDirection == "desc"
+                        ? query.OrderByDescending(p => p.Name)
+                        : query.OrderBy(p => p.Name)
+                };
+
+                var totalRecords = await query.CountAsync();
+                var totalPages = (int)Math.Ceiling((double)totalRecords / request.PageSize);
+
+                var products = await query
+                    .Skip((request.Page - 1) * request.PageSize)
+                    .Take(request.PageSize)
+                    .Select(p => new ProductDto
+                    {
+                        Id = p.Id,
+                        Name = p.Name,
+                        Description = p.Description,
+                        Price = p.Price,
+                        CategoryName = p.Category.Name,
+                        ImageUrl = p.ImageUrl,
+                        Rating = p.Rating,
+                        ReviewsCount = p.ReviewsCount,
+                        StockQuantity = p.StockQuantity,
+                        IsActive = p.IsActive
+                    })
+                    .ToListAsync();
+
+                var response = new PagedResponse<ProductDto>
+                {
+                    Data = products,
+                    CurrentPage = request.Page,
+                    TotalPages = totalPages,
+                    PageSize = request.PageSize,
+                    TotalRecords = totalRecords
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi lấy danh sách sản phẩm");
+                return StatusCode(500, ApiResponse<object>.ErrorResult("Có lỗi xảy ra khi lấy danh sách sản phẩm"));
+            }
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<ApiResponse<ProductDto>>> GetProduct(Guid id)
+        {
+            try
+            {
+                var product = await _context.Products
+                    .Include(p => p.Category)
+                    .Where(p => p.Id == id && p.IsActive)
+                    .Select(p => new ProductDto
+                    {
+                        Id = p.Id,
+                        Name = p.Name,
+                        Description = p.Description,
+                        Price = p.Price,
+                        CategoryName = p.Category.Name,
+                        ImageUrl = p.ImageUrl,
+                        Rating = p.Rating,
+                        ReviewsCount = p.ReviewsCount,
+                        StockQuantity = p.StockQuantity,
+                        IsActive = p.IsActive
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (product == null)
+                {
+                    return NotFound(ApiResponse<ProductDto>.ErrorResult("Không tìm thấy sản phẩm"));
+                }
+
+                return Ok(ApiResponse<ProductDto>.SuccessResult(product, "Lấy thông tin sản phẩm thành công"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi lấy thông tin sản phẩm {ProductId}", id);
+                return StatusCode(500, ApiResponse<ProductDto>.ErrorResult("Có lỗi xảy ra khi lấy thông tin sản phẩm"));
+            }
+        }
+
+        [HttpGet("{id}/reviews")]
+        public async Task<ActionResult<PagedResponse<ReviewDto>>> GetProductReviews(Guid id, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                var query = _context.Reviews
+                    .Where(r => r.ProductId == id)
+                    .OrderByDescending(r => r.CreatedAt);
+
+                var totalRecords = await query.CountAsync();
+                var totalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
+
+                var reviews = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(r => new ReviewDto
+                    {
+                        Id = r.Id,
+                        UserName = r.UserName,
+                        Rating = r.Rating,
+                        Comment = r.Comment,
+                        Date = r.Date,
+                        IsVerified = r.IsVerified
+                    })
+                    .ToListAsync();
+
+                var response = new PagedResponse<ReviewDto>
+                {
+                    Data = reviews,
+                    CurrentPage = page,
+                    TotalPages = totalPages,
+                    PageSize = pageSize,
+                    TotalRecords = totalRecords
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi lấy đánh giá sản phẩm {ProductId}", id);
+                return StatusCode(500, ApiResponse<object>.ErrorResult("Có lỗi xảy ra khi lấy đánh giá sản phẩm"));
+            }
+        }
+
+        [HttpGet("featured")]
+        public async Task<ActionResult<ApiResponse<List<ProductDto>>>> GetFeaturedProducts([FromQuery] int take = 8)
+        {
+            try
+            {
+                var products = await _context.Products
+                    .Include(p => p.Category)
+                    .Where(p => p.IsActive && p.Rating >= 4.0)
+                    .OrderByDescending(p => p.Popularity)
+                    .Take(take)
+                    .Select(p => new ProductDto
+                    {
+                        Id = p.Id,
+                        Name = p.Name,
+                        Description = p.Description,
+                        Price = p.Price,
+                        CategoryName = p.Category.Name,
+                        ImageUrl = p.ImageUrl,
+                        Rating = p.Rating,
+                        ReviewsCount = p.ReviewsCount,
+                        StockQuantity = p.StockQuantity,
+                        IsActive = p.IsActive
+                    })
+                    .ToListAsync();
+
+                return Ok(ApiResponse<List<ProductDto>>.SuccessResult(products, "Lấy sản phẩm nổi bật thành công"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi lấy sản phẩm nổi bật");
+                return StatusCode(500, ApiResponse<List<ProductDto>>.ErrorResult("Có lỗi xảy ra khi lấy sản phẩm nổi bật"));
+            }
+        }
+
+        [HttpGet("{id}/related")]
+        public async Task<ActionResult<ApiResponse<List<ProductDto>>>> GetRelatedProducts(Guid id, [FromQuery] int take = 4)
+        {
+            try
+            {
+                var product = await _context.Products.FindAsync(id);
+                if (product == null)
+                {
+                    return NotFound(ApiResponse<List<ProductDto>>.ErrorResult("Không tìm thấy sản phẩm"));
+                }
+
+                var relatedProducts = await _context.Products
+                    .Include(p => p.Category)
+                    .Where(p => p.CategoryId == product.CategoryId && p.Id != id && p.IsActive)
+                    .OrderByDescending(p => p.Rating)
+                    .Take(take)
+                    .Select(p => new ProductDto
+                    {
+                        Id = p.Id,
+                        Name = p.Name,
+                        Description = p.Description,
+                        Price = p.Price,
+                        CategoryName = p.Category.Name,
+                        ImageUrl = p.ImageUrl,
+                        Rating = p.Rating,
+                        ReviewsCount = p.ReviewsCount,
+                        StockQuantity = p.StockQuantity,
+                        IsActive = p.IsActive
+                    })
+                    .ToListAsync();
+
+                return Ok(ApiResponse<List<ProductDto>>.SuccessResult(relatedProducts, "Lấy sản phẩm liên quan thành công"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi lấy sản phẩm liên quan cho {ProductId}", id);
+                return StatusCode(500, ApiResponse<List<ProductDto>>.ErrorResult("Có lỗi xảy ra khi lấy sản phẩm liên quan"));
+            }
+        }
+    }
+}

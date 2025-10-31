@@ -1,0 +1,212 @@
+﻿# ShopWave API
+
+ShopWave là một Web API cho ứng dụng thương mại điện tử được xây dựng bằng ASP.NET Core 8.0, được thiết kế để làm việc với frontend Next.js.
+
+## Cấu trúc Project
+
+```
+ShopWave/
+├── Controllers/           # API Controllers
+│   ├── AuthController.cs     # Authentication endpoints
+│   ├── CartController.cs     # Shopping cart management
+│   ├── CategoriesController.cs # Product categories
+│   ├── HomeController.cs     # Dashboard & health check
+│   └── ProductsController.cs # Product management
+├── Models/               # Data models
+│   ├── DTOs/             # Data Transfer Objects
+│   ├── Requests/         # API Request models
+│   ├── Responses/        # API Response models
+│   └── [Entity Models]   # Database entities
+├── Extensions/           # Extension methods
+├── Repositories/         # Repository interfaces
+└── Program.cs           # Application entry point
+```
+
+## Tính năng chính
+
+- ✅ **Authentication**: Đăng ký, đăng nhập, logout
+- ✅ **Product Management**: CRUD operations cho sản phẩm
+- ✅ **Category Management**: Quản lý danh mục sản phẩm
+- ✅ **Shopping Cart**: Thêm, sửa, xóa sản phẩm trong giỏ hàng
+- ✅ **Database Seeding**: Tạo dữ liệu mẫu tự động
+- ✅ **CORS Support**: Hỗ trợ Next.js frontend
+- ✅ **Swagger Documentation**: API documentation tự động
+
+## Cài đặt và Chạy
+
+### 1. Clone repository
+```bash
+git clone [your-repo-url]
+cd ShopWave
+```
+
+### 2. Restore packages
+```bash
+dotnet restore
+```
+
+### 3. Cập nhật connection string
+Sửa file `appsettings.json`:
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=ShopWaveDb;Trusted_Connection=true;MultipleActiveResultSets=true"
+  }
+}
+```
+
+### 4. Tạo database
+```bash
+dotnet ef migrations add InitialCreate
+dotnet ef database update
+```
+
+### 5. Chạy application
+```bash
+dotnet run
+```
+
+API sẽ chạy tại:
+- HTTP: `http://localhost:5000`
+- HTTPS: `https://localhost:5001`
+- Swagger UI: `https://localhost:5001/swagger`
+
+## API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - Đăng ký người dùng mới
+- `POST /api/auth/login` - Đăng nhập
+- `POST /api/auth/logout` - Đăng xuất
+- `GET /api/auth/me` - Lấy thông tin người dùng hiện tại
+
+### Products
+- `GET /api/products` - Lấy danh sách sản phẩm (có phân trang, tìm kiếm, lọc)
+- `GET /api/products/{id}` - Lấy chi tiết sản phẩm
+- `GET /api/products/{id}/reviews` - Lấy đánh giá sản phẩm
+- `GET /api/products/featured` - Lấy sản phẩm nổi bật
+- `GET /api/products/{id}/related` - Lấy sản phẩm liên quan
+
+### Categories
+- `GET /api/categories` - Lấy danh sách danh mục
+- `GET /api/categories/{id}` - Lấy chi tiết danh mục
+- `GET /api/categories/tree` - Lấy cây danh mục
+- `GET /api/categories/{id}/products` - Lấy sản phẩm theo danh mục
+
+### Shopping Cart
+- `GET /api/cart` - Lấy giỏ hàng
+- `POST /api/cart/add` - Thêm sản phẩm vào giỏ hàng
+- `PUT /api/cart/{id}` - Cập nhật số lượng sản phẩm
+- `DELETE /api/cart/{id}` - Xóa sản phẩm khỏi giỏ hàng
+- `DELETE /api/cart/clear` - Xóa toàn bộ giỏ hàng
+
+### Dashboard
+- `GET /api/home/dashboard` - Lấy thống kê dashboard
+- `GET /api/home/health` - Health check
+
+## Cấu hình CORS
+
+API đã được cấu hình CORS để hỗ trợ Next.js frontend:
+- Development: `http://localhost:3000`
+- Production: `https://localhost:3001`
+
+## Database Models
+
+### Core Entities
+- **User**: Quản lý người dùng
+- **Category**: Danh mục sản phẩm (hỗ trợ cây danh mục)
+- **Product**: Sản phẩm
+- **Review**: Đánh giá sản phẩm
+- **CartItem**: Giỏ hàng
+- **Order & OrderItem**: Đơn hàng
+- **WishlistItem**: Danh sách yêu thích
+- **ProductRecommendation**: Gợi ý sản phẩm
+- **BrowsingHistory**: Lịch sử duyệt
+- **Notification**: Thông báo
+- **UserSetting**: Cài đặt người dùng
+- **UserSession**: Phiên đăng nhập
+
+## Authentication
+
+API sử dụng session-based authentication:
+1. Login để nhận session token
+2. Gửi token trong header `Authorization: Bearer <token>`
+3. Token có thời hạn 30 ngày
+
+## Ví dụ sử dụng với Next.js
+
+### Login
+```javascript
+const login = async (email, password) => {
+  const response = await fetch('https://localhost:5001/api/auth/login', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email, password }),
+  });
+  
+  const data = await response.json();
+  if (data.success) {
+    localStorage.setItem('token', data.token);
+  }
+  return data;
+};
+```
+
+### Fetch Products
+```javascript
+const getProducts = async (page = 1, categoryId = null) => {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    pageSize: '12',
+  });
+  
+  if (categoryId) {
+    params.append('categoryId', categoryId.toString());
+  }
+  
+  const response = await fetch(`https://localhost:5001/api/products?${params}`);
+  return await response.json();
+};
+```
+
+### Add to Cart
+```javascript
+const addToCart = async (productId, quantity) => {
+  const token = localStorage.getItem('token');
+  
+  const response = await fetch('https://localhost:5001/api/cart/add', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ productId, quantity }),
+  });
+  
+  return await response.json();
+};
+```
+
+## Development Notes
+
+- Database được seed với dữ liệu mẫu khi khởi động
+- Passwords được hash bằng BCrypt
+- API response format được chuẩn hóa
+- Logging được cấu hình sẵn
+- Error handling được xử lý tập trung
+
+## Next Steps
+
+1. Implement JWT authentication thay vì session
+2. Add caching layer (Redis)
+3. Implement email service
+4. Add file upload cho images
+5. Implement payment integration
+6. Add unit tests
+7. Add rate limiting
+8. Implement search with Elasticsearch
+
+## License
+
+MIT License

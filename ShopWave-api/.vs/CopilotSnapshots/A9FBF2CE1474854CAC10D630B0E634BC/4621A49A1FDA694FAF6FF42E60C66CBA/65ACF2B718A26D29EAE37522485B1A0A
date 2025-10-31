@@ -1,0 +1,149 @@
+﻿using Microsoft.EntityFrameworkCore;
+using ShopWave.Models;
+
+namespace ShopWave.Extensions
+{
+    public static class DatabaseExtensions
+    {
+        public static void SeedDatabase(this IApplicationBuilder app)
+        {
+            using var scope = app.ApplicationServices.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ShopWaveDbContext>();
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<DatabaseExtensions>>();
+
+            try
+            {
+                // Check if database exists and can connect
+                if (!context.Database.CanConnect())
+                {
+                    logger.LogWarning("Cannot connect to database - skipping seeding");
+                    return;
+                }
+
+                // Check if tables exist before seeding
+                var tableExists = context.Database.GetService<Microsoft.EntityFrameworkCore.Storage.IRelationalDatabaseCreator>().Exists();
+                if (!tableExists)
+                {
+                    logger.LogWarning("Database tables don't exist - run migrations first");
+                    return;
+                }
+
+                // Check if Users table exists specifically
+                try
+                {
+                    var userCount = context.Users.Count();
+                    logger.LogInformation("Found {UserCount} existing users", userCount);
+                }
+                catch (Exception)
+                {
+                    logger.LogWarning("Users table doesn't exist - skipping seeding. Run 'dotnet ef database update' first.");
+                    return;
+                }
+
+                logger.LogInformation("Starting database seeding...");
+
+                // Seed categories if none exist
+                if (!context.Categories.Any())
+                {
+                    var categories = new List<Category>
+                    {
+                        new Category { Name = "Điện tử", Description = "Thiết bị điện tử", IsActive = true, SortOrder = 1, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                        new Category { Name = "Thời trang", Description = "Quần áo và phụ kiện", IsActive = true, SortOrder = 2, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                        new Category { Name = "Gia dụng", Description = "Đồ gia dụng và nội thất", IsActive = true, SortOrder = 3, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                        new Category { Name = "Sách", Description = "Sách và văn phòng phẩm", IsActive = true, SortOrder = 4, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                        new Category { Name = "Thể thao", Description = "Đồ thể thao và outdoor", IsActive = true, SortOrder = 5, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
+                    };
+
+                    context.Categories.AddRange(categories);
+                    context.SaveChanges();
+                    logger.LogInformation("✅ Seeded {CategoryCount} categories", categories.Count);
+                }
+
+                // Seed products if none exist
+                if (!context.Products.Any())
+                {
+                    var categories = context.Categories.ToList();
+                    if (categories.Any())
+                    {
+                        var products = new List<Product>
+                        {
+                            new Product 
+                            { 
+                                Name = "iPhone 15 Pro Max", 
+                                Description = "Điện thoại thông minh cao cấp từ Apple",
+                                Price = 29990000,
+                                CategoryId = categories.First(c => c.Name == "Điện tử").Id,
+                                StockQuantity = 50,
+                                Rating = 4.8,
+                                ReviewsCount = 150,
+                                Popularity = 100,
+                                IsActive = true,
+                                CreatedAt = DateTime.UtcNow,
+                                UpdatedAt = DateTime.UtcNow
+                            },
+                            new Product 
+                            { 
+                                Name = "Samsung Galaxy S24 Ultra", 
+                                Description = "Điện thoại Android flagship từ Samsung",
+                                Price = 26990000,
+                                CategoryId = categories.First(c => c.Name == "Điện tử").Id,
+                                StockQuantity = 30,
+                                Rating = 4.7,
+                                ReviewsCount = 98,
+                                Popularity = 85,
+                                IsActive = true,
+                                CreatedAt = DateTime.UtcNow,
+                                UpdatedAt = DateTime.UtcNow
+                            },
+                            new Product 
+                            { 
+                                Name = "Áo thun nam cao cấp", 
+                                Description = "Áo thun cotton 100% chất lượng cao",
+                                Price = 299000,
+                                CategoryId = categories.First(c => c.Name == "Thời trang").Id,
+                                StockQuantity = 100,
+                                Rating = 4.5,
+                                ReviewsCount = 45,
+                                Popularity = 60,
+                                IsActive = true,
+                                CreatedAt = DateTime.UtcNow,
+                                UpdatedAt = DateTime.UtcNow
+                            }
+                        };
+
+                        context.Products.AddRange(products);
+                        context.SaveChanges();
+                        logger.LogInformation("✅ Seeded {ProductCount} products", products.Count);
+                    }
+                }
+
+                // Seed admin user if none exist
+                if (!context.Users.Any())
+                {
+                    var adminUser = new User
+                    {
+                        Email = "admin@shopwave.com",
+                        PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
+                        FullName = "Quản trị viên",
+                        Phone = "0123456789",
+                        Role = "Admin",
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+
+                    context.Users.Add(adminUser);
+                    context.SaveChanges();
+                    logger.LogInformation("✅ Seeded admin user: admin@shopwave.com / admin123");
+                }
+
+                logger.LogInformation("🎉 Database seeding completed successfully");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "❌ Database seeding failed: {ErrorMessage}", ex.Message);
+                logger.LogInformation("💡 This is normal if migrations haven't been run yet. Run: dotnet ef database update");
+            }
+        }
+    }
+}

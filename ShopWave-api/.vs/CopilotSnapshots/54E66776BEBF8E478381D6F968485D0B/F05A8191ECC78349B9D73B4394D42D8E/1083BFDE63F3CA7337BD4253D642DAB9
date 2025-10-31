@@ -1,0 +1,82 @@
+﻿using System;
+using System.IO;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using ShopWave.Models;
+
+namespace ShopWave.Services
+{
+    public class FileService : IMediaService
+    {
+        private readonly ShopWaveDbContext _context;
+        private readonly IWebHostEnvironment _env;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public FileService(ShopWaveDbContext context, IWebHostEnvironment env, IHttpContextAccessor httpContextAccessor)
+        {
+            _context = context;
+            _env = env;
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        public async Task<Media> UploadFileAsync(IFormFile file, string? category)
+        {
+            if (file == null || file.Length == 0)
+            {
+                throw new ArgumentException("File is empty.");
+            }
+
+            var uploadPath = Path.Combine(_env.WebRootPath ?? Path.Combine(AppContext.BaseDirectory, "wwwroot"), "uploads");
+            if (!Directory.Exists(uploadPath))
+            {
+                Directory.CreateDirectory(uploadPath);
+            }
+
+            var fileExtension = Path.GetExtension(file.FileName);
+            var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
+            var filePath = Path.Combine(uploadPath, uniqueFileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            var request = _httpContextAccessor.HttpContext?.Request;
+            if (request == null)
+            {
+                throw new InvalidOperationException("No active HTTP request context to build file URL.");
+            }
+            var fileUrl = $"{request.Scheme}://{request.Host}/uploads/{uniqueFileName}";
+
+            var media = new Media
+            {
+                Url = fileUrl,
+                FileName = uniqueFileName,
+                OriginalFileName = file.FileName,
+                FileSize = file.Length,
+                MimeType = file.ContentType,
+                Category = category
+            };
+
+            _context.Media.Add(media);
+            await _context.SaveChangesAsync();
+
+            return media;
+        }
+
+        public async Task<List<Media>> UploadFilesAsync(IEnumerable<IFormFile> files, string? category)
+        {
+            if (files == null) throw new ArgumentException("Files is null.");
+
+            var result = new List<Media>();
+            foreach (var file in files)
+            {
+                if (file == null || file.Length == 0) continue;
+                var media = await UploadFileAsync(file, category);
+                result.Add(media);
+            }
+            return result;
+        }
+    }
+}

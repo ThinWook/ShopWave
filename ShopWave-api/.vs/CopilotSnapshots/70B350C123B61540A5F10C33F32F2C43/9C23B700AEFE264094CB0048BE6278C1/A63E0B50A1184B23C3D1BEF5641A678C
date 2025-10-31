@@ -1,0 +1,105 @@
+﻿using System.Text.Json;
+using System.Collections.Generic;
+using System.Linq;
+using ShopWave.Models;
+
+namespace ShopWave.Repositories
+{
+    // In-memory/mock repository loading precomputed JSON from data/precomputed_recs.json
+    public class RecommendationRepository : IRecommendationRepository
+    {
+        private readonly ILogger<RecommendationRepository> _logger;
+        private readonly string _dataPath;
+        private PrecomputedData? _data;
+
+        public RecommendationRepository(ILogger<RecommendationRepository> logger, IWebHostEnvironment env)
+        {
+            _logger = logger;
+            _dataPath = Path.Combine(env.ContentRootPath, "data", "precomputed_recs.json");
+            LoadData();
+        }
+
+        private void LoadData()
+        {
+            try
+            {
+                if (!File.Exists(_dataPath))
+                {
+                    _logger.LogWarning("Precomputed recommendation file not found: {Path}", _dataPath);
+                    _data = new PrecomputedData();
+                    return;
+                }
+
+                var json = File.ReadAllText(_dataPath);
+                _data = JsonSerializer.Deserialize<PrecomputedData>(json) ?? new PrecomputedData();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to load precomputed recommendations");
+                _data = new PrecomputedData();
+            }
+        }
+
+        public Task<bool> IsReadyAsync(CancellationToken ct = default)
+        {
+            return Task.FromResult(_data != null);
+        }
+
+        public Task<List<string>> GetPopularAsync(int k, CancellationToken ct = default)
+        {
+            if (_data == null) return Task.FromResult(new List<string>());
+            var pop = _data.Popularity?.Take(k).ToList() ?? new List<string>();
+            return Task.FromResult(pop);
+        }
+
+        public Task<List<(Guid id, double score)>> GetItemSimilarAsync(Guid productId, int k, CancellationToken ct = default)
+        {
+            var res = new List<(Guid, double)>();
+            if (_data == null || _data.ItemSimilar == null) return Task.FromResult(res);
+            var key = productId.ToString();
+            if (!_data.ItemSimilar.TryGetValue(key, out var list)) return Task.FromResult(res);
+
+            foreach (var it in list.Take(k))
+            {
+                if (Guid.TryParse(it.Id, out var gid))
+                {
+                    res.Add((gid, it.Score));
+                }
+            }
+
+            return Task.FromResult(res);
+        }
+
+        public Task<List<(Guid id, double score)>> GetPersonalizedAsync(Guid userId, int k, CancellationToken ct = default)
+        {
+            var res = new List<(Guid, double)>();
+            if (_data == null || _data.Personalized == null) return Task.FromResult(res);
+            var key = userId.ToString();
+            if (!_data.Personalized.TryGetValue(key, out var list)) return Task.FromResult(res);
+
+            foreach (var it in list.Take(k))
+            {
+                if (Guid.TryParse(it.Id, out var gid))
+                {
+                    res.Add((gid, it.Score));
+                }
+            }
+
+            return Task.FromResult(res);
+        }
+
+        // internal DTO for JSON
+        private class PrecomputedData
+        {
+            public Dictionary<string, List<SimpleScore>>? ItemSimilar { get; set; }
+            public Dictionary<string, List<SimpleScore>>? Personalized { get; set; }
+            public List<string>? Popularity { get; set; }
+        }
+
+        private class SimpleScore
+        {
+            public string Id { get; set; } = string.Empty;
+            public double Score { get; set; }
+        }
+    }
+}

@@ -1,0 +1,66 @@
+﻿using Microsoft.EntityFrameworkCore;
+using ShopWave.Models;
+using ShopWave.Extensions;
+using System.Text.Json.Serialization;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+builder.Services.AddControllers();
+
+// Configure Entity Framework
+builder.Services.AddDbContext<ShopWaveDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Configure API behavior
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.SuppressModelStateInvalidFilter = false;
+});
+
+// Add JSON serialization options
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    options.SerializerOptions.WriteIndented = true;
+});
+
+// Cấu hình CORS cho Next.js frontend
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowNextJS",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:3000", "https://localhost:3001") // Next.js dev và production
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        });
+});
+
+// Add API Explorer for development
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+var app = builder.Build();
+
+// Seed database
+app.SeedDatabase();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseHttpsRedirection();
+
+// Enable CORS
+app.UseCors("AllowNextJS");
+
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();

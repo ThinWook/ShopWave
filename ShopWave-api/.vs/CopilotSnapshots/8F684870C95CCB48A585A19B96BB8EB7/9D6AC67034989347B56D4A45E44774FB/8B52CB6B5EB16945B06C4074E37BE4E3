@@ -1,0 +1,31 @@
+﻿using Google.Apis.Auth;
+
+namespace ShopWave.Services
+{
+    public class GoogleTokenValidator
+    {
+        private readonly IConfiguration _config;
+        public GoogleTokenValidator(IConfiguration config)
+        {
+            _config = config;
+        }
+
+        public async Task<GoogleJsonWebSignature.Payload?> ValidateIdTokenAsync(string idToken)
+        {
+            var clientIds = _config.GetSection("GoogleAuth:ClientIds").Get<string[]>() ?? Array.Empty<string>();
+            var settings = new GoogleJsonWebSignature.ValidationSettings
+            {
+                Audience = clientIds
+            };
+            try
+            {
+                var payload = await GoogleJsonWebSignature.ValidateAsync(idToken, settings);
+                return payload;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+    }
+}

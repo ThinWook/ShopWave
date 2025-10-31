@@ -1,0 +1,289 @@
+﻿using Microsoft.EntityFrameworkCore;
+
+namespace ShopWave.Models
+{
+    public class ShopWaveDbContext : DbContext
+    {
+        public ShopWaveDbContext(DbContextOptions<ShopWaveDbContext> options) : base(options)
+        {
+        }
+
+        // DbSets for all entities
+        public DbSet<User> Users { get; set; }
+        public DbSet<Category> Categories { get; set; }
+        public DbSet<Product> Products { get; set; }
+        public DbSet<Review> Reviews { get; set; }
+        public DbSet<CartItem> CartItems { get; set; }
+        public DbSet<Order> Orders { get; set; }
+        public DbSet<OrderItem> OrderItems { get; set; }
+        public DbSet<WishlistItem> WishlistItems { get; set; }
+        public DbSet<ProductRecommendation> ProductRecommendations { get; set; }
+        public DbSet<BrowsingHistory> BrowsingHistory { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
+        public DbSet<UserSetting> UserSettings { get; set; }
+        public DbSet<UserSession> UserSessions { get; set; }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            if (!optionsBuilder.IsConfigured)
+            {
+                // This will only be used if no options are provided (fallback)
+                optionsBuilder.UseSqlServer();
+            }
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            // Configure decimal precision for SQL Server
+            modelBuilder.Entity<Product>()
+                .Property(p => p.Price)
+                .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<CartItem>()
+                .Property(ci => ci.UnitPrice)
+                .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<Order>()
+                .Property(o => o.TotalAmount)
+                .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<OrderItem>()
+                .Property(oi => oi.UnitPrice)
+                .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<OrderItem>()
+                .Property(oi => oi.TotalPrice)
+                .HasColumnType("decimal(18,2)");
+
+            // Configure string lengths for better SQL Server performance
+            modelBuilder.Entity<User>()
+                .Property(u => u.Email)
+                .HasMaxLength(255)
+                .IsRequired();
+
+            modelBuilder.Entity<User>()
+                .Property(u => u.FullName)
+                .HasMaxLength(255)
+                .IsRequired();
+
+            modelBuilder.Entity<User>()
+                .Property(u => u.Phone)
+                .HasMaxLength(20);
+
+            modelBuilder.Entity<Product>()
+                .Property(p => p.Name)
+                .HasMaxLength(255)
+                .IsRequired();
+
+            modelBuilder.Entity<Category>()
+                .Property(c => c.Name)
+                .HasMaxLength(255)
+                .IsRequired();
+
+            // Configure DateTime columns for SQL Server
+            modelBuilder.Entity<User>()
+                .Property(u => u.CreatedAt)
+                .HasColumnType("datetime2");
+
+            modelBuilder.Entity<User>()
+                .Property(u => u.UpdatedAt)
+                .HasColumnType("datetime2");
+
+            // Configure self-referencing relationship for Category
+            modelBuilder.Entity<Category>()
+                .HasOne(c => c.ParentCategory)
+                .WithMany(c => c.SubCategories)
+                .HasForeignKey(c => c.ParentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure Product-Category relationship
+            modelBuilder.Entity<Product>()
+                .HasOne(p => p.Category)
+                .WithMany(c => c.Products)
+                .HasForeignKey(p => p.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure Review relationships
+            modelBuilder.Entity<Review>()
+                .HasOne(r => r.Product)
+                .WithMany(p => p.Reviews)
+                .HasForeignKey(r => r.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Review>()
+                .HasOne(r => r.User)
+                .WithMany(u => u.Reviews)
+                .HasForeignKey(r => r.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure CartItem relationships
+            modelBuilder.Entity<CartItem>()
+                .HasOne(ci => ci.User)
+                .WithMany(u => u.CartItems)
+                .HasForeignKey(ci => ci.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<CartItem>()
+                .HasOne(ci => ci.Product)
+                .WithMany(p => p.CartItems)
+                .HasForeignKey(ci => ci.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure Order relationships
+            modelBuilder.Entity<Order>()
+                .HasOne(o => o.User)
+                .WithMany(u => u.Orders)
+                .HasForeignKey(o => o.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure OrderItem relationships
+            modelBuilder.Entity<OrderItem>()
+                .HasOne(oi => oi.Order)
+                .WithMany(o => o.OrderItems)
+                .HasForeignKey(oi => oi.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<OrderItem>()
+                .HasOne(oi => oi.Product)
+                .WithMany(p => p.OrderItems)
+                .HasForeignKey(oi => oi.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure WishlistItem relationships
+            modelBuilder.Entity<WishlistItem>()
+                .HasOne(wi => wi.User)
+                .WithMany(u => u.WishlistItems)
+                .HasForeignKey(wi => wi.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<WishlistItem>()
+                .HasOne(wi => wi.Product)
+                .WithMany(p => p.WishlistItems)
+                .HasForeignKey(wi => wi.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure ProductRecommendation relationships
+            modelBuilder.Entity<ProductRecommendation>()
+                .HasOne(pr => pr.User)
+                .WithMany(u => u.ProductRecommendations)
+                .HasForeignKey(pr => pr.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ProductRecommendation>()
+                .HasOne(pr => pr.Product)
+                .WithMany(p => p.ProductRecommendations)
+                .HasForeignKey(pr => pr.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure BrowsingHistory relationships
+            modelBuilder.Entity<BrowsingHistory>()
+                .HasOne(bh => bh.User)
+                .WithMany(u => u.BrowsingHistory)
+                .HasForeignKey(bh => bh.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<BrowsingHistory>()
+                .HasOne(bh => bh.Product)
+                .WithMany(p => p.BrowsingHistory)
+                .HasForeignKey(bh => bh.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure Notification relationships
+            modelBuilder.Entity<Notification>()
+                .HasOne(n => n.User)
+                .WithMany(u => u.Notifications)
+                .HasForeignKey(n => n.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure UserSetting relationships
+            modelBuilder.Entity<UserSetting>()
+                .HasOne(us => us.User)
+                .WithMany(u => u.UserSettings)
+                .HasForeignKey(us => us.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure UserSession relationships
+            modelBuilder.Entity<UserSession>()
+                .HasOne(us => us.User)
+                .WithMany(u => u.UserSessions)
+                .HasForeignKey(us => us.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure indexes for better performance
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Email)
+                .IsUnique()
+                .HasDatabaseName("IX_Users_Email");
+
+            modelBuilder.Entity<Product>()
+                .HasIndex(p => p.CategoryId)
+                .HasDatabaseName("IX_Products_CategoryId");
+
+            modelBuilder.Entity<Product>()
+                .HasIndex(p => p.Rating)
+                .HasDatabaseName("IX_Products_Rating");
+
+            modelBuilder.Entity<Product>()
+                .HasIndex(p => p.IsActive)
+                .HasDatabaseName("IX_Products_IsActive");
+
+            modelBuilder.Entity<Order>()
+                .HasIndex(o => o.OrderNumber)
+                .IsUnique()
+                .HasDatabaseName("IX_Orders_OrderNumber");
+
+            modelBuilder.Entity<Order>()
+                .HasIndex(o => o.UserId)
+                .HasDatabaseName("IX_Orders_UserId");
+
+            modelBuilder.Entity<Order>()
+                .HasIndex(o => o.Status)
+                .HasDatabaseName("IX_Orders_Status");
+
+            modelBuilder.Entity<UserSession>()
+                .HasIndex(us => us.SessionToken)
+                .IsUnique()
+                .HasDatabaseName("IX_UserSessions_SessionToken");
+
+            modelBuilder.Entity<UserSession>()
+                .HasIndex(us => us.ExpiresAt)
+                .HasDatabaseName("IX_UserSessions_ExpiresAt");
+
+            // Configure composite indexes
+            modelBuilder.Entity<CartItem>()
+                .HasIndex(ci => new { ci.UserId, ci.ProductId })
+                .IsUnique()
+                .HasDatabaseName("IX_CartItems_UserId_ProductId");
+
+            modelBuilder.Entity<WishlistItem>()
+                .HasIndex(wi => new { wi.UserId, wi.ProductId })
+                .IsUnique()
+                .HasDatabaseName("IX_WishlistItems_UserId_ProductId");
+
+            modelBuilder.Entity<UserSetting>()
+                .HasIndex(us => new { us.UserId, us.SettingKey })
+                .IsUnique()
+                .HasDatabaseName("IX_UserSettings_UserId_SettingKey");
+
+            modelBuilder.Entity<Review>()
+                .HasIndex(r => new { r.ProductId, r.UserId })
+                .IsUnique()
+                .HasDatabaseName("IX_Reviews_ProductId_UserId");
+
+            // Configure additional performance indexes
+            modelBuilder.Entity<Product>()
+                .HasIndex(p => new { p.IsActive, p.Rating })
+                .HasDatabaseName("IX_Products_IsActive_Rating");
+
+            modelBuilder.Entity<Order>()
+                .HasIndex(o => new { o.UserId, o.Status })
+                .HasDatabaseName("IX_Orders_UserId_Status");
+
+            modelBuilder.Entity<Notification>()
+                .HasIndex(n => new { n.UserId, n.IsRead })
+                .HasDatabaseName("IX_Notifications_UserId_IsRead");
+        }
+    }
+}

@@ -1,0 +1,25 @@
+﻿{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=DESKTOP-GMAM0VA;Database=ShopWaveDB;Trusted_Connection=True;TrustServerCertificate=True;"
+  },
+  "Jwt": {
+    "Issuer": "ShopWave",
+    "Audience": "ShopWave.Client",
+    "Secret": "REPLACE_WITH_A_LONG_RANDOM_SECRET_64+_CHARS_CHANGE_ME_CHANGE_ME_CHANGE_ME_CHANGE_ME_1234567890",
+    "AccessTokenMinutes": 30,
+    "RefreshTokenDays": 30,
+    "PasswordResetMinutes": 15
+  },
+  "GoogleAuth": {
+    "ClientIds": [
+      "YOUR_GOOGLE_OAUTH_CLIENT_ID.apps.googleusercontent.com"
+    ]
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*"
+}

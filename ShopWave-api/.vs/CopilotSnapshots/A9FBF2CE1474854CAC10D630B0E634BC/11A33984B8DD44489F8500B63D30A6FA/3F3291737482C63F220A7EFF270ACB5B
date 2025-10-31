@@ -1,0 +1,164 @@
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace ShopWave.Models.Requests
+{
+    public class CreateProductRequest
+    {
+        [Required]
+        [MaxLength(255)]
+        public string Name { get; set; } = string.Empty;
+
+        [MaxLength(2000)]
+        public string? Description { get; set; }
+
+        [Required]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Giá phải lớn hơn 0")]
+        public decimal Price { get; set; }
+
+        [Required]
+        public Guid CategoryId { get; set; }
+
+        [MaxLength(500)]
+        public string? ImageUrl { get; set; }
+
+        [MaxLength(1000)]
+        public string? ImageAiHint { get; set; }
+
+        public string? Attributes { get; set; } // JSON string
+
+        [Range(0, int.MaxValue)]
+        public int StockQuantity { get; set; } = 0;
+    }
+
+    public class UpdateProductRequest
+    {
+        [Required]
+        [MaxLength(255)]
+        public string Name { get; set; } = string.Empty;
+
+        [MaxLength(2000)]
+        public string? Description { get; set; }
+
+        [Required]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Giá phải lớn hơn 0")]
+        public decimal Price { get; set; }
+
+        [Required]
+        public Guid CategoryId { get; set; }
+
+        [MaxLength(500)]
+        public string? ImageUrl { get; set; }
+
+        [MaxLength(1000)]
+        public string? ImageAiHint { get; set; }
+
+        public string? Attributes { get; set; } // JSON string
+
+        [Range(0, int.MaxValue)]
+        public int StockQuantity { get; set; }
+
+        public bool IsActive { get; set; } = true;
+    }
+
+    public class CreateCategoryRequest
+    {
+        [Required]
+        [MaxLength(255)]
+        public string Name { get; set; } = string.Empty;
+
+        [MaxLength(1000)]
+        public string? Description { get; set; }
+
+        [MaxLength(500)]
+        public string? ImageUrl { get; set; }
+
+        public Guid? ParentId { get; set; }
+
+        public int SortOrder { get; set; } = 0;
+    }
+
+    public class AddToCartRequest
+    {
+        [Required]
+        public Guid ProductId { get; set; }
+
+        [Required]
+        [Range(1, int.MaxValue, ErrorMessage = "Số lượng phải lớn hơn 0")]
+        public int Quantity { get; set; }
+    }
+
+    public class UpdateCartItemRequest
+    {
+        [Required]
+        [Range(1, int.MaxValue, ErrorMessage = "Số lượng phải lớn hơn 0")]
+        public int Quantity { get; set; }
+    }
+
+    public class CreateOrderRequest
+    {
+        [Required]
+        public string ShippingAddress { get; set; } = string.Empty; // JSON string
+
+        public string? BillingAddress { get; set; } // JSON string
+
+        [Required]
+        [MaxLength(100)]
+        public string PaymentMethod { get; set; } = string.Empty;
+
+        public string? Notes { get; set; }
+    }
+
+    public class AddReviewRequest
+    {
+        [Required]
+        public Guid ProductId { get; set; }
+
+        [Required]
+        [Range(1, 5, ErrorMessage = "Đánh giá phải từ 1 đến 5 sao")]
+        public int Rating { get; set; }
+
+        [MaxLength(2000)]
+        public string? Comment { get; set; }
+    }
+
+    public class UpdateUserProfileRequest
+    {
+        [Required]
+        [MaxLength(255)]
+        public string FullName { get; set; } = string.Empty;
+
+        [Phone]
+        [MaxLength(20)]
+        public string? Phone { get; set; }
+
+        [MaxLength(500)]
+        public string? AvatarUrl { get; set; }
+    }
+
+    public class ChangePasswordRequest
+    {
+        [Required]
+        public string CurrentPassword { get; set; } = string.Empty;
+
+        [Required]
+        [MinLength(6)]
+        public string NewPassword { get; set; } = string.Empty;
+
+        [Required]
+        [Compare("NewPassword")]
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+
+    public class ProductSearchRequest
+    {
+        public string? SearchTerm { get; set; }
+        public Guid? CategoryId { get; set; }
+        public decimal? MinPrice { get; set; }
+        public decimal? MaxPrice { get; set; }
+        public double? MinRating { get; set; }
+        public string SortBy { get; set; } = "name"; // name, price, rating, popularity
+        public string SortDirection { get; set; } = "asc"; // asc, desc
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 12;
+    }
+}

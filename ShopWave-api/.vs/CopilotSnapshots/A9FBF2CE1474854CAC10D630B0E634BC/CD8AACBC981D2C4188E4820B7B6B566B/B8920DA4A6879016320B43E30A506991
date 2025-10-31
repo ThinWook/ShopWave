@@ -1,0 +1,309 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ShopWave.Models;
+using ShopWave.Models.DTOs;
+using ShopWave.Models.Responses;
+using System.ComponentModel.DataAnnotations;
+
+namespace ShopWave.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class WishlistController : ControllerBase
+    {
+        private readonly ShopWaveDbContext _context;
+        private readonly ILogger<WishlistController> _logger;
+
+        public WishlistController(ShopWaveDbContext context, ILogger<WishlistController> logger)
+        {
+            _context = context;
+            _logger = logger;
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<PagedResponse<WishlistItemDto>>> GetWishlist(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 12,
+            [FromHeader(Name = "Authorization")] string? token = null)
+        {
+            try
+            {
+                var userId = await GetUserIdFromToken(token);
+                if (userId == null)
+                {
+                    return Unauthorized(ApiResponse<object>.ErrorResult("Vui lòng đăng nhập"));
+                }
+
+                var query = _context.WishlistItems
+                    .Include(wi => wi.Product)
+                    .ThenInclude(p => p.Category)
+                    .Where(wi => wi.UserId == userId.Value && wi.Product.IsActive)
+                    .OrderByDescending(wi => wi.CreatedAt);
+
+                var totalRecords = await query.CountAsync();
+                var totalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
+
+                var wishlistItems = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(wi => new WishlistItemDto
+                    {
+                        Id = wi.Id,
+                        ProductId = wi.ProductId,
+                        ProductName = wi.Product.Name,
+                        ProductPrice = wi.Product.Price,
+                        ProductImageUrl = wi.Product.ImageUrl,
+                        ProductRating = wi.Product.Rating,
+                        ProductStockQuantity = wi.Product.StockQuantity,
+                        CategoryName = wi.Product.Category.Name,
+                        AddedAt = wi.CreatedAt
+                    })
+                    .ToListAsync();
+
+                var response = new PagedResponse<WishlistItemDto>
+                {
+                    Data = wishlistItems,
+                    CurrentPage = page,
+                    TotalPages = totalPages,
+                    PageSize = pageSize,
+                    TotalRecords = totalRecords
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi lấy danh sách wishlist của người dùng {UserId}", userId);
+                return StatusCode(500, ApiResponse<object>.ErrorResult("Có lỗi xảy ra khi lấy danh sách wishlist"));
+            }
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<ApiResponse<object>>> AddToWishlist([FromBody] AddToWishlistRequest request, [FromHeader(Name = "Authorization")] string? token)
+        {
+            try
+            {
+                var userId = await GetUserIdFromToken(token);
+                if (userId == null)
+                {
+                    return Unauthorized(ApiResponse<object>.ErrorResult("Vui lòng đăng nhập"));
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ApiResponse<object>.ErrorResult("Dữ liệu không hợp lệ"));
+                }
+
+                var product = await _context.Products.FindAsync(request.ProductId);
+                if (product == null || !product.IsActive)
+                {
+                    return NotFound(ApiResponse<object>.ErrorResult("Không tìm thấy sản phẩm"));
+                }
+
+                // Check if product is already in wishlist
+                var existingItem = await _context.WishlistItems
+                    .FirstOrDefaultAsync(wi => wi.UserId == userId.Value && wi.ProductId == request.ProductId);
+
+                if (existingItem != null)
+                {
+                    return Conflict(ApiResponse<object>.ErrorResult("Sản phẩm đã có trong danh sách yêu thích"));
+                }
+
+                var wishlistItem = new WishlistItem
+                {
+                    UserId = userId.Value,
+                    ProductId = request.ProductId,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.WishlistItems.Add(wishlistItem);
+                await _context.SaveChangesAsync();
+
+                return Ok(ApiResponse<object>.SuccessResult(null, "Đã thêm sản phẩm vào danh sách yêu thích"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi thêm sản phẩm {ProductId} vào wishlist của người dùng {UserId}", request.ProductId, userId);
+                return StatusCode(500, ApiResponse<object>.ErrorResult("Có lỗi xảy ra khi thêm vào danh sách yêu thích"));
+            }
+        }
+
+        [HttpDelete("{productId}")]
+        public async Task<ActionResult<ApiResponse<object>>> RemoveFromWishlist(int productId, [FromHeader(Name = "Authorization")] string? token)
+        {
+            try
+            {
+                var userId = await GetUserIdFromToken(token);
+                if (userId == null)
+                {
+                    return Unauthorized(ApiResponse<object>.ErrorResult("Vui lòng đăng nhập"));
+                }
+
+                var wishlistItem = await _context.WishlistItems
+                    .FirstOrDefaultAsync(wi => wi.UserId == userId.Value && wi.ProductId == productId);
+
+                if (wishlistItem == null)
+                {
+                    return NotFound(ApiResponse<object>.ErrorResult("Không tìm thấy sản phẩm trong danh sách yêu thích"));
+                }
+
+                _context.WishlistItems.Remove(wishlistItem);
+                await _context.SaveChangesAsync();
+
+                return Ok(ApiResponse<object>.SuccessResult(null, "Đã xóa sản phẩm khỏi danh sách yêu thích"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi xóa sản phẩm {ProductId} khỏi wishlist của người dùng {UserId}", productId, userId);
+                return StatusCode(500, ApiResponse<object>.ErrorResult("Có lỗi xảy ra khi xóa khỏi danh sách yêu thích"));
+            }
+        }
+
+        [HttpGet("check/{productId}")]
+        public async Task<ActionResult<ApiResponse<bool>>> CheckInWishlist(int productId, [FromHeader(Name = "Authorization")] string? token)
+        {
+            try
+            {
+                var userId = await GetUserIdFromToken(token);
+                if (userId == null)
+                {
+                    return Ok(ApiResponse<bool>.SuccessResult(false, "Chưa đăng nhập"));
+                }
+
+                var isInWishlist = await _context.WishlistItems
+                    .AnyAsync(wi => wi.UserId == userId.Value && wi.ProductId == productId);
+
+                return Ok(ApiResponse<bool>.SuccessResult(isInWishlist, "Kiểm tra wishlist thành công"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi kiểm tra sản phẩm {ProductId} trong wishlist của người dùng {UserId}", productId, userId);
+                return StatusCode(500, ApiResponse<bool>.ErrorResult("Có lỗi xảy ra khi kiểm tra wishlist"));
+            }
+        }
+
+        [HttpDelete("clear")]
+        public async Task<ActionResult<ApiResponse<object>>> ClearWishlist([FromHeader(Name = "Authorization")] string? token)
+        {
+            try
+            {
+                var userId = await GetUserIdFromToken(token);
+                if (userId == null)
+                {
+                    return Unauthorized(ApiResponse<object>.ErrorResult("Vui lòng đăng nhập"));
+                }
+
+                var wishlistItems = await _context.WishlistItems
+                    .Where(wi => wi.UserId == userId.Value)
+                    .ToListAsync();
+
+                if (wishlistItems.Any())
+                {
+                    _context.WishlistItems.RemoveRange(wishlistItems);
+                    await _context.SaveChangesAsync();
+                }
+
+                return Ok(ApiResponse<object>.SuccessResult(null, "Đã xóa tất cả sản phẩm khỏi danh sách yêu thích"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi xóa toàn bộ wishlist của người dùng {UserId}", userId);
+                return StatusCode(500, ApiResponse<object>.ErrorResult("Có lỗi xảy ra khi xóa danh sách yêu thích"));
+            }
+        }
+
+        [HttpPost("move-to-cart/{productId}")]
+        public async Task<ActionResult<ApiResponse<object>>> MoveToCart(int productId, [FromHeader(Name = "Authorization")] string? token)
+        {
+            try
+            {
+                var userId = await GetUserIdFromToken(token);
+                if (userId == null)
+                {
+                    return Unauthorized(ApiResponse<object>.ErrorResult("Vui lòng đăng nhập"));
+                }
+
+                var wishlistItem = await _context.WishlistItems
+                    .Include(wi => wi.Product)
+                    .FirstOrDefaultAsync(wi => wi.UserId == userId.Value && wi.ProductId == productId);
+
+                if (wishlistItem == null)
+                {
+                    return NotFound(ApiResponse<object>.ErrorResult("Không tìm thấy sản phẩm trong danh sách yêu thích"));
+                }
+
+                if (wishlistItem.Product.StockQuantity <= 0)
+                {
+                    return BadRequest(ApiResponse<object>.ErrorResult("Sản phẩm hiện tại hết hàng"));
+                }
+
+                // Check if product is already in cart
+                var existingCartItem = await _context.CartItems
+                    .FirstOrDefaultAsync(ci => ci.UserId == userId.Value && ci.ProductId == productId);
+
+                if (existingCartItem != null)
+                {
+                    existingCartItem.Quantity += 1;
+                    existingCartItem.UpdatedAt = DateTime.UtcNow;
+                }
+                else
+                {
+                    var cartItem = new CartItem
+                    {
+                        UserId = userId.Value,
+                        ProductId = productId,
+                        Quantity = 1,
+                        UnitPrice = wishlistItem.Product.Price,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                    _context.CartItems.Add(cartItem);
+                }
+
+                // Remove from wishlist
+                _context.WishlistItems.Remove(wishlistItem);
+
+                await _context.SaveChangesAsync();
+
+                return Ok(ApiResponse<object>.SuccessResult(null, "Đã chuyển sản phẩm vào giỏ hàng"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi chuyển sản phẩm {ProductId} từ wishlist sang cart của người dùng {UserId}", productId, userId);
+                return StatusCode(500, ApiResponse<object>.ErrorResult("Có lỗi xảy ra khi chuyển sản phẩm vào giỏ hàng"));
+            }
+        }
+
+        private async Task<int?> GetUserIdFromToken(string? token)
+        {
+            if (string.IsNullOrEmpty(token))
+                return null;
+
+            token = token.Replace("Bearer ", "");
+
+            var session = await _context.UserSessions
+                .FirstOrDefaultAsync(s => s.SessionToken == token && s.ExpiresAt > DateTime.UtcNow);
+
+            return session?.UserId;
+        }
+    }
+
+    public class AddToWishlistRequest
+    {
+        [Required(ErrorMessage = "ID sản phẩm là bắt buộc")]
+        public int ProductId { get; set; }
+    }
+
+    public class WishlistItemDto
+    {
+        public int Id { get; set; }
+        public int ProductId { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public decimal ProductPrice { get; set; }
+        public string? ProductImageUrl { get; set; }
+        public double ProductRating { get; set; }
+        public int ProductStockQuantity { get; set; }
+        public string CategoryName { get; set; } = string.Empty;
+        public DateTime AddedAt { get; set; }
+    }
+}

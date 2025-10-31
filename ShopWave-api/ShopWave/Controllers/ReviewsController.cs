@@ -1,0 +1,255 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ShopWave.Models;
+using ShopWave.Models.DTOs;
+using ShopWave.Models.Responses;
+using System.ComponentModel.DataAnnotations;
+
+namespace ShopWave.Controllers
+{
+    [ApiController]
+    [Route("api/v1/[controller]")]
+    public class ReviewsController : ControllerBase
+    {
+        private readonly ShopWaveDbContext _context;
+        private readonly ILogger<ReviewsController> _logger;
+
+        public ReviewsController(ShopWaveDbContext context, ILogger<ReviewsController> logger)
+        {
+            _context = context;
+            _logger = logger;
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CreateReview([FromBody] CreateReviewRequest request, [FromHeader(Name = "Authorization")] string? token)
+        {
+            Guid? userId = null;
+            try
+            {
+                userId = await GetUserIdFromToken(token);
+                if (userId == null)
+                {
+                    return Unauthorized(EnvelopeBuilder.Fail<object>(HttpContext, "UNAUTHORIZED", new[] { new ErrorItem("auth", "Unauthorized", "UNAUTHORIZED") }, 401));
+                }
+
+                var user = await _context.Users.FindAsync(userId.Value);
+                var product = await _context.Products.FindAsync(request.ProductId);
+                if (user == null || !user.IsActive)
+                {
+                    return NotFound(EnvelopeBuilder.Fail<object>(HttpContext, "NOT_FOUND", new[] { new ErrorItem("user", "User not found", "NOT_FOUND") }, 404));
+                }
+                if (product == null || !product.IsActive)
+                {
+                    return NotFound(EnvelopeBuilder.Fail<object>(HttpContext, "NOT_FOUND", new[] { new ErrorItem("product", "Product not found", "NOT_FOUND") }, 404));
+                }
+
+                var existingReview = await _context.Reviews.FirstOrDefaultAsync(r => r.UserId == userId.Value && r.ProductId == request.ProductId);
+                if (existingReview != null)
+                {
+                    return Conflict(EnvelopeBuilder.Fail<object>(HttpContext, "REVIEW_EXISTS", new[] { new ErrorItem("review", "Already reviewed", "REVIEW_EXISTS") }, 409));
+                }
+
+                var hasPurchased = await _context.OrderItems
+                    .Include(oi => oi.Order)
+                    .AnyAsync(oi => oi.ProductId == request.ProductId && oi.Order.UserId == userId.Value && oi.Order.Status == "Delivered");
+
+                var review = new Review
+                {
+                    ProductId = request.ProductId,
+                    UserId = userId.Value,
+                    UserName = user.FullName,
+                    Rating = request.Rating,
+                    Comment = request.Comment?.Trim(),
+                    Date = DateTime.UtcNow,
+                    IsVerified = hasPurchased,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                _context.Reviews.Add(review);
+                await _context.SaveChangesAsync();
+
+                await _context.Entry(product).ReloadAsync();
+
+                var dto = new ReviewDto
+                {
+                    Id = review.Id,
+                    UserName = review.UserName,
+                    Rating = review.Rating,
+                    Comment = review.Comment,
+                    Date = review.Date,
+                    IsVerified = review.IsVerified
+                };
+
+                return StatusCode(201, EnvelopeBuilder.Ok(HttpContext, "REVIEW_CREATED", dto));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating review {ProductId} for {UserId}", request.ProductId, userId);
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500));
+            }
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteReview(Guid id, [FromHeader(Name = "Authorization")] string? token)
+        {
+            try
+            {
+                var userId = await GetUserIdFromToken(token);
+                if (userId == null)
+                {
+                    return Unauthorized(EnvelopeBuilder.Fail<object>(HttpContext, "UNAUTHORIZED", new[] { new ErrorItem("auth", "Unauthorized", "UNAUTHORIZED") }, 401));
+                }
+
+                var user = await _context.Users.FindAsync(userId.Value);
+                if (user == null || !user.IsActive)
+                {
+                    return NotFound(EnvelopeBuilder.Fail<object>(HttpContext, "NOT_FOUND", new[] { new ErrorItem("user", "User not found", "NOT_FOUND") }, 404));
+                }
+
+                var review = await _context.Reviews.FindAsync(id);
+                if (review == null)
+                {
+                    return NotFound(EnvelopeBuilder.Fail<object>(HttpContext, "NOT_FOUND", new[] { new ErrorItem("id", "Review not found", "NOT_FOUND") }, 404));
+                }
+
+                if (review.UserId != userId.Value && user.Role != "Admin")
+                {
+                    return StatusCode(403, EnvelopeBuilder.Fail<object>(HttpContext, "FORBIDDEN", new[] { new ErrorItem("auth", "Forbidden", "FORBIDDEN") }, 403));
+                }
+
+                _context.Reviews.Remove(review);
+                await _context.SaveChangesAsync();
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "REVIEW_DELETED", new { }));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting review {ReviewId}", id);
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500));
+            }
+        }
+
+        [HttpGet("user/me")]
+        public async Task<IActionResult> GetMyReviews([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromHeader(Name = "Authorization")] string? token = null)
+        {
+            Guid? userId = null;
+            try
+            {
+                userId = await GetUserIdFromToken(token);
+                if (userId == null)
+                {
+                    return Unauthorized(EnvelopeBuilder.Fail<object>(HttpContext, "UNAUTHORIZED", new[] { new ErrorItem("auth", "Unauthorized", "UNAUTHORIZED") }, 401));
+                }
+                if (page < 1) page = 1; if (pageSize <= 0 || pageSize > 100) pageSize = 10;
+
+                var baseQuery = _context.Reviews.Include(r => r.Product).Where(r => r.UserId == userId.Value).OrderByDescending(r => r.CreatedAt);
+                var total = await baseQuery.CountAsync();
+                var totalPages = total == 0 ? 0 : (int)Math.Ceiling(total / (double)pageSize);
+                if (totalPages > 0 && page > totalPages) page = totalPages;
+
+                var list = await baseQuery.Skip((page - 1) * pageSize).Take(pageSize).Select(r => new ReviewWithProductDto
+                {
+                    Id = r.Id,
+                    ProductId = r.ProductId,
+                    ProductName = r.Product.Name,
+                    ProductMediaId = r.Product.MediaId,
+                    UserName = r.UserName,
+                    Rating = r.Rating,
+                    Comment = r.Comment,
+                    Date = r.Date,
+                    IsVerified = r.IsVerified
+                }).ToListAsync();
+
+                var paged = new PagedResult<ReviewWithProductDto>(
+                    Data: list,
+                    CurrentPage: page,
+                    TotalPages: totalPages,
+                    PageSize: pageSize,
+                    TotalRecords: total,
+                    HasPreviousPage: page > 1,
+                    HasNextPage: page < totalPages,
+                    AppliedFilters: new { user = "me" }
+                );
+
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "REVIEW_LIST_RETRIEVED", paged));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving my reviews {UserId}", userId);
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500));
+            }
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateReview(Guid id, [FromBody] UpdateReviewRequest request, [FromHeader(Name = "Authorization")] string? token)
+        {
+            try
+            {
+                var userId = await GetUserIdFromToken(token);
+                if (userId == null)
+                {
+                    return Unauthorized(EnvelopeBuilder.Fail<object>(HttpContext, "UNAUTHORIZED", new[] { new ErrorItem("auth", "Unauthorized", "UNAUTHORIZED") }, 401));
+                }
+
+                var review = await _context.Reviews.FindAsync(id);
+                if (review == null)
+                {
+                    return NotFound(EnvelopeBuilder.Fail<object>(HttpContext, "NOT_FOUND", new[] { new ErrorItem("id", "Review not found", "NOT_FOUND") }, 404));
+                }
+                if (review.UserId != userId.Value)
+                {
+                    return StatusCode(403, EnvelopeBuilder.Fail<object>(HttpContext, "FORBIDDEN", new[] { new ErrorItem("auth", "Forbidden", "FORBIDDEN") }, 403));
+                }
+
+                review.Rating = request.Rating;
+                review.Comment = request.Comment?.Trim();
+                review.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+
+                var dto = new ReviewDto
+                {
+                    Id = review.Id,
+                    UserName = review.UserName,
+                    Rating = review.Rating,
+                    Comment = review.Comment,
+                    Date = review.Date,
+                    IsVerified = review.IsVerified
+                };
+
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "REVIEW_UPDATED", dto));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating review {ReviewId}", id);
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500));
+            }
+        }
+
+        private async Task<Guid?> GetUserIdFromToken(string? token)
+        {
+            if (string.IsNullOrEmpty(token)) return null;
+            token = token.Replace("Bearer ", "");
+            var session = await _context.UserSessions.FirstOrDefaultAsync(s => s.SessionToken == token && s.ExpiresAt > DateTime.UtcNow);
+            return session?.UserId;
+        }
+    }
+
+    public class CreateReviewRequest
+    {
+        [Required] public Guid ProductId { get; set; }
+        [Required][Range(1, 5)] public int Rating { get; set; }
+        [MaxLength(2000)] public string? Comment { get; set; }
+    }
+
+    public class UpdateReviewRequest
+    {
+        [Required][Range(1, 5)] public int Rating { get; set; }
+        [MaxLength(2000)] public string? Comment { get; set; }
+    }
+
+    public class ReviewWithProductDto : ReviewDto
+    {
+        public Guid ProductId { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public long? ProductMediaId { get; set; }
+    }
+}

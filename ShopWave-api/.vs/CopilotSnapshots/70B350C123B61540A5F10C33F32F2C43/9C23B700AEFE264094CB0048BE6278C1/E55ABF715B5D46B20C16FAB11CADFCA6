@@ -1,0 +1,331 @@
+﻿using System.Text.Json;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
+using System.Text;
+using System.Net.Http.Json;
+using ShopWave.Models;
+
+namespace ShopWave.Repositories
+{
+    // Repository that can use multiple sources:
+    // 1) Vector index service (HTTP) or Pinecone client (TODO)
+    // 2) Redis cache (AddStackExchangeRedisCache in production)
+    // 3) Fallback to local precomputed JSON file
+    public class RecommendationRepository : IRecommendationRepository
+    {
+        private readonly ILogger<RecommendationRepository> _logger;
+        private readonly IWebHostEnvironment _env;
+        private readonly ShopWaveDbContext _db;
+        private readonly IHttpClientFactory _httpFactory;
+        private readonly IDistributedCache? _redis; // optional Redis
+        private readonly IMemoryCache _memory; // in-process cache for quick POC
+        private readonly string _dataPath;
+        private PrecomputedData? _data;
+
+        public RecommendationRepository(
+            ILogger<RecommendationRepository> logger,
+            IWebHostEnvironment env,
+            ShopWaveDbContext db,
+            IHttpClientFactory httpFactory,
+            IMemoryCache memory,
+            IDistributedCache? redis = null)
+        {
+            _logger = logger;
+            _env = env;
+            _db = db;
+            _httpFactory = httpFactory;
+            _memory = memory;
+            _redis = redis;
+            _dataPath = Path.Combine(env.ContentRootPath, "data", "precomputed_recs.json");
+            LoadData();
+        }
+
+        private void LoadData()
+        {
+            try
+            {
+                if (!File.Exists(_dataPath))
+                {
+                    _logger.LogWarning("Precomputed recommendation file not found: {Path}", _dataPath);
+                    _data = new PrecomputedData();
+                    return;
+                }
+
+                var json = File.ReadAllText(_dataPath);
+                _data = JsonSerializer.Deserialize<PrecomputedData>(json) ?? new PrecomputedData();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to load precomputed recommendations");
+                _data = new PrecomputedData();
+            }
+        }
+
+        public Task<bool> IsReadyAsync(CancellationToken ct = default)
+        {
+            return Task.FromResult(_data != null);
+        }
+
+        public async Task<List<string>> GetPopularAsync(int k, CancellationToken ct = default)
+        {
+            // Try Redis first (if configured)
+            string cacheKey = $"rec:popular:k:{k}";
+            if (_redis != null)
+            {
+                try
+                {
+                    var bytes = await _redis.GetAsync(cacheKey, ct);
+                    if (bytes != null)
+                    {
+                        var json = Encoding.UTF8.GetString(bytes);
+                        var list = JsonSerializer.Deserialize<List<string>>(json);
+                        if (list != null && list.Count > 0) return list.Take(k).ToList();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Redis unavailable for popularity cache");
+                }
+            }
+
+            // Fallback to in-memory precomputed
+            if (_data?.Popularity != null && _data.Popularity.Count > 0)
+            {
+                var top = _data.Popularity.Take(k).ToList();
+                // populate redis async (fire and forget)
+                if (_redis != null)
+                {
+                    try
+                    {
+                        var bytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(top));
+                        await _redis.SetAsync(cacheKey, bytes, new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5) }, ct);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Redis set failed for popularity");
+                    }
+                }
+                return top;
+            }
+
+            return new List<string>();
+        }
+
+        public async Task<List<(Guid id, double score)>> GetItemSimilarAsync(Guid productId, int k, CancellationToken ct = default)
+        {
+            // 1) Check memory cache
+            var mkey = $"itemsim:{productId}:{k}";
+            if (_memory.TryGetValue(mkey, out List<(Guid, double)>? memRes)) return memRes!;
+
+            // 2) Check Redis
+            if (_redis != null)
+            {
+                try
+                {
+                    var bytes = await _redis.GetAsync(mkey, ct);
+                    if (bytes != null)
+                    {
+                        var json = Encoding.UTF8.GetString(bytes);
+                        var list = JsonSerializer.Deserialize<List<SimpleScore>>(json);
+                        if (list != null)
+                        {
+                            var res = list.Select(it => (Guid.Parse(it.Id), it.Score)).ToList();
+                            _memory.Set(mkey, res, TimeSpan.FromMinutes(5));
+                            return res;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Redis unavailable for itemsim");
+                }
+            }
+
+            // 3) Call external vector index service (HTTP) - TODO replace with Pinecone/Faiss client
+            try
+            {
+                var client = _httpFactory.CreateClient("vector-index");
+                // Expected external API: GET /neighbors?itemId={}&k={}
+                var resp = await client.GetFromJsonAsync<VectorNeighborsResponse>($"neighbors?itemId={productId}&k={k}", ct);
+                if (resp?.Neighbors != null && resp.Neighbors.Count > 0)
+                {
+                    var res = resp.Neighbors.Select(n => (n.Id, n.Score)).ToList();
+                    // cache
+                    _memory.Set(mkey, res, TimeSpan.FromMinutes(5));
+                    if (_redis != null)
+                    {
+                        try
+                        {
+                            var bytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(resp.Neighbors.Select(x => new SimpleScore { Id = x.Id.ToString(), Score = x.Score }))); 
+                            await _redis.SetAsync(mkey, bytes, new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5) }, ct);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Redis set failed for itemsim");
+                        }
+                    }
+                    return res;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Vector index call failed - falling back to precomputed JSON");
+            }
+
+            // 4) Fallback to precomputed JSON file
+            if (_data?.ItemSimilar != null)
+            {
+                var key = productId.ToString();
+                if (_data.ItemSimilar.TryGetValue(key, out var list))
+                {
+                    var res = list.Take(k).Select(it => (Guid.Parse(it.Id), it.Score)).ToList();
+                    _memory.Set(mkey, res, TimeSpan.FromMinutes(5));
+                    return res;
+                }
+            }
+
+            return new List<(Guid id, double score)>();
+        }
+
+        public async Task<List<(Guid id, double score)>> GetPersonalizedAsync(Guid userId, int k, CancellationToken ct = default)
+        {
+            var mkey = $"personal:{userId}:{k}";
+            if (_memory.TryGetValue(mkey, out List<(Guid, double)>? memRes)) return memRes!;
+
+            if (_redis != null)
+            {
+                try
+                {
+                    var bytes = await _redis.GetAsync(mkey, ct);
+                    if (bytes != null)
+                    {
+                        var json = Encoding.UTF8.GetString(bytes);
+                        var list = JsonSerializer.Deserialize<List<SimpleScore>>(json);
+                        if (list != null)
+                        {
+                            var res = list.Select(it => (Guid.Parse(it.Id), it.Score)).ToList();
+                            _memory.Set(mkey, res, TimeSpan.FromMinutes(5));
+                            return res;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Redis unavailable for personal");
+                }
+            }
+
+            // Call vector index / personalization service
+            try
+            {
+                var client = _httpFactory.CreateClient("vector-index");
+                var resp = await client.GetFromJsonAsync<VectorNeighborsResponse>($"user-neighbors?userId={userId}&k={k}", ct);
+                if (resp?.Neighbors != null && resp.Neighbors.Count > 0)
+                {
+                    var res = resp.Neighbors.Select(n => (n.Id, n.Score)).ToList();
+                    _memory.Set(mkey, res, TimeSpan.FromMinutes(5));
+                    if (_redis != null)
+                    {
+                        try
+                        {
+                            var bytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(resp.Neighbors.Select(x => new SimpleScore { Id = x.Id.ToString(), Score = x.Score }))); 
+                            await _redis.SetAsync(mkey, bytes, new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5) }, ct);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Redis set failed for personal");
+                        }
+                    }
+                    return res;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Personalization service failed - falling back to precomputed JSON");
+            }
+
+            if (_data?.Personalized != null)
+            {
+                var key = userId.ToString();
+                if (_data.Personalized.TryGetValue(key, out var list))
+                {
+                    var res = list.Take(k).Select(it => (Guid.Parse(it.Id), it.Score)).ToList();
+                    _memory.Set(mkey, res, TimeSpan.FromMinutes(5));
+                    return res;
+                }
+            }
+
+            return new List<(Guid id, double score)>();
+        }
+
+        // Example: use DbContext to fetch product metadata for a list of ids
+        // This method can be used by RecommendationService to attach title, price, imageUrl
+        public async Task<Dictionary<Guid, (string title, decimal price, string? imageUrl)>> GetProductMetadataAsync(IEnumerable<Guid> ids, CancellationToken ct = default)
+        {
+            var idList = ids.ToList();
+
+            // Fetch product base info
+            var baseInfo = await _db.Products
+                .Where(p => idList.Contains(p.Id) && p.IsActive)
+                .Select(p => new { p.Id, p.Name })
+                .ToListAsync(ct);
+
+            // Fetch min price across variants for each product
+            var prices = await _db.ProductVariants
+                .Where(v => idList.Contains(v.ProductId))
+                .GroupBy(v => v.ProductId)
+                .Select(g => new { ProductId = g.Key, MinPrice = g.Min(v => v.Price) })
+                .ToListAsync(ct);
+
+            // Fetch image urls from ProductMedia -> Media
+            var images = await _db.ProductMedia
+                .Where(pm => idList.Contains(pm.ProductId))
+                .OrderBy(pm => pm.DisplayOrder)
+                .Select(pm => new { pm.ProductId, pm.Media.Url })
+                .ToListAsync(ct);
+
+            var priceMap = prices.ToDictionary(x => x.ProductId, x => x.MinPrice);
+            var imageMap = images.GroupBy(x => x.ProductId).ToDictionary(g => g.Key, g => g.First().Url);
+
+            var result = new Dictionary<Guid, (string title, decimal price, string? imageUrl)>();
+            foreach (var p in baseInfo)
+            {
+                var price = priceMap.TryGetValue(p.Id, out var pr) ? pr : 0m;
+                imageMap.TryGetValue(p.Id, out var img);
+                result[p.Id] = (p.Name ?? string.Empty, price, img);
+            }
+
+            return result;
+        }
+
+        // Internal DTOs
+        private class PrecomputedData
+        {
+            public Dictionary<string, List<SimpleScore>>? ItemSimilar { get; set; }
+            public Dictionary<string, List<SimpleScore>>? Personalized { get; set; }
+            public List<string>? Popularity { get; set; }
+        }
+
+        private class SimpleScore
+        {
+            public string Id { get; set; } = string.Empty;
+            public double Score { get; set; }
+        }
+
+        private class VectorNeighborsResponse
+        {
+            public List<VectorNeighbor> Neighbors { get; set; } = new List<VectorNeighbor>();
+        }
+
+        private class VectorNeighbor
+        {
+            public Guid Id { get; set; }
+            public double Score { get; set; }
+        }
+    }
+}

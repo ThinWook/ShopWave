@@ -1,0 +1,209 @@
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
+using ShopWave.Models;
+using ShopWave.Extensions;
+using ShopWave.Services;
+using ShopWave.Repositories;
+using ShopWave.Filters;
+using ShopWave.Middleware;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+builder.Services.AddControllers(o =>
+{
+    o.Filters.Add<ValidationFilter>();
+});
+
+// Configure Entity Framework
+builder.Services.AddDbContext<ShopWaveDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Register services
+builder.Services.AddScoped<DatabaseTestService>();
+builder.Services.AddSingleton<JwtTokenService>();
+builder.Services.AddSingleton<GoogleTokenValidator>();
+
+// Media services
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IMediaService, FileService>();
+
+// Recommendation services (POC)
+builder.Services.AddMemoryCache();
+// Register HttpClient factory used by RecommendationRepository to call vector index / personalization service
+builder.Services.AddHttpClient();
+// Register a distributed in-memory cache for development so IDistributedCache is available.
+// In production prefer Redis: builder.Services.AddStackExchangeRedisCache(...)
+builder.Services.AddDistributedMemoryCache();
+
+builder.Services.AddScoped<IRecommendationService, RecommendationService>();
+// RecommendationRepository may use DbContext and external HTTP clients, register as scoped
+builder.Services.AddScoped<IRecommendationRepository, RecommendationRepository>();
+
+// To enable Redis distributed cache in production, uncomment and configure:
+// builder.Services.AddStackExchangeRedisCache(options => { options.Configuration = builder.Configuration.GetConnectionString("Redis"); });
+
+// Configure API behavior
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.SuppressModelStateInvalidFilter = true; // we handle with ValidationFilter
+});
+
+// Add JSON serialization options
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    options.SerializerOptions.WriteIndented = true;
+});
+
+// Cấu hình CORS cho Next.js frontend
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowNextJS",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:3000", "https://localhost:3001", "http://localhost:4000")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        });
+});
+
+// JWT Bearer
+var jwtSection = builder.Configuration.GetSection("Jwt");
+var issuer = jwtSection["Issuer"];
+var audience = jwtSection["Audience"];
+var secret = jwtSection["Secret"] ?? throw new InvalidOperationException("Jwt:Secret missing");
+var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
+
+builder.Services
+    .AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.RequireHttpsMetadata = true;
+        options.SaveToken = true;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = issuer,
+            ValidateAudience = true,
+            ValidAudience = audience,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = key,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromMinutes(1)
+        };
+    });
+
+// Add API Explorer for development
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new() { Title = "ShopWave API", Version = "v1" });
+});
+
+var app = builder.Build();
+
+// Test database connection on startup (non-blocking)
+try
+{
+    using var scope = app.Services.CreateScope();
+    var dbTestService = scope.ServiceProvider.GetRequiredService<DatabaseTestService>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    
+    logger.LogInformation("🚀 Starting ShopWave API...");
+    
+    var isConnected = await dbTestService.TestConnectionAsync();
+    if (isConnected)
+    {
+        logger.LogInformation("✅ Database connection verified successfully");
+        
+        try
+        {
+            var dbInfo = await dbTestService.GetDatabaseInfoAsync();
+            logger.LogInformation("📊 Database: {DatabaseName} on {ServerName}", dbInfo.DatabaseName, dbInfo.ServerName);
+            logger.LogInformation("📋 Tables: {TableCount}, Users: {UserCount}, Products: {ProductCount}", 
+                dbInfo.TableCount, dbInfo.UserCount, dbInfo.ProductCount);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Could not get detailed database info - migrations may be needed");
+        }
+    }
+    else
+    {
+        logger.LogWarning("⚠️ Database connection failed - check connection string");
+        logger.LogInformation("💡 You can still access Swagger at: https://localhost:5001/swagger");
+    }
+}
+catch (Exception ex)
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogError(ex, "❌ Database connection error: {ErrorMessage}", ex.Message);
+    logger.LogInformation("💡 API will start anyway. Check database connection and run migrations if needed.");
+}
+
+// Seed database (only if connection works)
+try
+{
+    app.SeedDatabase();
+}
+catch (Exception ex)
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogWarning(ex, "⚠️ Database seeding skipped - database may not be ready");
+}
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "ShopWave API v1");
+        c.RoutePrefix = "swagger";
+    });
+}
+
+app.UseHttpsRedirection();
+
+// Serve static files from wwwroot (e.g., /uploads)
+app.UseStaticFiles();
+
+// Enable CORS
+app.UseCors("AllowNextJS");
+app.UseApiMeta();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
+
+// Add a simple health check endpoint
+app.MapGet("/", () => new { 
+    Status = "Running", 
+    Service = "ShopWave API", 
+    Version = "1.0",
+    Timestamp = DateTime.UtcNow,
+    SwaggerUrl = "/swagger"
+});
+
+app.MapGet("/health", () => new { 
+    Status = "Healthy", 
+    Timestamp = DateTime.UtcNow 
+});
+
+var logger2 = app.Services.GetRequiredService<ILogger<Program>>();
+logger2.LogInformation("🌐 ShopWave API is starting...");
+logger2.LogInformation("📖 Swagger UI: https://localhost:5001/swagger");
+logger2.LogInformation("🔗 API Base: https://localhost:5001/api");
+
+app.Run();

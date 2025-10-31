@@ -1,0 +1,21 @@
+﻿using Microsoft.AspNetCore.Http;
+using ShopWave.Models;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+
+namespace ShopWave.Services
+{
+    public interface IMediaService
+    {
+        Task<Media> UploadFileAsync(IFormFile file, string? category);
+        Task<List<Media>> UploadFilesAsync(IEnumerable<IFormFile> files, string? category);
+    }
+
+    public static class MediaServiceExtensions
+    {
+        public static Task<Media> SaveMediaAsync(this IMediaService service, IFormFile file)
+        {
+            return service.UploadFileAsync(file, null);
+        }
+    }
+}

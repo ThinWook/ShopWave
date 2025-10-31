@@ -1,0 +1,24 @@
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace ShopWave.Models
+{
+    public class ProductVariantAttribute
+    {
+        [Key]
+        public Guid Id { get; set; } = Guid.NewGuid();
+
+        [Required]
+        public Guid ProductVariantId { get; set; }
+
+        [Required]
+        [MaxLength(100)]
+        public string Name { get; set; }
+
+        [Required]
+        [MaxLength(100)]
+        public string Value { get; set; }
+
+        // Navigation
+        public virtual ProductVariant ProductVariant { get; set; }
+    }
+}

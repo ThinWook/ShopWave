@@ -1,0 +1,129 @@
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace ShopWave.Models.ViewModels
+{
+    public class LoginViewModel
+    {
+        [Required(ErrorMessage = "Email là bắt buộc")]
+        [EmailAddress(ErrorMessage = "Email không hợp lệ")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Mật khẩu là bắt buộc")]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = string.Empty;
+
+        public bool RememberMe { get; set; }
+    }
+
+    public class RegisterViewModel
+    {
+        [Required(ErrorMessage = "Email là bắt buộc")]
+        [EmailAddress(ErrorMessage = "Email không hợp lệ")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Họ tên là bắt buộc")]
+        [MaxLength(255)]
+        public string FullName { get; set; } = string.Empty;
+
+        [Phone(ErrorMessage = "Số điện thoại không hợp lệ")]
+        public string? Phone { get; set; }
+
+        [Required(ErrorMessage = "Mật khẩu là bắt buộc")]
+        [MinLength(6, ErrorMessage = "Mật khẩu phải có ít nhất 6 ký tự")]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Xác nhận mật khẩu là bắt buộc")]
+        [Compare("Password", ErrorMessage = "Mật khẩu xác nhận không khớp")]
+        [DataType(DataType.Password)]
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+
+    public class ProductListViewModel
+    {
+        public List<Product> Products { get; set; } = new List<Product>();
+        public List<Category> Categories { get; set; } = new List<Category>();
+        public int? SelectedCategoryId { get; set; }
+        public string? SearchTerm { get; set; }
+        public string SortBy { get; set; } = "name";
+        public int CurrentPage { get; set; } = 1;
+        public int TotalPages { get; set; }
+        public int PageSize { get; set; } = 12;
+        public int TotalProducts { get; set; }
+    }
+
+    public class ProductDetailViewModel
+    {
+        public Product Product { get; set; } = null!;
+        public List<Review> Reviews { get; set; } = new List<Review>();
+        public List<Product> RelatedProducts { get; set; } = new List<Product>();
+        public bool IsInWishlist { get; set; }
+        public bool IsInCart { get; set; }
+    }
+
+    public class CartViewModel
+    {
+        public List<CartItem> CartItems { get; set; } = new List<CartItem>();
+        public decimal SubTotal { get; set; }
+        public decimal ShippingFee { get; set; }
+        public decimal Total { get; set; }
+        public int TotalItems { get; set; }
+    }
+
+    public class CheckoutViewModel
+    {
+        [Required(ErrorMessage = "Họ tên là bắt buộc")]
+        public string FullName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Email là bắt buộc")]
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Số điện thoại là bắt buộc")]
+        [Phone]
+        public string Phone { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Địa chỉ là bắt buộc")]
+        public string Address { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Thành phố là bắt buộc")]
+        public string City { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Quận/Huyện là bắt buộc")]
+        public string District { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Phường/Xã là bắt buộc")]
+        public string Ward { get; set; } = string.Empty;
+
+        public string? Notes { get; set; }
+
+        [Required(ErrorMessage = "Phương thức thanh toán là bắt buộc")]
+        public string PaymentMethod { get; set; } = string.Empty;
+
+        public List<CartItem> CartItems { get; set; } = new List<CartItem>();
+        public decimal SubTotal { get; set; }
+        public decimal ShippingFee { get; set; }
+        public decimal Total { get; set; }
+    }
+
+    public class UserProfileViewModel
+    {
+        public User User { get; set; } = null!;
+        public List<Order> RecentOrders { get; set; } = new List<Order>();
+        public int TotalOrders { get; set; }
+        public int WishlistCount { get; set; }
+    }
+
+    public class AddReviewViewModel
+    {
+        public int ProductId { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Đánh giá là bắt buộc")]
+        [Range(1, 5, ErrorMessage = "Đánh giá phải từ 1 đến 5 sao")]
+        public int Rating { get; set; }
+
+        [MaxLength(2000, ErrorMessage = "Bình luận không được quá 2000 ký tự")]
+        public string? Comment { get; set; }
+    }
+}

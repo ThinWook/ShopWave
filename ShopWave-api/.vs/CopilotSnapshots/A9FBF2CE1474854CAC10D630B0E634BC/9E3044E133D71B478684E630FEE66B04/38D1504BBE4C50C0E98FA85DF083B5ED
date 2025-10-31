@@ -1,0 +1,304 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ShopWave.Models;
+using ShopWave.Models.DTOs;
+using ShopWave.Models.Responses;
+using System.ComponentModel.DataAnnotations;
+
+namespace ShopWave.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class ReviewsController : ControllerBase
+    {
+        private readonly ShopWaveDbContext _context;
+        private readonly ILogger<ReviewsController> _logger;
+
+        public ReviewsController(ShopWaveDbContext context, ILogger<ReviewsController> logger)
+        {
+            _context = context;
+            _logger = logger;
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<ApiResponse<ReviewDto>>> CreateReview([FromBody] CreateReviewRequest request, [FromHeader(Name = "Authorization")] string? token)
+        {
+            int? userId = null;
+            try
+            {
+                userId = await GetUserIdFromToken(token);
+                if (userId == null)
+                {
+                    return Unauthorized(ApiResponse<ReviewDto>.ErrorResult("Vui lòng ??ng nh?p"));
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ApiResponse<ReviewDto>.ErrorResult("D? li?u không h?p l?"));
+                }
+
+                var user = await _context.Users.FindAsync(userId.Value);
+                var product = await _context.Products.FindAsync(request.ProductId);
+
+                if (user == null || !user.IsActive)
+                {
+                    return NotFound(ApiResponse<ReviewDto>.ErrorResult("Không tìm th?y ng??i dùng"));
+                }
+
+                if (product == null || !product.IsActive)
+                {
+                    return NotFound(ApiResponse<ReviewDto>.ErrorResult("Không tìm th?y s?n ph?m"));
+                }
+
+                // Check if user already reviewed this product
+                var existingReview = await _context.Reviews
+                    .FirstOrDefaultAsync(r => r.UserId == userId.Value && r.ProductId == request.ProductId);
+
+                if (existingReview != null)
+                {
+                    return Conflict(ApiResponse<ReviewDto>.ErrorResult("B?n ?ã ?ánh giá s?n ph?m này r?i"));
+                }
+
+                // Optional: Check if user has purchased this product
+                var hasPurchased = await _context.OrderItems
+                    .Include(oi => oi.Order)
+                    .AnyAsync(oi => oi.ProductId == request.ProductId && 
+                                   oi.Order.UserId == userId.Value && 
+                                   oi.Order.Status == "Delivered");
+
+                var review = new Review
+                {
+                    ProductId = request.ProductId,
+                    UserId = userId.Value,
+                    UserName = user.FullName,
+                    Rating = request.Rating,
+                    Comment = request.Comment?.Trim(),
+                    Date = DateTime.UtcNow,
+                    IsVerified = hasPurchased, // Mark as verified if user purchased the product
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                _context.Reviews.Add(review);
+                await _context.SaveChangesAsync();
+
+                // Note: Rating and review count will be updated by triggers
+                // Refresh product to get updated stats
+                await _context.Entry(product).ReloadAsync();
+
+                var reviewDto = new ReviewDto
+                {
+                    Id = review.Id,
+                    UserName = review.UserName,
+                    Rating = review.Rating,
+                    Comment = review.Comment,
+                    Date = review.Date,
+                    IsVerified = review.IsVerified
+                };
+
+                return Ok(ApiResponse<ReviewDto>.SuccessResult(reviewDto, "?ánh giá s?n ph?m thành công"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "L?i khi t?o ?ánh giá s?n ph?m {ProductId} cho ng??i dùng {UserId}", request.ProductId, userId);
+                return StatusCode(500, ApiResponse<ReviewDto>.ErrorResult("Có l?i x?y ra khi ?ánh giá s?n ph?m"));
+            }
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<ActionResult<ApiResponse<object>>> DeleteReview(int id, [FromHeader(Name = "Authorization")] string? token)
+        {
+            try
+            {
+                var userId = await GetUserIdFromToken(token);
+                if (userId == null)
+                {
+                    return Unauthorized(ApiResponse<object>.ErrorResult("Vui lòng ??ng nh?p"));
+                }
+
+                var user = await _context.Users.FindAsync(userId.Value);
+                if (user == null || !user.IsActive)
+                {
+                    return NotFound(ApiResponse<object>.ErrorResult("Không tìm th?y ng??i dùng"));
+                }
+
+                var review = await _context.Reviews.FindAsync(id);
+                if (review == null)
+                {
+                    return NotFound(ApiResponse<object>.ErrorResult("Không tìm th?y ?ánh giá"));
+                }
+
+                // User can only delete their own review, or admin can delete any review
+                if (review.UserId != userId.Value && user.Role != "Admin")
+                {
+                    return Forbid();
+                }
+
+                _context.Reviews.Remove(review);
+                await _context.SaveChangesAsync();
+
+                return Ok(ApiResponse<object>.SuccessResult(null, "Xóa ?ánh giá thành công"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "L?i khi xóa ?ánh giá {ReviewId}", id);
+                return StatusCode(500, ApiResponse<object>.ErrorResult("Có l?i x?y ra khi xóa ?ánh giá"));
+            }
+        }
+
+        [HttpGet("user/me")]
+        public async Task<ActionResult<PagedResponse<ReviewWithProductDto>>> GetMyReviews(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromHeader(Name = "Authorization")] string? token = null)
+        {
+            int? userId = null;
+            try
+            {
+                userId = await GetUserIdFromToken(token);
+                if (userId == null)
+                {
+                    return Unauthorized(ApiResponse<object>.ErrorResult("Vui lòng ??ng nh?p"));
+                }
+
+                var query = _context.Reviews
+                    .Include(r => r.Product)
+                    .Where(r => r.UserId == userId.Value)
+                    .OrderByDescending(r => r.CreatedAt);
+
+                var totalRecords = await query.CountAsync();
+                var totalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
+
+                var reviews = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(r => new ReviewWithProductDto
+                    {
+                        Id = r.Id,
+                        ProductId = r.ProductId,
+                        ProductName = r.Product.Name,
+                        ProductImageUrl = r.Product.ImageUrl,
+                        UserName = r.UserName,
+                        Rating = r.Rating,
+                        Comment = r.Comment,
+                        Date = r.Date,
+                        IsVerified = r.IsVerified
+                    })
+                    .ToListAsync();
+
+                var response = new PagedResponse<ReviewWithProductDto>
+                {
+                    Data = reviews,
+                    CurrentPage = page,
+                    TotalPages = totalPages,
+                    PageSize = pageSize,
+                    TotalRecords = totalRecords
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "L?i khi l?y danh sách ?ánh giá c?a ng??i dùng {UserId}", userId);
+                return StatusCode(500, ApiResponse<object>.ErrorResult("Có l?i x?y ra khi l?y danh sách ?ánh giá"));
+            }
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult<ApiResponse<ReviewDto>>> UpdateReview(int id, [FromBody] UpdateReviewRequest request, [FromHeader(Name = "Authorization")] string? token)
+        {
+            try
+            {
+                var userId = await GetUserIdFromToken(token);
+                if (userId == null)
+                {
+                    return Unauthorized(ApiResponse<ReviewDto>.ErrorResult("Vui lòng ??ng nh?p"));
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ApiResponse<ReviewDto>.ErrorResult("D? li?u không h?p l?"));
+                }
+
+                var review = await _context.Reviews.FindAsync(id);
+                if (review == null)
+                {
+                    return NotFound(ApiResponse<ReviewDto>.ErrorResult("Không tìm th?y ?ánh giá"));
+                }
+
+                // User can only update their own review
+                if (review.UserId != userId.Value)
+                {
+                    return Forbid();
+                }
+
+                // Update review
+                review.Rating = request.Rating;
+                review.Comment = request.Comment?.Trim();
+                review.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                var reviewDto = new ReviewDto
+                {
+                    Id = review.Id,
+                    UserName = review.UserName,
+                    Rating = review.Rating,
+                    Comment = review.Comment,
+                    Date = review.Date,
+                    IsVerified = review.IsVerified
+                };
+
+                return Ok(ApiResponse<ReviewDto>.SuccessResult(reviewDto, "C?p nh?t ?ánh giá thành công"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "L?i khi c?p nh?t ?ánh giá {ReviewId}", id);
+                return StatusCode(500, ApiResponse<ReviewDto>.ErrorResult("Có l?i x?y ra khi c?p nh?t ?ánh giá"));
+            }
+        }
+
+        private async Task<int?> GetUserIdFromToken(string? token)
+        {
+            if (string.IsNullOrEmpty(token))
+                return null;
+
+            token = token.Replace("Bearer ", "");
+
+            var session = await _context.UserSessions
+                .FirstOrDefaultAsync(s => s.SessionToken == token && s.ExpiresAt > DateTime.UtcNow);
+
+            return session?.UserId;
+        }
+    }
+
+    public class CreateReviewRequest
+    {
+        [Required(ErrorMessage = "ID s?n ph?m là b?t bu?c")]
+        public int ProductId { get; set; }
+
+        [Required(ErrorMessage = "?ánh giá là b?t bu?c")]
+        [Range(1, 5, ErrorMessage = "?ánh giá ph?i t? 1 ??n 5 sao")]
+        public int Rating { get; set; }
+
+        [MaxLength(2000, ErrorMessage = "Bình lu?n không ???c quá 2000 ký t?")]
+        public string? Comment { get; set; }
+    }
+
+    public class UpdateReviewRequest
+    {
+        [Required(ErrorMessage = "?ánh giá là b?t bu?c")]
+        [Range(1, 5, ErrorMessage = "?ánh giá ph?i t? 1 ??n 5 sao")]
+        public int Rating { get; set; }
+
+        [MaxLength(2000, ErrorMessage = "Bình lu?n không ???c quá 2000 ký t?")]
+        public string? Comment { get; set; }
+    }
+
+    public class ReviewWithProductDto : ReviewDto
+    {
+        public int ProductId { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public string? ProductImageUrl { get; set; }
+    }
+}

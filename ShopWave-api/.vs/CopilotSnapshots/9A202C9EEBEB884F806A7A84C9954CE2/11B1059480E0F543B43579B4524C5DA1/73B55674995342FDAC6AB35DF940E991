@@ -1,0 +1,189 @@
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace ShopWave.Models.Requests
+{
+    public class VariantAttributeRequest
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
+    }
+
+    public class ProductVariantRequest
+    {
+        public string? Sku { get; set; }
+        public decimal Price { get; set; }
+        public int Stock { get; set; }
+        public long? ImageId { get; set; }
+        public string? Size { get; set; } // Thêm trường Size cho request
+        public List<VariantAttributeRequest>? Attributes { get; set; }
+    }
+
+    public class CreateProductRequest
+    {
+        [Required]
+        [MaxLength(255)]
+        public string Name { get; set; } = string.Empty;
+
+        [MaxLength(2000)]
+        public string? Description { get; set; }
+
+        [Required]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Giá ph?i l?n h?n 0")]
+        public decimal Price { get; set; }
+
+        [Required]
+        public Guid CategoryId { get; set; }
+
+        [MaxLength(500)]
+        public string? ImageUrl { get; set; }
+
+        [MaxLength(50)]
+        public string? Size { get; set; }
+
+        public string? Attributes { get; set; } // JSON string
+
+        [Range(0, int.MaxValue)]
+        public int StockQuantity { get; set; } = 0;
+
+        // Danh sách MediaId (bigint) ?? liên k?t v?i s?n ph?m, theo th? t? hi?n th?
+        public List<long> MediaIds { get; set; } = new List<long>();
+
+        // Thêm variants
+        public List<ProductVariantRequest>? Variants { get; set; }
+    }
+
+    public class UpdateProductRequest
+    {
+        [Required]
+        [MaxLength(255)]
+        public string Name { get; set; } = string.Empty;
+
+        [MaxLength(2000)]
+        public string? Description { get; set; }
+
+        [Required]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Giá ph?i l?n h?n 0")]
+        public decimal Price { get; set; }
+
+        [Required]
+        public Guid CategoryId { get; set; }
+
+        [MaxLength(500)]
+        public string? ImageUrl { get; set; }
+
+        [MaxLength(50)]
+        public string? Size { get; set; }
+
+        public string? Attributes { get; set; } // JSON string
+
+        [Range(0, int.MaxValue)]
+        public int StockQuantity { get; set; }
+
+        public bool IsActive { get; set; } = true;
+
+        // Thêm variants
+        public List<ProductVariantRequest>? Variants { get; set; }
+    }
+
+    public class CreateCategoryRequest
+    {
+        [Required]
+        [MaxLength(255)]
+        public string Name { get; set; } = string.Empty;
+
+        [MaxLength(1000)]
+        public string? Description { get; set; }
+
+        [MaxLength(500)]
+        public string? ImageUrl { get; set; }
+
+        public Guid? ParentId { get; set; }
+
+        public int SortOrder { get; set; } = 0;
+    }
+
+    public class AddToCartRequest
+    {
+        [Required]
+        public Guid ProductId { get; set; }
+
+        [Required]
+        [Range(1, int.MaxValue, ErrorMessage = "S? l??ng ph?i l?n h?n 0")]
+        public int Quantity { get; set; }
+    }
+
+    public class UpdateCartItemRequest
+    {
+        [Required]
+        [Range(1, int.MaxValue, ErrorMessage = "S? l??ng ph?i l?n h?n 0")]
+        public int Quantity { get; set; }
+    }
+
+    public class CreateOrderRequest
+    {
+        [Required]
+        public string ShippingAddress { get; set; } = string.Empty; // JSON string
+
+        public string? BillingAddress { get; set; } // JSON string
+
+        [Required]
+        [MaxLength(100)]
+        public string PaymentMethod { get; set; } = string.Empty;
+
+        public string? Notes { get; set; }
+    }
+
+    public class AddReviewRequest
+    {
+        [Required]
+        public Guid ProductId { get; set; }
+
+        [Required]
+        [Range(1, 5, ErrorMessage = "?ánh giá ph?i t? 1 ??n 5 sao")]
+        public int Rating { get; set; }
+
+        [MaxLength(2000)]
+        public string? Comment { get; set; }
+    }
+
+    public class UpdateUserProfileRequest
+    {
+        [Required]
+        [MaxLength(255)]
+        public string FullName { get; set; } = string.Empty;
+
+        [Phone]
+        [MaxLength(20)]
+        public string? Phone { get; set; }
+
+        [MaxLength(500)]
+        public string? AvatarUrl { get; set; }
+    }
+
+    public class ChangePasswordRequest
+    {
+        [Required]
+        public string CurrentPassword { get; set; } = string.Empty;
+
+        [Required]
+        [MinLength(6)]
+        public string NewPassword { get; set; } = string.Empty;
+
+        [Required]
+        [Compare("NewPassword")]
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+
+    public class ProductSearchRequest
+    {
+        public string? SearchTerm { get; set; }
+        public Guid? CategoryId { get; set; }
+        public decimal? MinPrice { get; set; }
+        public decimal? MaxPrice { get; set; }
+        public double? MinRating { get; set; }
+        public string SortBy { get; set; } = "name"; // name, price, rating, popularity
+        public string SortDirection { get; set; } = "asc"; // asc, desc
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 12;
+    }
+}

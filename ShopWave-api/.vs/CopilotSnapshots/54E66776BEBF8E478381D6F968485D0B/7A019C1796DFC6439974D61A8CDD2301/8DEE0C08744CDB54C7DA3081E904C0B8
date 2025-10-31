@@ -1,0 +1,58 @@
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using ShopWave.DTOs;
+using ShopWave.Services;
+
+namespace ShopWave.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class MediaController : ControllerBase
+    {
+        private readonly IMediaService _mediaService;
+
+        public MediaController(IMediaService mediaService)
+        {
+            _mediaService = mediaService;
+        }
+
+        [HttpPost("upload")]
+        [ProducesResponseType(typeof(MediaUploadDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> UploadMedia([FromForm] IFormFile file, [FromForm] string? category)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("No file uploaded.");
+            }
+
+            try
+            {
+                var createdMedia = await _mediaService.UploadFileAsync(file, category);
+
+                var result = new MediaUploadDto
+                {
+                    Id = createdMedia.Id,
+                    Url = createdMedia.Url
+                };
+
+                return CreatedAtAction(nameof(GetMediaById), new { id = result.Id }, result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch
+            {
+                return StatusCode(500, "An internal error occurred.");
+            }
+        }
+
+        [HttpGet("{id}")]
+        public IActionResult GetMediaById(long id)
+        {
+            return Ok(new { Message = $"Get media with Id = {id}" });
+        }
+    }
+}

@@ -1,0 +1,375 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ShopWave.Models;
+using ShopWave.Models.DTOs;
+using ShopWave.Models.Responses;
+using System.ComponentModel.DataAnnotations;
+using BCrypt.Net;
+
+namespace ShopWave.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class AuthController : ControllerBase
+    {
+        private readonly ShopWaveDbContext _context;
+        private readonly ILogger<AuthController> _logger;
+
+        public AuthController(ShopWaveDbContext context, ILogger<AuthController> logger)
+        {
+            _context = context;
+            _logger = logger;
+        }
+
+        [HttpPost("register")]
+        public async Task<ActionResult<AuthResponse>> Register([FromBody] RegisterRequest request)
+        {
+            try
+            {
+                // Validation
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new AuthResponse
+                    {
+                        Success = false,
+                        Message = "Dữ liệu không hợp lệ"
+                    });
+                }
+
+                // Check if email already exists
+                if (await _context.Users.AnyAsync(u => u.Email == request.Email))
+                {
+                    return Conflict(new AuthResponse
+                    {
+                        Success = false,
+                        Message = "Email đã được sử dụng"
+                    });
+                }
+
+                // Create new user
+                var user = new User
+                {
+                    Email = request.Email.ToLowerInvariant(),
+                    FullName = request.FullName.Trim(),
+                    Phone = request.Phone?.Trim(),
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                    Role = "Customer",
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+
+                // Create session (refresh token)
+                var refreshToken = Guid.NewGuid().ToString();
+                var session = new UserSession
+                {
+                    UserId = user.Id,
+                    SessionToken = refreshToken,
+                    ExpiresAt = DateTime.UtcNow.AddDays(30), // 30 days for refresh token
+                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    UserAgent = HttpContext.Request.Headers.UserAgent.ToString(),
+                    CreatedAt = DateTime.UtcNow,
+                    LastActivity = DateTime.UtcNow
+                };
+
+                _context.UserSessions.Add(session);
+                await _context.SaveChangesAsync();
+
+                var userDto = new UserDto
+                {
+                    Id = user.Id,
+                    Email = user.Email,
+                    FullName = user.FullName,
+                    Phone = user.Phone,
+                    AvatarUrl = user.AvatarUrl,
+                    Role = user.Role,
+                    IsActive = user.IsActive,
+                    CreatedAt = user.CreatedAt
+                };
+
+                return Ok(new AuthResponse
+                {
+                    Success = true,
+                    Message = "Đăng ký thành công",
+                    Token = refreshToken, // In production, this should be JWT access token
+                    User = userDto,
+                    ExpiresAt = session.ExpiresAt
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi đăng ký người dùng với email {Email}", request.Email);
+                return StatusCode(500, new AuthResponse
+                {
+                    Success = false,
+                    Message = "Có lỗi xảy ra khi đăng ký"
+                });
+            }
+        }
+
+        [HttpPost("login")]
+        public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new AuthResponse
+                    {
+                        Success = false,
+                        Message = "Dữ liệu không hợp lệ"
+                    });
+                }
+
+                var user = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Email == request.Email.ToLowerInvariant() && u.IsActive);
+
+                if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+                {
+                    await Task.Delay(TimeSpan.FromMilliseconds(500)); // Prevent timing attacks
+                    return Unauthorized(new AuthResponse
+                    {
+                        Success = false,
+                        Message = "Email hoặc mật khẩu không đúng"
+                    });
+                }
+
+                // Clean up old sessions for this user (optional - keep only last 5 sessions)
+                var oldSessions = await _context.UserSessions
+                    .Where(s => s.UserId == user.Id)
+                    .OrderByDescending(s => s.CreatedAt)
+                    .Skip(4)
+                    .ToListAsync();
+                
+                if (oldSessions.Any())
+                {
+                    _context.UserSessions.RemoveRange(oldSessions);
+                }
+
+                // Create new session token
+                var sessionToken = Guid.NewGuid().ToString();
+                var session = new UserSession
+                {
+                    UserId = user.Id,
+                    SessionToken = sessionToken,
+                    ExpiresAt = DateTime.UtcNow.AddDays(30), // 30 days
+                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                    UserAgent = HttpContext.Request.Headers.UserAgent.ToString(),
+                    CreatedAt = DateTime.UtcNow,
+                    LastActivity = DateTime.UtcNow
+                };
+
+                _context.UserSessions.Add(session);
+                await _context.SaveChangesAsync();
+
+                var userDto = new UserDto
+                {
+                    Id = user.Id,
+                    Email = user.Email,
+                    FullName = user.FullName,
+                    Phone = user.Phone,
+                    AvatarUrl = user.AvatarUrl,
+                    Role = user.Role,
+                    IsActive = user.IsActive,
+                    CreatedAt = user.CreatedAt
+                };
+
+                return Ok(new AuthResponse
+                {
+                    Success = true,
+                    Message = "Đăng nhập thành công",
+                    Token = sessionToken,
+                    User = userDto,
+                    ExpiresAt = session.ExpiresAt
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi đăng nhập với email {Email}", request.Email);
+                return StatusCode(500, new AuthResponse
+                {
+                    Success = false,
+                    Message = "Có lỗi xảy ra khi đăng nhập"
+                });
+            }
+        }
+
+        [HttpPost("refresh")]
+        public async Task<ActionResult<AuthResponse>> RefreshToken([FromBody] RefreshTokenRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(request.RefreshToken))
+                {
+                    return BadRequest(new AuthResponse
+                    {
+                        Success = false,
+                        Message = "Refresh token là bắt buộc"
+                    });
+                }
+
+                var session = await _context.UserSessions
+                    .Include(s => s.User)
+                    .FirstOrDefaultAsync(s => s.SessionToken == request.RefreshToken && s.ExpiresAt > DateTime.UtcNow);
+
+                if (session == null || !session.User.IsActive)
+                {
+                    return Unauthorized(new AuthResponse
+                    {
+                        Success = false,
+                        Message = "Refresh token không hợp lệ hoặc đã hết hạn"
+                    });
+                }
+
+                // Update session activity
+                session.LastActivity = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+
+                var userDto = new UserDto
+                {
+                    Id = session.User.Id,
+                    Email = session.User.Email,
+                    FullName = session.User.FullName,
+                    Phone = session.User.Phone,
+                    AvatarUrl = session.User.AvatarUrl,
+                    Role = session.User.Role,
+                    IsActive = session.User.IsActive,
+                    CreatedAt = session.User.CreatedAt
+                };
+
+                return Ok(new AuthResponse
+                {
+                    Success = true,
+                    Message = "Làm mới token thành công",
+                    Token = session.SessionToken, // In production, generate new JWT access token
+                    User = userDto,
+                    ExpiresAt = session.ExpiresAt
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi làm mới token");
+                return StatusCode(500, new AuthResponse
+                {
+                    Success = false,
+                    Message = "Có lỗi xảy ra khi làm mới token"
+                });
+            }
+        }
+
+        [HttpPost("logout")]
+        public async Task<ActionResult<ApiResponse<object>>> Logout([FromHeader(Name = "Authorization")] string? token)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(token))
+                {
+                    // Remove "Bearer " prefix if present
+                    token = token.Replace("Bearer ", "");
+                    
+                    var session = await _context.UserSessions
+                        .FirstOrDefaultAsync(s => s.SessionToken == token);
+
+                    if (session != null)
+                    {
+                        _context.UserSessions.Remove(session);
+                        await _context.SaveChangesAsync();
+                    }
+                }
+
+                return Ok(ApiResponse<object>.SuccessResult(null, "Đăng xuất thành công"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi đăng xuất");
+                return StatusCode(500, ApiResponse<object>.ErrorResult("Có lỗi xảy ra khi đăng xuất"));
+            }
+        }
+
+        [HttpGet("me")]
+        public async Task<ActionResult<ApiResponse<UserDto>>> GetCurrentUser([FromHeader(Name = "Authorization")] string? token)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(token))
+                {
+                    return Unauthorized(ApiResponse<UserDto>.ErrorResult("Không có token xác thực"));
+                }
+
+                // Remove "Bearer " prefix if present
+                token = token.Replace("Bearer ", "");
+
+                var session = await _context.UserSessions
+                    .Include(s => s.User)
+                    .FirstOrDefaultAsync(s => s.SessionToken == token && s.ExpiresAt > DateTime.UtcNow);
+
+                if (session == null || !session.User.IsActive)
+                {
+                    return Unauthorized(ApiResponse<UserDto>.ErrorResult("Token không hợp lệ hoặc đã hết hạn"));
+                }
+
+                // Update last activity
+                session.LastActivity = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+
+                var userDto = new UserDto
+                {
+                    Id = session.User.Id,
+                    Email = session.User.Email,
+                    FullName = session.User.FullName,
+                    Phone = session.User.Phone,
+                    AvatarUrl = session.User.AvatarUrl,
+                    Role = session.User.Role,
+                    IsActive = session.User.IsActive,
+                    CreatedAt = session.User.CreatedAt
+                };
+
+                return Ok(ApiResponse<UserDto>.SuccessResult(userDto, "Lấy thông tin người dùng thành công"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi lấy thông tin người dùng hiện tại");
+                return StatusCode(500, ApiResponse<UserDto>.ErrorResult("Có lỗi xảy ra khi lấy thông tin người dùng"));
+            }
+        }
+    }
+
+    public class RegisterRequest
+    {
+        [Required(ErrorMessage = "Email là bắt buộc")]
+        [EmailAddress(ErrorMessage = "Email không hợp lệ")]
+        [MaxLength(255)]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Họ tên là bắt buộc")]
+        [MaxLength(255)]
+        public string FullName { get; set; } = string.Empty;
+
+        [Phone(ErrorMessage = "Số điện thoại không hợp lệ")]
+        [MaxLength(20)]
+        public string? Phone { get; set; }
+
+        [Required(ErrorMessage = "Mật khẩu là bắt buộc")]
+        [MinLength(8, ErrorMessage = "Mật khẩu phải có ít nhất 8 ký tự")]
+        public string Password { get; set; } = string.Empty;
+    }
+
+    public class LoginRequest
+    {
+        [Required(ErrorMessage = "Email là bắt buộc")]
+        [EmailAddress(ErrorMessage = "Email không hợp lệ")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Mật khẩu là bắt buộc")]
+        public string Password { get; set; } = string.Empty;
+    }
+
+    public class RefreshTokenRequest
+    {
+        [Required(ErrorMessage = "Refresh token là bắt buộc")]
+        public string RefreshToken { get; set; } = string.Empty;
+    }
+}

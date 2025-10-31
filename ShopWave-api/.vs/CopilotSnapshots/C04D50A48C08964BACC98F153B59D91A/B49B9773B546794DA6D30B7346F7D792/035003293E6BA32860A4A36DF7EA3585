@@ -1,0 +1,79 @@
+﻿using System.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
+using ShopWave.Models;
+using Microsoft.EntityFrameworkCore;
+using ShopWave.Models.DTOs;
+using ShopWave.Models.Responses;
+
+namespace ShopWave.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class HomeController : ControllerBase
+    {
+        private readonly ShopWaveDbContext _context;
+        private readonly ILogger<HomeController> _logger;
+
+        public HomeController(ShopWaveDbContext context, ILogger<HomeController> logger)
+        {
+            _context = context;
+            _logger = logger;
+        }
+
+        [HttpGet("dashboard")]
+        public async Task<ActionResult<ApiResponse<object>>> GetDashboard()
+        {
+            try
+            {
+                var featuredProducts = await _context.Products
+                    .Where(p => p.IsActive && p.Rating >= 4.0)
+                    .OrderByDescending(p => p.Popularity)
+                    .Take(8)
+                    .ToListAsync();
+
+                var productIds = featuredProducts.Select(p => p.Id).ToList();
+                var variants = await _context.ProductVariants.Where(v => productIds.Contains(v.ProductId)).ToListAsync();
+
+                var featuredDtos = featuredProducts.Select(p => {
+                    var productVariants = variants.Where(v => v.ProductId == p.Id).OrderBy(v => v.Price).ToList();
+                    var price = productVariants.FirstOrDefault()?.Price ?? 0;
+                    var stock = productVariants.Sum(v => v.Stock);
+                    return new ProductDto
+                    {
+                        Id = p.Id,
+                        Name = p.Name,
+                        Description = p.Description,
+                        Price = price,
+                        CategoryName = p.Category != null ? p.Category.Name : string.Empty,
+                        Rating = p.Rating,
+                        ReviewsCount = p.ReviewsCount,
+                        StockQuantity = stock,
+                        IsActive = p.IsActive
+                    };
+                }).ToList();
+
+                var stats = new
+                {
+                    TotalProducts = await _context.Products.CountAsync(),
+                    TotalCategories = await _context.Categories.CountAsync(),
+                    TotalUsers = await _context.Users.CountAsync(),
+                    TotalOrders = await _context.Orders.CountAsync(),
+                    FeaturedProducts = featuredDtos
+                };
+
+                return Ok(ApiResponse<object>.SuccessResult(stats, "Lấy thông tin dashboard thành công"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi lấy thông tin dashboard");
+                return StatusCode(500, ApiResponse<object>.ErrorResult("Có lỗi xảy ra khi lấy thông tin dashboard"));
+            }
+        }
+
+        [HttpGet("health")]
+        public IActionResult HealthCheck()
+        {
+            return Ok(new { status = "healthy", timestamp = DateTime.UtcNow });
+        }
+    }
+}

@@ -1,0 +1,25 @@
+﻿using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace ShopWave.Migrations
+{
+    public partial class AddMediaIdToProduct : Migration
+    {
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.AddColumn<long>(
+                name: "MediaId",
+                table: "Products",
+                type: "bigint",
+                nullable: true);
+        }
+
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropColumn(
+                name: "MediaId",
+                table: "Products");
+        }
+    }
+}

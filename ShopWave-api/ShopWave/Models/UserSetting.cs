@@ -1,0 +1,29 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace ShopWave.Models
+{
+    public class UserSetting
+    {
+        [Key]
+        public Guid Id { get; set; } = Guid.NewGuid();
+
+        [Required]
+        public Guid UserId { get; set; }
+
+        [Required]
+        [MaxLength(100)]
+        public string SettingKey { get; set; } = string.Empty;
+
+        [MaxLength(1000)]
+        public string? SettingValue { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        // Navigation properties
+        [ForeignKey("UserId")]
+        public virtual User User { get; set; } = null!;
+    }
+}

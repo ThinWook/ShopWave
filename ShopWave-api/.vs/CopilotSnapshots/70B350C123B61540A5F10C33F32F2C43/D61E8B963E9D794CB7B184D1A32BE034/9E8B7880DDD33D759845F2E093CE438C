@@ -1,0 +1,9 @@
+﻿using ShopWave.Models.DTOs;
+
+namespace ShopWave.Services
+{
+    public interface IRecommendationService
+    {
+        Task<RecommendationsResponse> GetRecommendationsAsync(Guid? userId, Guid? productId, int k, CancellationToken ct = default);
+    }
+}

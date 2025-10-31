@@ -1,0 +1,25 @@
+﻿public class ProductCreateRequest
+{
+    public string Name { get; set; }
+    public string Description { get; set; }
+    public Guid CategoryId { get; set; }
+    public long? MainImageId { get; set; }
+    public List<GalleryMediaDto> GalleryMedia { get; set; }
+    public List<ProductVariantDto> Variants { get; set; }
+}
+
+public class GalleryMediaDto
+{
+    public long MediaId { get; set; }
+    public int SortOrder { get; set; }
+}
+
+public class ProductVariantDto
+{
+    public string Sku { get; set; }
+    public decimal Price { get; set; }
+    public int Stock { get; set; }
+    public long? ImageId { get; set; }
+    public string? Size { get; set; }
+    public string? Color { get; set; }
+}

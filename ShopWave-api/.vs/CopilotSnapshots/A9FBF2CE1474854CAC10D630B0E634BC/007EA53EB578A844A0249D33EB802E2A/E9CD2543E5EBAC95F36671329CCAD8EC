@@ -1,0 +1,98 @@
+﻿using Microsoft.EntityFrameworkCore;
+using ShopWave.Models;
+
+namespace ShopWave.Extensions
+{
+    public static class DatabaseExtensions
+    {
+        public static void SeedDatabase(this IApplicationBuilder app)
+        {
+            using var scope = app.ApplicationServices.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ShopWaveDbContext>();
+
+            // Ensure database is created
+            context.Database.EnsureCreated();
+
+            // Seed categories if none exist
+            if (!context.Categories.Any())
+            {
+                var categories = new List<Category>
+                {
+                    new Category { Name = "?i?n t?", Description = "Thi?t b? ?i?n t?", IsActive = true, SortOrder = 1 },
+                    new Category { Name = "Th?i trang", Description = "Qu?n áo và ph? ki?n", IsActive = true, SortOrder = 2 },
+                    new Category { Name = "Gia d?ng", Description = "?? gia d?ng và n?i th?t", IsActive = true, SortOrder = 3 },
+                    new Category { Name = "Sách", Description = "Sách và v?n phòng ph?m", IsActive = true, SortOrder = 4 },
+                    new Category { Name = "Th? thao", Description = "?? th? thao và outdoor", IsActive = true, SortOrder = 5 }
+                };
+
+                context.Categories.AddRange(categories);
+                context.SaveChanges();
+            }
+
+            // Seed products if none exist
+            if (!context.Products.Any())
+            {
+                var categories = context.Categories.ToList();
+                var products = new List<Product>
+                {
+                    new Product 
+                    { 
+                        Name = "iPhone 15 Pro Max", 
+                        Description = "?i?n tho?i thông minh cao c?p t? Apple",
+                        Price = 29990000,
+                        CategoryId = categories.First(c => c.Name == "?i?n t?").Id,
+                        StockQuantity = 50,
+                        Rating = 4.8,
+                        ReviewsCount = 150,
+                        Popularity = 100,
+                        IsActive = true
+                    },
+                    new Product 
+                    { 
+                        Name = "Samsung Galaxy S24 Ultra", 
+                        Description = "?i?n tho?i Android flagship t? Samsung",
+                        Price = 26990000,
+                        CategoryId = categories.First(c => c.Name == "?i?n t?").Id,
+                        StockQuantity = 30,
+                        Rating = 4.7,
+                        ReviewsCount = 98,
+                        Popularity = 85,
+                        IsActive = true
+                    },
+                    new Product 
+                    { 
+                        Name = "Áo thun nam cao c?p", 
+                        Description = "Áo thun cotton 100% ch?t l??ng cao",
+                        Price = 299000,
+                        CategoryId = categories.First(c => c.Name == "Th?i trang").Id,
+                        StockQuantity = 100,
+                        Rating = 4.5,
+                        ReviewsCount = 45,
+                        Popularity = 60,
+                        IsActive = true
+                    }
+                };
+
+                context.Products.AddRange(products);
+                context.SaveChanges();
+            }
+
+            // Seed admin user if none exist
+            if (!context.Users.Any())
+            {
+                var adminUser = new User
+                {
+                    Email = "admin@shopwave.com",
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"), // In production, use proper password hashing
+                    FullName = "Qu?n tr? viên",
+                    Phone = "0123456789",
+                    Role = "Admin",
+                    IsActive = true
+                };
+
+                context.Users.Add(adminUser);
+                context.SaveChanges();
+            }
+        }
+    }
+}

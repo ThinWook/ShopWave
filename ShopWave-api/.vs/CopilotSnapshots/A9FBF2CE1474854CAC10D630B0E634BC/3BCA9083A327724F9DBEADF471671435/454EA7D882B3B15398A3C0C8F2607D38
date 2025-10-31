@@ -1,0 +1,345 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ShopWave.Models;
+using ShopWave.Models.DTOs;
+using ShopWave.Models.Responses;
+using System.ComponentModel.DataAnnotations;
+using BCrypt.Net;
+
+namespace ShopWave.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class UsersController : ControllerBase
+    {
+        private readonly ShopWaveDbContext _context;
+        private readonly ILogger<UsersController> _logger;
+
+        public UsersController(ShopWaveDbContext context, ILogger<UsersController> logger)
+        {
+            _context = context;
+            _logger = logger;
+        }
+
+        [HttpGet("me")]
+        public async Task<ActionResult<ApiResponse<UserProfileDto>>> GetMyProfile([FromHeader(Name = "Authorization")] string? token)
+        {
+            int? userId = null;
+            try
+            {
+                userId = await GetUserIdFromToken(token);
+                if (userId == null)
+                {
+                    return Unauthorized(ApiResponse<UserProfileDto>.ErrorResult("Vui lòng ??ng nh?p"));
+                }
+
+                var user = await _context.Users
+                    .Where(u => u.Id == userId.Value && u.IsActive)
+                    .Select(u => new UserProfileDto
+                    {
+                        Id = u.Id,
+                        Email = u.Email,
+                        FullName = u.FullName,
+                        Phone = u.Phone,
+                        AvatarUrl = u.AvatarUrl,
+                        Role = u.Role,
+                        CreatedAt = u.CreatedAt,
+                        TotalOrders = u.Orders.Count(),
+                        TotalWishlistItems = u.WishlistItems.Count()
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (user == null)
+                {
+                    return NotFound(ApiResponse<UserProfileDto>.ErrorResult("Không tìm th?y ng??i dùng"));
+                }
+
+                return Ok(ApiResponse<UserProfileDto>.SuccessResult(user, "L?y thông tin profile thành công"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "L?i khi l?y profile ng??i dùng {UserId}", userId);
+                return StatusCode(500, ApiResponse<UserProfileDto>.ErrorResult("Có l?i x?y ra khi l?y thông tin profile"));
+            }
+        }
+
+        [HttpPut("me")]
+        public async Task<ActionResult<ApiResponse<UserDto>>> UpdateMyProfile([FromBody] UpdateProfileRequest request, [FromHeader(Name = "Authorization")] string? token)
+        {
+            int? userId = null;
+            try
+            {
+                userId = await GetUserIdFromToken(token);
+                if (userId == null)
+                {
+                    return Unauthorized(ApiResponse<UserDto>.ErrorResult("Vui lòng ??ng nh?p"));
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ApiResponse<UserDto>.ErrorResult("D? li?u không h?p l?"));
+                }
+
+                var user = await _context.Users.FindAsync(userId.Value);
+                if (user == null || !user.IsActive)
+                {
+                    return NotFound(ApiResponse<UserDto>.ErrorResult("Không tìm th?y ng??i dùng"));
+                }
+
+                // Update user information
+                user.FullName = request.FullName.Trim();
+                user.Phone = request.Phone?.Trim();
+                user.AvatarUrl = request.AvatarUrl?.Trim();
+                user.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                var userDto = new UserDto
+                {
+                    Id = user.Id,
+                    Email = user.Email,
+                    FullName = user.FullName,
+                    Phone = user.Phone,
+                    AvatarUrl = user.AvatarUrl,
+                    Role = user.Role,
+                    IsActive = user.IsActive,
+                    CreatedAt = user.CreatedAt
+                };
+
+                return Ok(ApiResponse<UserDto>.SuccessResult(userDto, "C?p nh?t profile thành công"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "L?i khi c?p nh?t profile ng??i dùng {UserId}", userId);
+                return StatusCode(500, ApiResponse<UserDto>.ErrorResult("Có l?i x?y ra khi c?p nh?t profile"));
+            }
+        }
+
+        [HttpPut("me/password")]
+        public async Task<ActionResult<ApiResponse<object>>> ChangePassword([FromBody] ChangePasswordRequest request, [FromHeader(Name = "Authorization")] string? token)
+        {
+            int? userId = null;
+            try
+            {
+                userId = await GetUserIdFromToken(token);
+                if (userId == null)
+                {
+                    return Unauthorized(ApiResponse<object>.ErrorResult("Vui lòng ??ng nh?p"));
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ApiResponse<object>.ErrorResult("D? li?u không h?p l?"));
+                }
+
+                var user = await _context.Users.FindAsync(userId.Value);
+                if (user == null || !user.IsActive)
+                {
+                    return NotFound(ApiResponse<object>.ErrorResult("Không tìm th?y ng??i dùng"));
+                }
+
+                // Verify current password
+                if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash))
+                {
+                    return BadRequest(ApiResponse<object>.ErrorResult("M?t kh?u hi?n t?i không ?úng"));
+                }
+
+                // Update password
+                user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+                user.UpdatedAt = DateTime.UtcNow;
+
+                // Optionally: Invalidate all user sessions except current one
+                var currentSession = await GetCurrentSession(token);
+                var currentSessionId = currentSession?.Id ?? 0;
+                var otherSessions = await _context.UserSessions
+                    .Where(s => s.UserId == userId.Value && s.Id != currentSessionId)
+                    .ToListAsync();
+
+                if (otherSessions.Any())
+                {
+                    _context.UserSessions.RemoveRange(otherSessions);
+                }
+
+                await _context.SaveChangesAsync();
+
+                return Ok(ApiResponse<object>.SuccessResult(null, "??i m?t kh?u thành công"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "L?i khi ??i m?t kh?u ng??i dùng {UserId}", userId);
+                return StatusCode(500, ApiResponse<object>.ErrorResult("Có l?i x?y ra khi ??i m?t kh?u"));
+            }
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<ApiResponse<UserDto>>> GetUserById(int id, [FromHeader(Name = "Authorization")] string? token)
+        {
+            try
+            {
+                var currentUserId = await GetUserIdFromToken(token);
+                var currentUser = currentUserId != null ? await _context.Users.FindAsync(currentUserId.Value) : null;
+                
+                // Only admin can view other users' profiles
+                if (currentUser == null || (currentUser.Role != "Admin" && currentUserId != id))
+                {
+                    return Forbid();
+                }
+
+                var user = await _context.Users
+                    .Where(u => u.Id == id && u.IsActive)
+                    .Select(u => new UserDto
+                    {
+                        Id = u.Id,
+                        Email = u.Email,
+                        FullName = u.FullName,
+                        Phone = u.Phone,
+                        AvatarUrl = u.AvatarUrl,
+                        Role = u.Role,
+                        IsActive = u.IsActive,
+                        CreatedAt = u.CreatedAt
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (user == null)
+                {
+                    return NotFound(ApiResponse<UserDto>.ErrorResult("Không tìm th?y ng??i dùng"));
+                }
+
+                return Ok(ApiResponse<UserDto>.SuccessResult(user, "L?y thông tin ng??i dùng thành công"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "L?i khi l?y thông tin ng??i dùng {UserId}", id);
+                return StatusCode(500, ApiResponse<UserDto>.ErrorResult("Có l?i x?y ra khi l?y thông tin ng??i dùng"));
+            }
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<PagedResponse<UserDto>>> GetUsers(
+            [FromQuery] int page = 1, 
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? search = null,
+            [FromQuery] string? role = null,
+            [FromHeader(Name = "Authorization")] string? token = null)
+        {
+            try
+            {
+                var currentUserId = await GetUserIdFromToken(token);
+                var currentUser = currentUserId != null ? await _context.Users.FindAsync(currentUserId.Value) : null;
+                
+                // Only admin can list users
+                if (currentUser?.Role != "Admin")
+                {
+                    return Forbid();
+                }
+
+                var query = _context.Users.Where(u => u.IsActive);
+
+                // Apply filters
+                if (!string.IsNullOrEmpty(search))
+                {
+                    query = query.Where(u => u.FullName.Contains(search) || u.Email.Contains(search));
+                }
+
+                if (!string.IsNullOrEmpty(role))
+                {
+                    query = query.Where(u => u.Role == role);
+                }
+
+                var totalRecords = await query.CountAsync();
+                var totalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
+
+                var users = await query
+                    .OrderByDescending(u => u.CreatedAt)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(u => new UserDto
+                    {
+                        Id = u.Id,
+                        Email = u.Email,
+                        FullName = u.FullName,
+                        Phone = u.Phone,
+                        AvatarUrl = u.AvatarUrl,
+                        Role = u.Role,
+                        IsActive = u.IsActive,
+                        CreatedAt = u.CreatedAt
+                    })
+                    .ToListAsync();
+
+                var response = new PagedResponse<UserDto>
+                {
+                    Data = users,
+                    CurrentPage = page,
+                    TotalPages = totalPages,
+                    PageSize = pageSize,
+                    TotalRecords = totalRecords
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "L?i khi l?y danh sách ng??i dùng");
+                return StatusCode(500, ApiResponse<object>.ErrorResult("Có l?i x?y ra khi l?y danh sách ng??i dùng"));
+            }
+        }
+
+        private async Task<int?> GetUserIdFromToken(string? token)
+        {
+            if (string.IsNullOrEmpty(token))
+                return null;
+
+            token = token.Replace("Bearer ", "");
+
+            var session = await _context.UserSessions
+                .FirstOrDefaultAsync(s => s.SessionToken == token && s.ExpiresAt > DateTime.UtcNow);
+
+            return session?.UserId;
+        }
+
+        private async Task<UserSession?> GetCurrentSession(string? token)
+        {
+            if (string.IsNullOrEmpty(token))
+                return null;
+
+            token = token.Replace("Bearer ", "");
+
+            return await _context.UserSessions
+                .FirstOrDefaultAsync(s => s.SessionToken == token && s.ExpiresAt > DateTime.UtcNow);
+        }
+    }
+
+    public class UpdateProfileRequest
+    {
+        [Required(ErrorMessage = "H? tên là b?t bu?c")]
+        [MaxLength(255)]
+        public string FullName { get; set; } = string.Empty;
+
+        [Phone(ErrorMessage = "S? ?i?n tho?i không h?p l?")]
+        [MaxLength(20)]
+        public string? Phone { get; set; }
+
+        [MaxLength(500)]
+        public string? AvatarUrl { get; set; }
+    }
+
+    public class ChangePasswordRequest
+    {
+        [Required(ErrorMessage = "M?t kh?u hi?n t?i là b?t bu?c")]
+        public string CurrentPassword { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "M?t kh?u m?i là b?t bu?c")]
+        [MinLength(8, ErrorMessage = "M?t kh?u ph?i có ít nh?t 8 ký t?")]
+        public string NewPassword { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Xác nh?n m?t kh?u là b?t bu?c")]
+        [Compare("NewPassword", ErrorMessage = "M?t kh?u xác nh?n không kh?p")]
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+
+    public class UserProfileDto : UserDto
+    {
+        public int TotalOrders { get; set; }
+        public int TotalWishlistItems { get; set; }
+    }
+}
