@@ -20,25 +20,20 @@ export function ProductFiltersBar() {
     setFilters({ priceRange: value });
   };
 
-  const handleRatingChange = (value: string) => {
-    const v = Number(value);
-    setFilters({ rating: isNaN(v) || v === 0 ? null : v });
-  };
+  // Rating filter removed
 
   const clearFilters = () => {
     setFilters({
       category: null,
       priceRange: [minPossiblePrice, maxPossiblePrice],
-      rating: null,
       searchQuery: filters.searchQuery, // keep search query
     });
   };
 
   const hasActiveFilters =
-    !!filters.category ||
-    filters.priceRange[0] !== minPossiblePrice ||
-    filters.priceRange[1] !== maxPossiblePrice ||
-    !!filters.rating;
+  !!filters.category ||
+  filters.priceRange[0] !== minPossiblePrice ||
+  filters.priceRange[1] !== maxPossiblePrice;
 
   return (
     <div className="w-full border rounded-lg p-3 md:p-4 bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60">
@@ -65,21 +60,7 @@ export function ProductFiltersBar() {
           </Select>
         </div>
 
-        {/* Rating */}
-        <div className="min-w-[140px]">
-          <Select value={String(filters.rating || 0)} onValueChange={handleRatingChange}>
-            <SelectTrigger aria-label="Rating">
-              <SelectValue placeholder="Rating" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="0">Any rating</SelectItem>
-              <SelectItem value="4">4★ & up</SelectItem>
-              <SelectItem value="3">3★ & up</SelectItem>
-              <SelectItem value="2">2★ & up</SelectItem>
-              <SelectItem value="1">1★ & up</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {/* Rating filter removed */}
 
         {/* Price Range */}
         <div className="flex items-center gap-2 grow basis-full sm:basis-auto sm:grow-0 sm:min-w-[260px]">

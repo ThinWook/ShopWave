@@ -2,7 +2,8 @@
 "use client";
 
 import type { ReactNode } from 'react';
-import { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
+import { createContext, useContext, useReducer, useEffect, useCallback, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 import { api, UnauthorizedError, getAuthToken } from '@/lib/api';
 import { formatApiError, humanizeFieldErrors } from '@/lib/error-format';
 import type { FECartItem as CartItem, FEProduct as Product } from '@/lib/api';
@@ -51,6 +52,17 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(cartReducer, initialState);
+  // Prevent race conditions between initial load and user actions (add/update/remove)
+  // by tracking the latest async operation. Older responses will be ignored.
+  const latestOpIdRef = useRef(0);
+
+  const beginOp = () => {
+    latestOpIdRef.current += 1;
+    const opId = latestOpIdRef.current;
+    dispatch({ type: 'SET_SYNCING', value: true });
+    dispatch({ type: 'SET_ERROR', message: null });
+    return opId;
+  };
 
   const loadRemote = useCallback(async () => {
     // If not logged in, keep cart empty without calling backend
@@ -58,13 +70,15 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       dispatch({ type: 'SET_CART', items: [] });
       return;
     }
-    dispatch({ type: 'SET_SYNCING', value: true });
-    dispatch({ type: 'SET_ERROR', message: null });
+    const opId = beginOp();
     try {
       const res = await api.cart.get();
+      // Ignore if a newer operation has started since this one began
+      if (opId !== latestOpIdRef.current) return;
       dispatch({ type: 'SET_CART', items: res.items });
       localStorage.setItem('shopwave-cart', JSON.stringify(res.items));
     } catch (e: any) {
+      if (opId !== latestOpIdRef.current) return;
       if (e instanceof UnauthorizedError) {
         // Do not treat as hard error; just keep empty cart until login
         dispatch({ type: 'SET_ERROR', message: null });
@@ -78,13 +92,19 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       }
       dispatch({ type: 'SET_ERROR', message: humanizeFieldErrors(fe.fieldErrors) || fe.message || 'Failed to load cart' });
     } finally {
-      dispatch({ type: 'SET_SYNCING', value: false });
+      if (opId === latestOpIdRef.current) {
+        dispatch({ type: 'SET_SYNCING', value: false });
+      }
     }
   }, []);
 
+  // Avoid loading cart on product detail pages to reduce unnecessary calls
+  const pathname = usePathname();
   useEffect(() => {
-    loadRemote();
-  }, [loadRemote]);
+    if (!pathname?.startsWith('/product/')) {
+      loadRemote();
+    }
+  }, [pathname, loadRemote]);
 
   useEffect(() => {
     if (state.items.length > 0) {
@@ -95,16 +115,18 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   }, [state.items]);
 
   const syncWrapper = async <T,>(fn: () => Promise<T>) => {
-    dispatch({ type: 'SET_SYNCING', value: true });
-    dispatch({ type: 'SET_ERROR', message: null });
+    const opId = beginOp();
     try {
       const result: any = await fn();
       if (result?.items) {
-        dispatch({ type: 'SET_CART', items: result.items });
-        localStorage.setItem('shopwave-cart', JSON.stringify(result.items));
+        if (opId === latestOpIdRef.current) {
+          dispatch({ type: 'SET_CART', items: result.items });
+          localStorage.setItem('shopwave-cart', JSON.stringify(result.items));
+        }
       }
       return result;
     } catch (e: any) {
+      if (opId !== latestOpIdRef.current) return;
       if (e instanceof UnauthorizedError) {
         // user not logged in - silent
         return;
@@ -113,7 +135,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       dispatch({ type: 'SET_ERROR', message: humanizeFieldErrors(fe.fieldErrors) || fe.message || 'Cart action failed' });
       throw e;
     } finally {
-      dispatch({ type: 'SET_SYNCING', value: false });
+      if (opId === latestOpIdRef.current) {
+        dispatch({ type: 'SET_SYNCING', value: false });
+      }
     }
   };
 

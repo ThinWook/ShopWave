@@ -6,7 +6,6 @@ import dynamic from 'next/dynamic';
 import { ShoppingBag, Heart, User, Menu, Mountain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
-import { useWishlist } from '@/contexts/WishlistContext';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useState } from 'react';
@@ -17,7 +16,6 @@ const ProductSearch = dynamic(() => import('@/components/products/ProductSearch'
 
 export default function Header() {
   const { getItemCount } = useCart();
-  const { state: wishlistState } = useWishlist();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const navLinks = [
@@ -54,16 +52,7 @@ export default function Header() {
 
 
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" asChild className="relative hover:bg-accent/10 transition-colors">
-            <Link href="/wishlist" aria-label="View Wishlist">
-              <Heart className="h-5 w-5" />
-              {wishlistState.items.length > 0 && (
-                <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-xs">
-                  {wishlistState.items.length}
-                </Badge>
-              )}
-            </Link>
-          </Button>
+          {/* Wishlist removed from header */}
           <Button variant="ghost" size="icon" asChild className="relative hover:bg-accent/10 transition-colors">
             <Link href="/cart" aria-label="View Cart">
               <ShoppingBag className="h-5 w-5" />

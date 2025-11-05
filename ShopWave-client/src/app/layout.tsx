@@ -4,6 +4,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { AppProviders } from '@/components/layout/AppProviders';
 import ConditionalLayout from '@/components/layout/ConditionalLayout';
+import FancyboxInit from '@/components/FancyboxInit.client';
 
 export const metadata: Metadata = {
   title: 'ShopWave - Your Ultimate Shopping Destination',
@@ -25,12 +26,19 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="" suppressHydrationWarning>
+      <head>
+        {/* Fancybox CDN (quick integration) */}
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.css" />
+        <script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui/dist/fancybox.umd.js"></script>
+      </head>
       <body className="antialiased flex flex-col min-h-screen">
         <AppProviders>
           <ConditionalLayout>
             {children}
           </ConditionalLayout>
         </AppProviders>
+        {/* client init to bind Fancybox after script loads */}
+        <FancyboxInit />
       </body>
     </html>
   );

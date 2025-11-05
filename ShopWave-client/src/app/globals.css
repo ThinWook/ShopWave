@@ -337,4 +337,60 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Product details tabs (nav-tabs) */
+.nav-tabs [role="tablist"] {
+  position: relative;
+  /* smooth horizontal scroll and hide default scrollbars */
+  -ms-overflow-style: none;
+  /* IE/Edge */
+  scrollbar-width: none;
+  /* Firefox */
+  scroll-snap-type: x proximity;
+  /* fade edges when overflowing */
+  -webkit-mask-image: linear-gradient(to right, transparent 0, black 16px, black calc(100% - 16px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, black 16px, black calc(100% - 16px), transparent 100%);
+}
+
+.nav-tabs [role="tablist"]::-webkit-scrollbar {
+  display: none;
+}
+
+.nav-tabs [role="tab"] {
+  position: relative;
+  scroll-snap-align: start;
+}
+
+/* Active tab underline indicator */
+.nav-tabs [role="tab"][data-state="active"]::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: -6px;
+  /* visually sits just below the tab button */
+  height: 2px;
+  background: hsl(var(--ring));
+  border-radius: 999px;
+}
+
+/* Edge fade overlays (match bg-muted) */
+.nav-tabs [role="tablist"]::before,
+.nav-tabs [role="tablist"]::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 16px;
+  pointer-events: none;
+}
+
+.nav-tabs [role="tablist"]::before {
+  left: 0;
+  background: linear-gradient(to right, hsl(var(--muted)) 0%, rgba(0, 0, 0, 0) 100%);
+}
+
+.nav-tabs [role="tablist"]::after {
+  right: 0;
+  background: linear-gradient(to left, hsl(var(--muted)) 0%, rgba(0, 0, 0, 0) 100%);
+}
 

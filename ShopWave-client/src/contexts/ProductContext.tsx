@@ -7,11 +7,11 @@ import { formatApiError, humanizeFieldErrors } from '@/lib/error-format';
 import type { FEProduct as Product } from '@/lib/api';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 
 interface ProductFilters {
   category: string | null;
   priceRange: [number, number];
-  rating: number | null;
   searchQuery: string;
 }
 
@@ -35,7 +35,6 @@ interface ProductContextState {
 const initialFilters: ProductFilters = {
   category: null,
   priceRange: [0, 1000], // Default wide range
-  rating: null,
   searchQuery: '',
 };
 
@@ -115,9 +114,16 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  // Only preload list on non-detail pages to avoid extra traffic on product detail
+  const pathname = usePathname();
   useEffect(() => {
-    loadProducts();
-  }, [loadProducts]);
+    // Avoid preloading the product list on product detail and cart pages
+    const onProductDetail = pathname?.startsWith('/product/');
+    const onCartPage = pathname?.startsWith('/cart');
+    if (!onProductDetail && !onCartPage) {
+      loadProducts();
+    }
+  }, [pathname, loadProducts]);
 
   useEffect(() => {
     if (allProducts.length === 0) return;
@@ -173,10 +179,7 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
     // Apply price range filter
     products = products.filter(p => p.price >= filters.priceRange[0] && p.price <= filters.priceRange[1]);
 
-    // Apply rating filter
-    if (filters.rating) {
-      products = products.filter(p => p.rating >= filters.rating!);
-    }
+    // Rating filter removed
 
     // Apply sorting
     switch (sortOption) {
@@ -189,9 +192,7 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
       case 'popularity':
         products.sort((a, b) => b.popularity - a.popularity);
         break;
-      case 'rating':
-        products.sort((a, b) => b.rating - a.rating);
-        break;
+      // 'rating' sort removed
     }
 
     setFilteredProducts(products);

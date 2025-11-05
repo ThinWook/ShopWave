@@ -20,7 +20,7 @@ export function CartItemCard({ item }: CartItemCardProps) {
 
   const handleQuantityChange = (newQuantity: number) => {
     const quantity = Math.max(1, newQuantity); // Ensure quantity is at least 1
-    updateQuantity(item.id, quantity);
+    updateQuantity(item.cartItemId, quantity);
   };
 
   return (
@@ -62,7 +62,7 @@ export function CartItemCard({ item }: CartItemCardProps) {
         <p className="text-md font-semibold">
           Total: ${(item.price * item.quantity).toFixed(2)}
         </p>
-        <Button variant="ghost" size="sm" onClick={() => removeItem(item.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
+        <Button variant="ghost" size="sm" onClick={() => removeItem(item.cartItemId)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
           <Trash2 className="mr-1 h-4 w-4" /> Remove
         </Button>
       </div>

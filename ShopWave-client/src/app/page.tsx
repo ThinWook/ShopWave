@@ -4,6 +4,8 @@
 import dynamic from 'next/dynamic';
 import { useProducts } from '@/contexts/ProductContext';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ProductFiltersBar } from '@/components/products/ProductFiltersBar';
+import { ProductSort } from '@/components/products/ProductSort';
 
 // Lazy-load heavier client components to cut initial bundle size
 const ProductGrid = dynamic(() => import('@/components/products/ProductGrid').then(m => m.ProductGrid), {
@@ -26,35 +28,7 @@ const ProductGrid = dynamic(() => import('@/components/products/ProductGrid').th
   ),
 });
 
-const ProductSuggestions = dynamic(() => import('@/components/products/ProductSuggestions').then(m => m.ProductSuggestions), {
-  loading: () => (
-    <div className="mt-12">
-      <Skeleton className="h-8 w-48 mb-4" />
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="flex flex-col h-full overflow-hidden rounded-lg shadow-lg">
-            <div className="relative aspect-square">
-              <Skeleton className="w-full h-full" />
-            </div>
-            <div className="p-4">
-              <Skeleton className="h-6 w-3/4 mb-2" />
-              <Skeleton className="h-4 w-full mb-1" />
-              <Skeleton className="h-4 w-5/6" />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  ),
-});
-
-const ProductFiltersBar = dynamic(() => import('@/components/products/ProductFiltersBar').then(m => m.ProductFiltersBar), {
-  loading: () => <div className="w-full"><Skeleton className="h-10 w-full" /></div>,
-});
-
-const ProductSort = dynamic(() => import('@/components/products/ProductSort').then(m => m.ProductSort), {
-  loading: () => <Skeleton className="h-10 w-40" />,
-});
+// ProductSuggestions removed from scope
 
 const HomeBanner = dynamic(() => import('@/components/common/HomeBanner'), {
   loading: () => <Skeleton className="w-full h-[220px] sm:h-[300px] md:h-[700px] rounded-xl" />,
@@ -75,9 +49,7 @@ export default function HomePage() {
           <ProductSort />
         </div>
         <ProductGrid products={filteredProducts} />
-        <div className="mt-12">
-          <ProductSuggestions title="You Might Also Like" context="homepage" />
-        </div>
+        {/* Product suggestions section removed */}
       </section>
     </div>
   );

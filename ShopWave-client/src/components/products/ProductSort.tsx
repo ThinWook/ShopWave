@@ -11,7 +11,6 @@ export function ProductSort() {
 
   const sortOptions: { value: SortOption; label: string }[] = [
     { value: 'popularity', label: 'Popularity' },
-    { value: 'rating', label: 'Average Rating' },
     { value: 'price_asc', label: 'Price: Low to High' },
     { value: 'price_desc', label: 'Price: High to Low' },
   ];

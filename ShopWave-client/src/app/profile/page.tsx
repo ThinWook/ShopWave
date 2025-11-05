@@ -176,15 +176,7 @@ export default function ProfilePage() {
                   </div>
                 </Button>
               </Link>
-              <Link href="/wishlist" className="block">
-                <Button variant="outline" className="w-full justify-start py-6 text-left">
-                  <Heart className="mr-3 h-5 w-5 text-primary" />
-                  <div>
-                    <p className="font-semibold">Danh sách yêu thích</p>
-                    <p className="text-xs text-muted-foreground">Quản lý sản phẩm đã lưu.</p>
-                  </div>
-                </Button>
-              </Link>
+              {/* Wishlist section removed */}
               <Link href="/settings" className="block">
                 <Button variant="outline" className="w-full justify-start py-6 text-left">
                   <Settings className="mr-3 h-5 w-5 text-primary" />

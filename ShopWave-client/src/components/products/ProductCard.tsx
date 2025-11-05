@@ -4,17 +4,13 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Heart, ShoppingCart } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Product } from '@/lib/types';
 import { useCart } from '@/contexts/CartContext';
-import { useWishlist } from '@/contexts/WishlistContext';
-// import { StarRating } from './StarRating';
-import { RatingBadge } from './RatingBadge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from "@/hooks/use-toast";
-import { cn } from '@/lib/utils';
 import { resolveMediaUrl } from '@/lib/media';
 import { formatPrice } from '@/lib/format';
 import { getAuthToken, api } from '@/lib/api';
@@ -26,11 +22,7 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const router = useRouter();
   const { addItem: addToCart } = useCart();
-  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const { toast } = useToast();
-
-  const isProductInWishlist = isInWishlist(product.id);
-
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent link navigation if card is wrapped in Link
     e.stopPropagation();
@@ -45,37 +37,10 @@ export function ProductCard({ product }: ProductCardProps) {
     });
   };
 
-  const handleToggleWishlist = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!getAuthToken()) {
-      router.replace(`/signin?from=${encodeURIComponent(`/product/${product.id}`)}`);
-      return;
-    }
-    if (isProductInWishlist) {
-      removeFromWishlist(product.id);
-      toast({
-        title: "Removed from Wishlist",
-        description: `${product.name} has been removed from your wishlist.`,
-      });
-    } else {
-      addToWishlist(product);
-      toast({
-        title: "Added to Wishlist",
-        description: `${product.name} has been added to your wishlist.`,
-      });
-    }
-  };
 
   return (
     <Card className="flex flex-col h-full overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-      <Link href={getAuthToken() ? `/product/${product.id}` : `/signin?from=${encodeURIComponent(`/product/${product.id}`)}`} className="block"
-        onClick={() => {
-          try {
-            void api.recommendationsTracking.click({ userId: null, productIdClicked: product.id, recommendationId: undefined, source: 'product_card' });
-          } catch { /* ignore */ }
-        }}
-      >
+      <Link href={getAuthToken() ? `/product/${product.id}` : `/signin?from=${encodeURIComponent(`/product/${product.id}`)}`} className="block">
         <CardHeader className="p-0 relative aspect-square overflow-hidden rounded-lg">
           <Image
             src={resolveMediaUrl(product.imageUrl)}
@@ -90,17 +55,12 @@ export function ProductCard({ product }: ProductCardProps) {
         </CardHeader>
       </Link>
       <CardContent className="p-4 flex-grow">
-        <Link href={`/product/${product.id}`} className="block" onClick={() => {
-            try {
-              void api.recommendationsTracking.click({ userId: null, productIdClicked: product.id, recommendationId: undefined, source: 'product_card' });
-            } catch { /* ignore */ }
-          }}>
+        <Link href={`/product/${product.id}`} className="block">
           <CardTitle className="text-lg font-semibold mb-1 hover:text-primary transition-colors">{product.name}</CardTitle>
         </Link>
         <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{product.description}</p>
-        <div className="flex items-center justify-between mb-2 min-h-[2.25rem]">
+        <div className="flex items-center mb-2 min-h-[2.25rem]">
           <p className="text-lg font-semibold text-primary leading-snug" aria-label={`Giá ${formatPrice(product.price)}`}>{formatPrice(product.price)}</p>
-          <RatingBadge rating={product.rating} />
         </div>
       </CardContent>
       <CardFooter className="p-4 pt-0 flex items-center justify-between gap-2">
@@ -113,18 +73,7 @@ export function ProductCard({ product }: ProductCardProps) {
         >
           <ShoppingCart className="mr-2 h-4 w-4" /> Add to Cart
         </Button>
-        <Button 
-          onClick={handleToggleWishlist} 
-          variant="outline" 
-          size="icon" 
-          className={cn(
-            "transition-colors transform hover:scale-110",
-            isProductInWishlist ? "text-accent border-accent hover:bg-accent/10" : "text-muted-foreground"
-          )}
-          aria-label={isProductInWishlist ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
-        >
-          <Heart className={cn("h-5 w-5", isProductInWishlist ? "fill-accent" : "")} />
-        </Button>
+        {/* Wishlist action removed */}
       </CardFooter>
     </Card>
   );

@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RangeSlider } from '@/components/ui/range-slider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Filter, X } from 'lucide-react';
-import { StarRating } from './StarRating';
 import { formatPrice } from '@/lib/format';
 
 export function ProductFilters() {
@@ -24,20 +23,20 @@ export function ProductFilters() {
     setFilters({ priceRange: value });
   };
 
-  const handleRatingChange = (rating: number) => {
-    setFilters({ rating: filters.rating === rating ? null : rating });
-  };
+  // Rating filter removed
   
   const clearFilters = () => {
     setFilters({
       category: null,
       priceRange: [minPossiblePrice, maxPossiblePrice],
-      rating: null,
       searchQuery: filters.searchQuery, // Keep search query
     });
   };
 
-  const hasActiveFilters = filters.category || filters.priceRange[0] !== minPossiblePrice || filters.priceRange[1] !== maxPossiblePrice || filters.rating;
+  const hasActiveFilters =
+    !!filters.category ||
+    filters.priceRange[0] !== minPossiblePrice ||
+    filters.priceRange[1] !== maxPossiblePrice;
 
   if (categories.length === 0 && minPossiblePrice === 0 && maxPossiblePrice === 0) {
     // Still loading initial product data
@@ -90,23 +89,7 @@ export function ProductFilters() {
           </div>
         </div>
 
-        <div>
-          <Label className="text-base font-medium mb-2 block">Rating</Label>
-          <div className="space-y-1">
-            {[4, 3, 2, 1].map((rate) => (
-              <Button
-                key={rate}
-                variant={filters.rating === rate ? 'default' : 'outline'}
-                className="w-full justify-start"
-                onClick={() => handleRatingChange(rate)}
-                aria-pressed={filters.rating === rate}
-              >
-                <StarRating rating={rate} totalStars={rate} size={16} className="mr-2" />
-                {rate} star{rate > 1 ? 's' : ''} & up
-              </Button>
-            ))}
-          </div>
-        </div>
+        {/* Rating filter removed */}
       </CardContent>
     </Card>
   );

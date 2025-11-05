@@ -91,6 +91,19 @@ export interface VariantDto {
   color?: string | null;
 }
 
+// Product options (for variant selection UI)
+export interface ProductOptionValueDto {
+  value: string;
+  thumbnailId?: number | string | null;
+  colorHex?: string | null;
+}
+
+export interface ProductOptionGroupDto {
+  name: string;
+  displayType?: 'text_button' | 'color_swatch' | 'image_swatch';
+  values: ProductOptionValueDto[];
+}
+
 // Augment ProductDto with optional fields the backend may return
 export interface ProductDtoExtended extends ProductDto {
   size?: string | null;
@@ -99,6 +112,10 @@ export interface ProductDtoExtended extends ProductDto {
   mainImage?: ImageDto | null;
   galleryImages?: ImageDto[] | null;
   variants?: VariantDto[] | null;
+  // optional richer category info
+  category?: { id?: string; name?: string } | string | null;
+  // options for dynamic variant selectors
+  options?: ProductOptionGroupDto[] | null;
 }
 
 export interface ReviewDto {
@@ -108,18 +125,6 @@ export interface ReviewDto {
   comment: string | null;
   date: string; // ISO8601
   isVerified: boolean;
-}
-
-export interface WishlistItemDto {
-  id: string;
-  productId: string;
-  productName: string;
-  productPrice: number;
-  productImageUrl: string | null;
-  productRating: number;
-  productStockQuantity: number;
-  categoryName: string;
-  addedAt: string; // ISO8601
 }
 
 export interface CartItemDto {
@@ -181,13 +186,14 @@ export interface Product {
   name: string;
   description: string;
   price: number;
-  category: string; // mapped from categoryName
+  category: string; // mapped from categoryName or category.name
   imageUrl: string;
   slug?: string;
   createdAt?: string;
   mainImage?: ImageDto | null;
   galleryImages?: ImageDto[];
   variants?: VariantDto[];
+  options?: ProductOptionGroupDto[] | null;
   size?: string | null;
   rating: number;
   reviewsCount: number;
@@ -213,6 +219,7 @@ export interface WishlistItem extends Product {
 }
 
 export interface CartItem extends Product {
+  cartItemId: string; // unique id of the item in cart (needed for update/remove)
   quantity: number;
   lineTotal: number;
 }
@@ -407,8 +414,12 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   // Debug: surface the parsed response for investigation (status + top-level keys)
   try {
     if (typeof window !== 'undefined' && typeof console !== 'undefined') {
+      // Only show this debug log when explicitly enabled in dev via env var
+      // Set NEXT_PUBLIC_SHOW_API_DEBUG=1 to enable in the browser
       // eslint-disable-next-line no-console
-      console.error('[api.request] parsed response for', url, 'status:', res.status, 'keys:', json && (Array.isArray(json) ? 'array' : Object.keys(json)));
+      if (process.env.NEXT_PUBLIC_SHOW_API_DEBUG === '1') {
+        console.debug('[api.request] parsed response for', url, 'status:', res.status, 'keys:', json && (Array.isArray(json) ? 'array' : Object.keys(json)));
+      }
     }
   } catch {
     // ignore
@@ -605,48 +616,47 @@ function mapProduct(dto: ProductDto | ProductDtoExtended): Product {
     } as VariantDto & { imageUrl?: string | null };
   });
 
+  // Base price: prefer dto.price; fallback to min variant price; else 0
+  const variantPrices = variants.map(v => (typeof v.price === 'number' ? v.price : Number.NaN)).filter(p => !Number.isNaN(p));
+  const minVariantPrice = variantPrices.length ? Math.min(...variantPrices) : undefined;
+  const price = Number(d.price ?? minVariantPrice ?? 0);
+
+  // Category string: prefer categoryName; else category.name; else string category
+  let categoryStr = d.categoryName ?? '';
+  if (!categoryStr) {
+    const cat: any = (d as any).category;
+    if (cat) {
+      if (typeof cat === 'string') categoryStr = cat;
+      else if (typeof cat === 'object' && typeof cat.name === 'string') categoryStr = cat.name;
+    }
+  }
+
   return {
     id: d.id,
     name: d.name,
     // backend may return slightly different shapes
     description: d.description ?? '',
-    price: Number(d.price ?? 0),
-    category: d.categoryName ?? (d as any).category ?? '',
+    price,
+    category: categoryStr,
     imageUrl,
     slug: d.slug ?? undefined,
     createdAt: d.createdAt ?? undefined,
     mainImage: d.mainImage ?? null,
     galleryImages: gallery,
     variants,
+    options: (d as any).options ?? null,
     size: d.size ?? null,
     rating: d.rating ?? 0,
     reviewsCount: d.reviewsCount ?? 0,
     popularity: d.reviewsCount ?? 0,
-    stockQuantity: d.stockQuantity ?? 0,
+    stockQuantity: d.stockQuantity ?? (variants.reduce((sum, v) => sum + (typeof v.stock === 'number' ? v.stock! : 0), 0)) ?? 0,
     isActive: d.isActive,
-  };
-}
-
-function mapWishlistItem(dto: WishlistItemDto): WishlistItem {
-  return {
-    id: dto.productId, // use productId as id for consistency with product-based components
-    name: dto.productName,
-    description: '',
-    price: dto.productPrice,
-    category: dto.categoryName,
-    imageUrl: dto.productImageUrl || '/placeholder.png',
-    rating: dto.productRating,
-    reviewsCount: 0,
-    popularity: 0,
-    stockQuantity: dto.productStockQuantity,
-    isActive: true,
-    addedAt: dto.addedAt,
   };
 }
 
 function mapCartItem(dto: CartItemDto): CartItem {
   return {
-    id: dto.productId, // product scope
+    id: dto.productId, // keep product id for linking/UI
     name: dto.productName,
     description: '',
     price: dto.unitPrice,
@@ -657,9 +667,35 @@ function mapCartItem(dto: CartItemDto): CartItem {
     popularity: 0,
     stockQuantity: dto.stockQuantity,
     isActive: true,
+    cartItemId: dto.id,
     quantity: dto.quantity,
     lineTotal: dto.totalPrice,
   };
+}
+
+// Normalize various cart response shapes into a consistent structure
+function normalizeCartResponse(resp: any): { items: CartItem[]; [k: string]: any } | null {
+  if (!resp) return null;
+  const extractItems = (p: any): CartItemDto[] | null => {
+    if (!p) return null;
+    if (Array.isArray(p)) return p as CartItemDto[];
+    if (Array.isArray(p.items)) return p.items as CartItemDto[];
+    if (p.data && Array.isArray(p.data.items)) return p.data.items as CartItemDto[];
+    if (Array.isArray(p.data)) return p.data as CartItemDto[];
+    if (p.cart && Array.isArray(p.cart.items)) return p.cart.items as CartItemDto[];
+    if (p.item && typeof p.item === 'object') return [p.item as CartItemDto];
+    return null;
+  };
+  try {
+    const itemsDto = extractItems(resp);
+    if (itemsDto) {
+      const mapped = itemsDto.map(mapCartItem);
+      return { ...resp, items: mapped };
+    }
+  } catch {
+    // fallthrough
+  }
+  return null;
 }
 
 // ---------- API surface ----------
@@ -722,8 +758,7 @@ export const api = {
       categoryId?: string;
       minPrice?: number;
       maxPrice?: number;
-      minRating?: number;
-      sortBy?: 'name' | 'price' | 'rating' | 'popularity';
+      sortBy?: 'name' | 'price' | 'popularity';
       sortDirection?: 'asc' | 'desc';
       page?: number;
       pageSize?: number;
@@ -1093,94 +1128,42 @@ export const api = {
       return data.map(mapProduct);
     }
   },
-  recommendations: {
-    // Call backend recommendation service. `history` can be an array of product IDs or a comma-separated string.
-    get: async (history: string[] | string) => {
-      const body = Array.isArray(history) ? history : (typeof history === 'string' ? history.split(',').map(s => s.trim()).filter(Boolean) : []);
-      // Use local proxy route to avoid CORS. Next server will forward to backend POC.
-      const resp = await request<any>('/api/recommendations', { method: 'POST', body: JSON.stringify({ browsingHistory: body }) });
-
-      // Normalize response to an array of recommendation ids or names.
-      // Common possible shapes:
-      // - { success: true, data: { recommendations: ['id1','id2'] } }
-      // - { recommendations: ['id1','id2'] }
-      // - ['id1','id2']
-      try {
-        if (!resp) return [] as string[];
-        if (Array.isArray(resp)) return resp as string[];
-        if (resp.recommendations && Array.isArray(resp.recommendations)) return resp.recommendations as string[];
-        if (resp.data && resp.data.recommendations && Array.isArray(resp.data.recommendations)) return resp.data.recommendations as string[];
-        // If backend returned a comma-separated string
-        const possible = (resp.data && resp.data.recommendations) || resp.recommendations || resp.data || resp;
-        if (typeof possible === 'string') return possible.split(',').map((s: string) => s.trim()).filter(Boolean);
-      } catch (e) {
-        // fallthrough
-      }
-      return [] as string[];
-    }
-  },
-  // Impression and click tracking for recommendations (useful for training/metrics)
-  recommendationsTracking: {
-    impression: async (payload: { userId?: string | null; productIds: string[]; source?: string }) => {
-      try {
-        await request('/api/recommendations/impression', { method: 'POST', body: JSON.stringify(payload) });
-      } catch (e) {
-        // don't block UI on tracking failures
-        console.warn('Failed to send recommendations impression', e);
-      }
-    },
-    click: async (payload: { userId?: string | null; productIdClicked: string; recommendationId?: string; position?: number; source?: string }) => {
-      try {
-        await request('/api/recommendations/click', { method: 'POST', body: JSON.stringify(payload) });
-      } catch (e) {
-        console.warn('Failed to send recommendations click', e);
-      }
-    }
-  },
-  wishlist: {
-    list: async (page = 1, pageSize = 50) => {
-  const data = await request<PagedResponse<WishlistItemDto>>('/api/v1/wishlist', { auth: true, searchParams: { page, pageSize } });
-      return { ...data, data: data.data.map(mapWishlistItem) };
-    },
-    add: async (productId: string) => {
-  await request<null>('/api/v1/wishlist', { auth: true, method: 'POST', body: JSON.stringify({ productId }) });
-    },
-    remove: async (productId: string) => {
-  await request<null>(`/api/v1/wishlist/${productId}`, { auth: true, method: 'DELETE' });
-    },
-    clear: async () => {
-  await request<null>('/api/v1/wishlist/clear', { auth: true, method: 'DELETE' });
-    },
-    moveToCart: async (productId: string) => {
-  await request<null>(`/api/v1/wishlist/move-to-cart/${productId}`, { auth: true, method: 'POST' });
-    },
-    check: async (productId: string) => {
-  const data = await request<boolean>(`/api/v1/wishlist/check/${productId}`, { auth: false });
-      return data;
-    }
-  },
+  // Recommendations removed from project scope
+  
   cart: {
     get: async () => {
   const data = await request<CartResponseDto>('/api/v1/cart', { auth: true });
-      return { ...data, items: data.items.map(mapCartItem) };
+      const normalized = normalizeCartResponse(data);
+      if (normalized) return normalized;
+      // Fallback to empty structure if unexpected
+      return { items: [], totalItems: 0, subTotal: 0, shippingFee: 0, total: 0 } as any;
     },
     add: async (productId: string, quantity = 1) => {
   const data = await request<CartResponseDto>('/api/v1/cart/add', { auth: true, method: 'POST', body: JSON.stringify({ productId, quantity }) });
-      return { ...data, items: data.items.map(mapCartItem) };
+      const normalized = normalizeCartResponse(data);
+      if (normalized) return normalized;
+      // If response didn't include cart, reload
+      return await api.cart.get();
     },
     update: async (cartItemId: string, quantity: number) => {
   const data = await request<CartResponseDto>(`/api/v1/cart/${cartItemId}`, { auth: true, method: 'PUT', body: JSON.stringify({ quantity }) });
-      return { ...data, items: data.items.map(mapCartItem) };
+      const normalized = normalizeCartResponse(data);
+      if (normalized) return normalized;
+      return await api.cart.get();
     },
     remove: async (cartItemId: string) => {
   const data = await request<CartResponseDto>(`/api/v1/cart/${cartItemId}`, { auth: true, method: 'DELETE' });
-      return { ...data, items: data.items.map(mapCartItem) };
+      const normalized = normalizeCartResponse(data);
+      if (normalized) return normalized;
+      return await api.cart.get();
     },
     clear: async () => {
   const data = await request<CartResponseDto>('/api/v1/cart/clear', { auth: true, method: 'DELETE' });
-      return { ...data, items: data.items.map(mapCartItem) };
+      const normalized = normalizeCartResponse(data);
+      if (normalized) return normalized;
+      return { items: [], totalItems: 0, subTotal: 0, shippingFee: 0, total: 0 } as any;
     }
   }
 };
 
-export type { Product as FEProduct, Review as FEReview, CartItem as FECartItem, WishlistItem as FEWishlistItem };
+export type { Product as FEProduct, Review as FEReview, CartItem as FECartItem };

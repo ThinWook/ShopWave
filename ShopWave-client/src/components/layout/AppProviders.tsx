@@ -5,7 +5,6 @@ import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { CartProvider } from '@/contexts/CartContext';
-import { WishlistProvider } from '@/contexts/WishlistContext';
 import { ProductProvider } from '@/contexts/ProductContext';
 // Lazy-load Toaster to avoid pulling it into initial chunks
 const Toaster = dynamic(() => import('@/components/ui/toaster').then(m => m.Toaster), { ssr: false });
@@ -44,10 +43,8 @@ export function AppProviders({ children }: { children: ReactNode }) {
   const content = (
     <ProductProvider>
       <CartProvider>
-        <WishlistProvider>
-          {children}
-          <Toaster />
-        </WishlistProvider>
+        {children}
+        <Toaster />
       </CartProvider>
     </ProductProvider>
   );

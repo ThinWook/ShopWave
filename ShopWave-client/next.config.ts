@@ -1,6 +1,6 @@
-import type {NextConfig} from 'next';
+import type { NextConfig } from 'next';
 
-const nextConfig: NextConfig = {
+const nextConfig = {
   /* config options here */
   // We terminate compression at the HTTP/2 proxy with Brotli/gzip to avoid double-compression
   compress: false,
@@ -13,11 +13,7 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   images: {
-    domains: ['localhost'],
     remotePatterns: [
       {
         protocol: 'https',
@@ -32,13 +28,31 @@ const nextConfig: NextConfig = {
         port: '5001',
         pathname: '/uploads/**',
       },
+      // Also allow direct IP address access (in case URLs resolve to 127.0.0.1)
+      {
+        protocol: 'https',
+        hostname: '127.0.0.1',
+        port: '5001',
+        pathname: '/uploads/**',
+      },
       {
         protocol: 'http',
         hostname: 'localhost',
         port: '5000',
         pathname: '/uploads/**',
       },
+      {
+        protocol: 'http',
+        hostname: '127.0.0.1',
+        port: '5000',
+        pathname: '/uploads/**',
+      },
     ],
+    // Disable built-in image optimization for the whole project. This forces
+    // Next to render <img> tags directly (no server-side optimization).
+    // Useful when your backend uses self-signed certs or when you want the
+    // browser to fetch images directly.
+    unoptimized: true,
   },
   async headers() {
     // Caching strategy:
@@ -94,6 +108,6 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-};
+} as unknown as NextConfig;
 
 export default nextConfig;
