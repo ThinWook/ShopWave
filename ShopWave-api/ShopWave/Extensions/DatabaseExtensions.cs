@@ -22,7 +22,7 @@ namespace ShopWave.Extensions
 
                 logger.LogInformation("Starting database seeding...");
 
-                // Check if Users table exists by trying a simple query
+                // Ensure Users table exists
                 try
                 {
                     var userCount = context.Users.Count();
@@ -34,84 +34,15 @@ namespace ShopWave.Extensions
                     return;
                 }
 
-                // Seed categories if none exist
-                if (!context.Categories.Any())
-                {
-                    var categories = new List<Category>
-                    {
-                        new Category { Name = "?i?n t?", Description = "Thi?t b? ?i?n t?", IsActive = true, SortOrder = 1, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
-                        new Category { Name = "Th?i trang", Description = "Qu?n áo và ph? ki?n", IsActive = true, SortOrder = 2, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
-                        new Category { Name = "Gia d?ng", Description = "?? gia d?ng và n?i th?t", IsActive = true, SortOrder = 3, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
-                        new Category { Name = "Sách", Description = "Sách và v?n phòng ph?m", IsActive = true, SortOrder = 4, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
-                        new Category { Name = "Th? thao", Description = "?? th? thao và outdoor", IsActive = true, SortOrder = 5, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
-                    };
-
-                    context.Categories.AddRange(categories);
-                    context.SaveChanges();
-                    logger.LogInformation("? Seeded {CategoryCount} categories", categories.Count);
-                }
-
-                // Seed products if none exist
-                if (!context.Products.Any())
-                {
-                    var categories = context.Categories.ToList();
-                    if (categories.Any())
-                    {
-                        var products = new List<Product>
-                        {
-                            new Product 
-                            { 
-                                Name = "iPhone 15 Pro Max", 
-                                Description = "?i?n tho?i thông minh cao c?p t? Apple",
-                                CategoryId = categories.First(c => c.Name == "?i?n t?").Id,
-                                Rating = 4.8,
-                                ReviewsCount = 150,
-                                Popularity = 100,
-                                IsActive = true,
-                                CreatedAt = DateTime.UtcNow,
-                                UpdatedAt = DateTime.UtcNow
-                            },
-                            new Product 
-                            { 
-                                Name = "Samsung Galaxy S24 Ultra", 
-                                Description = "?i?n tho?i Android flagship t? Samsung",
-                                CategoryId = categories.First(c => c.Name == "?i?n t?").Id,
-                                Rating = 4.7,
-                                ReviewsCount = 98,
-                                Popularity = 85,
-                                IsActive = true,
-                                CreatedAt = DateTime.UtcNow,
-                                UpdatedAt = DateTime.UtcNow
-                            },
-                            new Product 
-                            { 
-                                Name = "Áo thun nam cao c?p", 
-                                Description = "Áo thun cotton 100% ch?t l??ng cao",
-                                CategoryId = categories.First(c => c.Name == "Th?i trang").Id,
-                                Rating = 4.5,
-                                ReviewsCount = 45,
-                                Popularity = 60,
-                                IsActive = true,
-                                CreatedAt = DateTime.UtcNow,
-                                UpdatedAt = DateTime.UtcNow
-                            }
-                        };
-
-                        context.Products.AddRange(products);
-                        context.SaveChanges();
-                        logger.LogInformation("? Seeded {ProductCount} products", products.Count);
-                    }
-                }
-
-                // Seed admin user if none exist
+                // Only seed a default admin user if no users exist.
                 if (!context.Users.Any())
                 {
                     var adminUser = new User
                     {
                         Email = "admin@shopwave.com",
                         PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
-                        FullName = "Qu?n tr? viên",
-                        Phone = "0123456789",
+                        FullName = "Administrator",
+                        Phone = null,
                         Role = "Admin",
                         IsActive = true,
                         CreatedAt = DateTime.UtcNow,
@@ -120,15 +51,19 @@ namespace ShopWave.Extensions
 
                     context.Users.Add(adminUser);
                     context.SaveChanges();
-                    logger.LogInformation("? Seeded admin user: admin@shopwave.com / admin123");
+                    logger.LogInformation("Seeded default admin user: admin@shopwave.com / admin123");
+                }
+                else
+                {
+                    logger.LogInformation("Users exist - skipping admin seeding");
                 }
 
-                logger.LogInformation("?? Database seeding completed successfully");
+                logger.LogInformation("Database seeding completed (only admin retained).");
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "? Database seeding failed: {ErrorMessage}", ex.Message);
-                logger.LogInformation("?? This is normal if migrations haven't been run yet. Run: dotnet ef database update");
+                logger.LogError(ex, "Database seeding failed: {ErrorMessage}", ex.Message);
+                logger.LogInformation("This is normal if migrations haven't been run yet. Run: dotnet ef database update");
             }
         }
     }

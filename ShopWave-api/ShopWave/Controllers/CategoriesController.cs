@@ -248,7 +248,8 @@ namespace ShopWave.Controllers
                 {
                     var productVariants = variants.Where(v => v.ProductId == p.Id).OrderBy(v => v.Price).ToList();
                     var price = productVariants.FirstOrDefault()?.Price ?? 0;
-                    var size = productVariants.FirstOrDefault()?.Size;
+                    // Size removed from ProductVariant; leave null (option values may be used later)
+                    string? size = null;
                     var stock = productVariants.Sum(v => v.Stock);
                     return new ProductDto
                     {
@@ -258,8 +259,6 @@ namespace ShopWave.Controllers
                         Price = price,
                         CategoryName = p.Category.Name,
                         Size = size,
-                        Rating = p.Rating,
-                        ReviewsCount = p.ReviewsCount,
                         StockQuantity = stock,
                         IsActive = p.IsActive
                     };

@@ -8,8 +8,6 @@ namespace ShopWave.Models.Requests
         public decimal Price { get; set; }
         public int Stock { get; set; }
         public long? ImageId { get; set; }
-        public string? Size { get; set; }
-        public string? Color { get; set; }
     }
 
     public class CreateProductRequest
@@ -151,10 +149,33 @@ namespace ShopWave.Models.Requests
     {
         public string? SearchTerm { get; set; }
         public Guid? CategoryId { get; set; }
-        public double? MinRating { get; set; }
-        public string SortBy { get; set; } = "name"; // name, rating, popularity
+        public string SortBy { get; set; } = "name"; // name, popularity
         public string SortDirection { get; set; } = "asc"; // asc, desc
         public int Page { get; set; } = 1;
         public int PageSize { get; set; } = 12;
+    }
+
+    // New request models for options/values and finding variant
+    public class CreateOptionRequest
+    {
+        [Required]
+        [MaxLength(255)]
+        public string Name { get; set; } = string.Empty;
+
+        // Optional initial values
+        public List<string>? Values { get; set; }
+    }
+
+    public class AddOptionValueRequest
+    {
+        [Required]
+        [MaxLength(255)]
+        public string Value { get; set; } = string.Empty;
+    }
+
+    public class FindVariantByValuesRequest
+    {
+        [Required]
+        public List<Guid> ValueIds { get; set; } = new List<Guid>();
     }
 }

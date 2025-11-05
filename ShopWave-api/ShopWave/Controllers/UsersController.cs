@@ -50,8 +50,7 @@ namespace ShopWave.Controllers
                         MediaId = null,
                         Role = u.Role,
                         CreatedAt = u.CreatedAt,
-                        TotalOrders = u.Orders.Count(),
-                        TotalWishlistItems = u.WishlistItems.Count()
+                        TotalOrders = u.Orders.Count()
                     })
                     .FirstOrDefaultAsync();
 
@@ -280,6 +279,5 @@ namespace ShopWave.Controllers
     public class UserProfileDto : UserDto
     {
         public int TotalOrders { get; set; }
-        public int TotalWishlistItems { get; set; }
     }
 }

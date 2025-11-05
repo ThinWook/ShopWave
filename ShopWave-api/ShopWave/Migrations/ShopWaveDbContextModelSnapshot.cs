@@ -8,7 +8,7 @@ using ShopWave.Models;
 
 #nullable disable
 
-namespace ShopWave.Migrations
+namespace ShopWaveapi.Migrations
 {
     [DbContext(typeof(ShopWaveDbContext))]
     partial class ShopWaveDbContextModelSnapshot : ModelSnapshot
@@ -22,41 +22,68 @@ namespace ShopWave.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("ShopWave.Models.BrowsingHistory", b =>
+            modelBuilder.Entity("ShopWave.Models.AppliedDiscount", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("SessionId")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("ViewDuration")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("ViewedAt")
+                    b.Property<DateTime>("AppliedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CartId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("DiscountAmountApplied")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("DiscountId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProductId");
+                    b.HasIndex("CartId");
+
+                    b.HasIndex("DiscountId");
+
+                    b.ToTable("AppliedDiscounts");
+                });
+
+            modelBuilder.Entity("ShopWave.Models.Cart", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SessionId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SessionId");
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("BrowsingHistory");
+                    b.ToTable("Carts");
                 });
 
             modelBuilder.Entity("ShopWave.Models.CartItem", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CartId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
@@ -82,12 +109,13 @@ namespace ShopWave.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CartId");
+
                     b.HasIndex("ProductId");
 
                     b.HasIndex("ProductVariantId");
 
-                    b.HasIndex("UserId", "ProductId")
-                        .IsUnique();
+                    b.HasIndex("UserId");
 
                     b.ToTable("CartItems");
                 });
@@ -131,6 +159,89 @@ namespace ShopWave.Migrations
                     b.HasIndex("ParentId");
 
                     b.ToTable("Categories");
+                });
+
+            modelBuilder.Entity("ShopWave.Models.Discount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("DiscountType")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("DiscountValue")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("MinOrderAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UsageCount")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("UsageLimit")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("Discounts");
+                });
+
+            modelBuilder.Entity("ShopWave.Models.DiscountTier", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("DiscountValue")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("ThresholdAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("DiscountTiers");
                 });
 
             modelBuilder.Entity("ShopWave.Models.Media", b =>
@@ -213,6 +324,32 @@ namespace ShopWave.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Notifications");
+                });
+
+            modelBuilder.Entity("ShopWave.Models.OptionValue", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("OptionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long?>("ThumbnailId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OptionId");
+
+                    b.HasIndex("ThumbnailId");
+
+                    b.ToTable("OptionValues");
                 });
 
             modelBuilder.Entity("ShopWave.Models.Order", b =>
@@ -333,6 +470,9 @@ namespace ShopWave.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
+                    b.Property<decimal>("DisplayPrice")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -347,14 +487,14 @@ namespace ShopWave.Migrations
                     b.Property<int>("Popularity")
                         .HasColumnType("int");
 
-                    b.Property<double>("Rating")
-                        .HasColumnType("float");
-
-                    b.Property<int>("ReviewsCount")
+                    b.Property<int>("TotalInventory")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("VariantCount")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -385,39 +525,29 @@ namespace ShopWave.Migrations
                     b.ToTable("ProductMedia");
                 });
 
-            modelBuilder.Entity("ShopWave.Models.ProductRecommendation", b =>
+            modelBuilder.Entity("ShopWave.Models.ProductOption", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime?>("ExpiresAt")
-                        .HasColumnType("datetime2");
+                    b.Property<string>("DisplayType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
-                    b.Property<DateTime>("GeneratedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<Guid>("ProductId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<double>("RecommendationScore")
-                        .HasColumnType("float");
-
-                    b.Property<string>("RecommendationType")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ProductId");
 
-                    b.HasIndex("UserId");
-
-                    b.ToTable("ProductRecommendations");
+                    b.ToTable("ProductOptions");
                 });
 
             modelBuilder.Entity("ShopWave.Models.ProductVariant", b =>
@@ -425,10 +555,6 @@ namespace ShopWave.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Color")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
 
                     b.Property<long?>("ImageId")
                         .HasColumnType("bigint");
@@ -438,10 +564,6 @@ namespace ShopWave.Migrations
 
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Size")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Sku")
                         .IsRequired()
@@ -458,52 +580,6 @@ namespace ShopWave.Migrations
                     b.HasIndex("ProductId");
 
                     b.ToTable("ProductVariants");
-                });
-
-            modelBuilder.Entity("ShopWave.Models.Review", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Comment")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsVerified")
-                        .HasColumnType("bit");
-
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("Rating")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("UserName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("ProductId", "UserId")
-                        .IsUnique();
-
-                    b.ToTable("Reviews");
                 });
 
             modelBuilder.Entity("ShopWave.Models.User", b =>
@@ -642,52 +718,58 @@ namespace ShopWave.Migrations
                     b.ToTable("UserSettings");
                 });
 
-            modelBuilder.Entity("ShopWave.Models.WishlistItem", b =>
+            modelBuilder.Entity("ShopWave.Models.VariantValue", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<Guid>("VariantId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("ProductId")
+                    b.Property<Guid>("ValueId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
+                    b.HasKey("VariantId", "ValueId");
 
-                    b.HasKey("Id");
+                    b.HasIndex("ValueId");
 
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("UserId", "ProductId")
-                        .IsUnique();
-
-                    b.ToTable("WishlistItems");
+                    b.ToTable("VariantValues");
                 });
 
-            modelBuilder.Entity("ShopWave.Models.BrowsingHistory", b =>
+            modelBuilder.Entity("ShopWave.Models.AppliedDiscount", b =>
                 {
-                    b.HasOne("ShopWave.Models.Product", "Product")
-                        .WithMany("BrowsingHistory")
-                        .HasForeignKey("ProductId")
+                    b.HasOne("ShopWave.Models.Cart", "Cart")
+                        .WithMany("AppliedDiscounts")
+                        .HasForeignKey("CartId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("ShopWave.Models.Discount", "Discount")
+                        .WithMany("AppliedDiscounts")
+                        .HasForeignKey("DiscountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Cart");
+
+                    b.Navigation("Discount");
+                });
+
+            modelBuilder.Entity("ShopWave.Models.Cart", b =>
+                {
                     b.HasOne("ShopWave.Models.User", "User")
-                        .WithMany("BrowsingHistory")
+                        .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Product");
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("User");
                 });
 
             modelBuilder.Entity("ShopWave.Models.CartItem", b =>
                 {
+                    b.HasOne("ShopWave.Models.Cart", "Cart")
+                        .WithMany("CartItems")
+                        .HasForeignKey("CartId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("ShopWave.Models.Product", "Product")
                         .WithMany("CartItems")
                         .HasForeignKey("ProductId")
@@ -702,8 +784,10 @@ namespace ShopWave.Migrations
                     b.HasOne("ShopWave.Models.User", "User")
                         .WithMany("CartItems")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Cart");
 
                     b.Navigation("Product");
 
@@ -731,6 +815,24 @@ namespace ShopWave.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ShopWave.Models.OptionValue", b =>
+                {
+                    b.HasOne("ShopWave.Models.ProductOption", "Option")
+                        .WithMany("Values")
+                        .HasForeignKey("OptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ShopWave.Models.Media", "Thumbnail")
+                        .WithMany()
+                        .HasForeignKey("ThumbnailId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Option");
+
+                    b.Navigation("Thumbnail");
                 });
 
             modelBuilder.Entity("ShopWave.Models.Order", b =>
@@ -806,23 +908,15 @@ namespace ShopWave.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("ShopWave.Models.ProductRecommendation", b =>
+            modelBuilder.Entity("ShopWave.Models.ProductOption", b =>
                 {
                     b.HasOne("ShopWave.Models.Product", "Product")
-                        .WithMany("ProductRecommendations")
+                        .WithMany("Options")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ShopWave.Models.User", "User")
-                        .WithMany("ProductRecommendations")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Product");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ShopWave.Models.ProductVariant", b =>
@@ -832,7 +926,7 @@ namespace ShopWave.Migrations
                         .HasForeignKey("ImageId");
 
                     b.HasOne("ShopWave.Models.Product", "Product")
-                        .WithMany()
+                        .WithMany("Variants")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -840,25 +934,6 @@ namespace ShopWave.Migrations
                     b.Navigation("Image");
 
                     b.Navigation("Product");
-                });
-
-            modelBuilder.Entity("ShopWave.Models.Review", b =>
-                {
-                    b.HasOne("ShopWave.Models.Product", "Product")
-                        .WithMany("Reviews")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ShopWave.Models.User", "User")
-                        .WithMany("Reviews")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Product");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ShopWave.Models.UserMedia", b =>
@@ -902,23 +977,30 @@ namespace ShopWave.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("ShopWave.Models.WishlistItem", b =>
+            modelBuilder.Entity("ShopWave.Models.VariantValue", b =>
                 {
-                    b.HasOne("ShopWave.Models.Product", "Product")
-                        .WithMany("WishlistItems")
-                        .HasForeignKey("ProductId")
+                    b.HasOne("ShopWave.Models.OptionValue", "Value")
+                        .WithMany()
+                        .HasForeignKey("ValueId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ShopWave.Models.ProductVariant", "Variant")
+                        .WithMany("VariantValues")
+                        .HasForeignKey("VariantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ShopWave.Models.User", "User")
-                        .WithMany("WishlistItems")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("Value");
 
-                    b.Navigation("Product");
+                    b.Navigation("Variant");
+                });
 
-                    b.Navigation("User");
+            modelBuilder.Entity("ShopWave.Models.Cart", b =>
+                {
+                    b.Navigation("AppliedDiscounts");
+
+                    b.Navigation("CartItems");
                 });
 
             modelBuilder.Entity("ShopWave.Models.Category", b =>
@@ -928,6 +1010,11 @@ namespace ShopWave.Migrations
                     b.Navigation("SubCategories");
                 });
 
+            modelBuilder.Entity("ShopWave.Models.Discount", b =>
+                {
+                    b.Navigation("AppliedDiscounts");
+                });
+
             modelBuilder.Entity("ShopWave.Models.Order", b =>
                 {
                     b.Navigation("OrderItems");
@@ -935,42 +1022,40 @@ namespace ShopWave.Migrations
 
             modelBuilder.Entity("ShopWave.Models.Product", b =>
                 {
-                    b.Navigation("BrowsingHistory");
-
                     b.Navigation("CartItems");
+
+                    b.Navigation("Options");
 
                     b.Navigation("OrderItems");
 
                     b.Navigation("ProductMedia");
 
-                    b.Navigation("ProductRecommendations");
+                    b.Navigation("Variants");
+                });
 
-                    b.Navigation("Reviews");
+            modelBuilder.Entity("ShopWave.Models.ProductOption", b =>
+                {
+                    b.Navigation("Values");
+                });
 
-                    b.Navigation("WishlistItems");
+            modelBuilder.Entity("ShopWave.Models.ProductVariant", b =>
+                {
+                    b.Navigation("VariantValues");
                 });
 
             modelBuilder.Entity("ShopWave.Models.User", b =>
                 {
-                    b.Navigation("BrowsingHistory");
-
                     b.Navigation("CartItems");
 
                     b.Navigation("Notifications");
 
                     b.Navigation("Orders");
 
-                    b.Navigation("ProductRecommendations");
-
-                    b.Navigation("Reviews");
-
                     b.Navigation("UserMedia");
 
                     b.Navigation("UserSessions");
 
                     b.Navigation("UserSettings");
-
-                    b.Navigation("WishlistItems");
                 });
 #pragma warning restore 612, 618
         }

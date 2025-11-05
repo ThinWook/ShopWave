@@ -23,14 +23,11 @@ namespace ShopWave.Models
         [Column(TypeName = "bigint")]
         public long? ImageId { get; set; }
 
-        [MaxLength(50)]
-        public string? Size { get; set; } // Thêm tr??ng Size cho bi?n th?
-
-        [MaxLength(50)]
-        public string? Color { get; set; } // Thêm tr??ng Color cho bi?n th?
-
         // Navigation
         public virtual Product Product { get; set; }
         public virtual Media? Image { get; set; }
+
+        // New navigation for option values
+        public virtual ICollection<VariantValue> VariantValues { get; set; } = new List<VariantValue>();
     }
 }

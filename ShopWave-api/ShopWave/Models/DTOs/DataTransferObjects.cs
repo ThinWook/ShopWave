@@ -1,19 +1,7 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace ShopWave.Models.DTOs
 {
-    public class ProductDto
-    {
-        public Guid Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public string? Description { get; set; }
-        public decimal Price { get; set; }
-        public string CategoryName { get; set; } = string.Empty;
-        public string? Size { get; set; }
-        public double Rating { get; set; }
-        public int ReviewsCount { get; set; }
-        public int StockQuantity { get; set; }
-        public bool IsActive { get; set; }
-    }
-
     public class CategoryDto
     {
         public Guid Id { get; set; }
@@ -23,6 +11,34 @@ namespace ShopWave.Models.DTOs
         public string? ParentName { get; set; }
         public bool IsActive { get; set; }
         public int ProductCount { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
+
+    public class ProductDto
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public decimal Price { get; set; }
+        public string CategoryName { get; set; } = string.Empty;
+        public string? Size { get; set; }
+        public int StockQuantity { get; set; }
+        public bool IsActive { get; set; }
+    }
+
+    // Minimal DTO for product card rendering on client
+    public class ProductCardDto
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public decimal Price { get; set; }
+        public string CategoryName { get; set; } = string.Empty;
+        public string? ImageUrl { get; set; }
+        public int StockQuantity { get; set; }
+        public int VariantCount { get; set; }
+        public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
@@ -92,6 +108,6 @@ namespace ShopWave.Models.DTOs
         public int Stock { get; set; }
         public long? ImageId { get; set; }
         public string? Size { get; set; }
-        public string? Color { get; set; } // Thêm property Color
+        public string? Color { get; set; }
     }
 }

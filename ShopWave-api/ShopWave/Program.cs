@@ -4,7 +4,6 @@ using System.Text.Json;
 using ShopWave.Models;
 using ShopWave.Extensions;
 using ShopWave.Services;
-using ShopWave.Repositories;
 using ShopWave.Filters;
 using ShopWave.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -31,21 +30,6 @@ builder.Services.AddSingleton<GoogleTokenValidator>();
 // Media services
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IMediaService, FileService>();
-
-// Recommendation services (POC)
-builder.Services.AddMemoryCache();
-// Register HttpClient factory used by RecommendationRepository to call vector index / personalization service
-builder.Services.AddHttpClient();
-// Register a distributed in-memory cache for development so IDistributedCache is available.
-// In production prefer Redis: builder.Services.AddStackExchangeRedisCache(...)
-builder.Services.AddDistributedMemoryCache();
-
-builder.Services.AddScoped<IRecommendationService, RecommendationService>();
-// RecommendationRepository may use DbContext and external HTTP clients, register as scoped
-builder.Services.AddScoped<IRecommendationRepository, RecommendationRepository>();
-
-// To enable Redis distributed cache in production, uncomment and configure:
-// builder.Services.AddStackExchangeRedisCache(options => { options.Configuration = builder.Configuration.GetConnectionString("Redis"); });
 
 // Configure API behavior
 builder.Services.Configure<ApiBehaviorOptions>(options =>

@@ -26,7 +26,7 @@ namespace ShopWave.Controllers
             try
             {
                 var featuredProducts = await _context.Products
-                    .Where(p => p.IsActive && p.Rating >= 4.0)
+                    .Where(p => p.IsActive)
                     .OrderByDescending(p => p.Popularity)
                     .Take(8)
                     .ToListAsync();
@@ -45,8 +45,6 @@ namespace ShopWave.Controllers
                         Description = p.Description,
                         Price = price,
                         CategoryName = p.Category != null ? p.Category.Name : string.Empty,
-                        Rating = p.Rating,
-                        ReviewsCount = p.ReviewsCount,
                         StockQuantity = stock,
                         IsActive = p.IsActive
                     };

@@ -1,0 +1,147 @@
+{
+  "name": "Giày ch?y b? UltraRun",
+  "description": "Giày chuyên d?ng ch?y b?, ?? êm, thi?t k? thoáng khí. Phù h?p cho runner chuyên nghi?p.",
+  "categoryId": "d9f8e7c6-b5a4-4321-8888-abcdef123456",
+  "slug": "giay-chay-ultrarun",
+  "mainImageId": 210,
+  "galleryMedia": [
+    {
+      "mediaId": 210,
+      "sortOrder": 1
+    },
+    {
+      "mediaId": 211,
+      "sortOrder": 2
+    },
+    {
+      "mediaId": 212,
+      "sortOrder": 3
+    }
+  ],
+  "options": [
+    {
+      "name": "Size",
+      "displayType": "text_button",
+      "values": [
+        {
+          "value": "39"
+        },
+        {
+          "value": "40"
+        },
+        {
+          "value": "41"
+        },
+        {
+          "value": "42"
+        },
+        {
+          "value": "43"
+        },
+        {
+          "value": "44"
+        }
+      ]
+    },
+    {
+      "name": "Color",
+      "displayType": "color_swatch",
+      "values": [
+        {
+          "value": "Black",
+          "thumbnailId": 211
+        },
+        {
+          "value": "White",
+          "thumbnailId": 212
+        },
+        {
+          "value": "Navy Blue",
+          "thumbnailId": 213
+        }
+      ]
+    }
+  ],
+  "variants": [
+    {
+      "sku": "UR-42-BLK",
+      "price": 899000,
+      "stock": 25,
+      "imageId": 211,
+      "selectedOptions": [
+        {
+          "optionName": "Size",
+          "value": "42"
+        },
+        {
+          "optionName": "Color",
+          "value": "Black"
+        }
+      ]
+    },
+    {
+      "sku": "UR-42-WHT",
+      "price": 899000,
+      "stock": 30,
+      "imageId": 212,
+      "selectedOptions": [
+        {
+          "optionName": "Size",
+          "value": "42"
+        },
+        {
+          "optionName": "Color",
+          "value": "White"
+        }
+      ]
+    },
+    {
+      "sku": "UR-43-BLK",
+      "price": 919000,
+      "stock": 20,
+      "imageId": 211,
+      "selectedOptions": [
+        {
+          "optionName": "Size",
+          "value": "43"
+        },
+        {
+          "optionName": "Color",
+          "value": "Black"
+        }
+      ]
+    },
+    {
+      "sku": "UR-43-WHT",
+      "price": 919000,
+      "stock": 40,
+      "imageId": 212,
+      "selectedOptions": [
+        {
+          "optionName": "Size",
+          "value": "43"
+        },
+        {
+          "optionName": "Color",
+          "value": "White"
+        }
+      ]
+    },
+    {
+      "sku": "UR-41-NAVY",
+      "price": 889000,
+      "stock": 15,
+      "imageId": 213,
+      "selectedOptions": [
+        {
+          "optionName": "Size",
+          "value": "41"
+        },
+        {
+          "optionName": "Color",
+          "value": "Navy Blue"
+        }
+      ]
+    }
+  ]
+}

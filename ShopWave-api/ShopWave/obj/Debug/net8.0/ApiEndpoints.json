@@ -9,7 +9,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "\u003C\u003Ef__AnonymousType53\u00605[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.DateTime, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "Type": "\u003C\u003Ef__AnonymousType55\u00605[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.DateTime, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
         "MediaTypes": [
           "application/json"
         ],
@@ -186,32 +186,6 @@
         "StatusCode": 400
       }
     ]
-  },
-  {
-    "ContainingType": "ShopWave.Controllers.RecommendationsController",
-    "Method": "Get",
-    "RelativePath": "api/Recommendations",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "userId",
-        "Type": "System.Nullable\u00601[[System.Guid, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "productId",
-        "Type": "System.Nullable\u00601[[System.Guid, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "k",
-        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": []
   },
   {
     "ContainingType": "ShopWave.Controllers.AuthController",
@@ -641,7 +615,7 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "ProductCreateRequest",
+        "Type": "ShopWave.Models.Requests.ProductCreateRequest",
         "IsRequired": true
       }
     ],
@@ -663,11 +637,6 @@
       {
         "Name": "CategoryId",
         "Type": "System.Nullable\u00601[[System.Guid, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
-        "IsRequired": false
-      },
-      {
-        "Name": "MinRating",
-        "Type": "System.Nullable\u00601[[System.Double, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
         "IsRequired": false
       },
       {
@@ -768,27 +737,85 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "ShopWave.Controllers.ProductsController",
-    "Method": "GetProductReviews",
-    "RelativePath": "api/v1/Products/{id}/reviews",
+    "ContainingType": "ShopWave.Controllers.VariantLookupController",
+    "Method": "FindVariant",
+    "RelativePath": "api/v1/products/{productId}/find-variant",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "productId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "ShopWave.Models.Requests.FindVariantByValuesRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ShopWave.Controllers.ProductOptionsController",
+    "Method": "CreateOption",
+    "RelativePath": "api/v1/products/{productId}/options",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "productId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "ShopWave.Models.Requests.CreateOptionRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ShopWave.Controllers.ProductOptionsController",
+    "Method": "GetOptions",
+    "RelativePath": "api/v1/products/{productId}/options",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "id",
+        "Name": "productId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ShopWave.Controllers.ProductOptionsController",
+    "Method": "AddValue",
+    "RelativePath": "api/v1/products/{productId}/options/{optionId}/values",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "productId",
         "Type": "System.Guid",
         "IsRequired": true
       },
       {
-        "Name": "page",
-        "Type": "System.Int32",
-        "IsRequired": false
+        "Name": "optionId",
+        "Type": "System.Guid",
+        "IsRequired": true
       },
       {
-        "Name": "pageSize",
-        "Type": "System.Int32",
-        "IsRequired": false
+        "Name": "request",
+        "Type": "ShopWave.Models.Requests.AddOptionValueRequest",
+        "IsRequired": true
       }
     ],
     "ReturnTypes": []
@@ -924,100 +951,6 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "ShopWave.Controllers.ReviewsController",
-    "Method": "CreateReview",
-    "RelativePath": "api/v1/Reviews",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "request",
-        "Type": "ShopWave.Controllers.CreateReviewRequest",
-        "IsRequired": true
-      },
-      {
-        "Name": "Authorization",
-        "Type": "System.String",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "ShopWave.Controllers.ReviewsController",
-    "Method": "DeleteReview",
-    "RelativePath": "api/v1/Reviews/{id}",
-    "HttpMethod": "DELETE",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Guid",
-        "IsRequired": true
-      },
-      {
-        "Name": "Authorization",
-        "Type": "System.String",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "ShopWave.Controllers.ReviewsController",
-    "Method": "UpdateReview",
-    "RelativePath": "api/v1/Reviews/{id}",
-    "HttpMethod": "PUT",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Guid",
-        "IsRequired": true
-      },
-      {
-        "Name": "request",
-        "Type": "ShopWave.Controllers.UpdateReviewRequest",
-        "IsRequired": true
-      },
-      {
-        "Name": "Authorization",
-        "Type": "System.String",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "ShopWave.Controllers.ReviewsController",
-    "Method": "GetMyReviews",
-    "RelativePath": "api/v1/Reviews/user/me",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "page",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "pageSize",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "Authorization",
-        "Type": "System.String",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
     "ContainingType": "ShopWave.Controllers.UsersController",
     "Method": "GetUsers",
     "RelativePath": "api/v1/Users",
@@ -1107,101 +1040,6 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "ShopWave.Controllers.WishlistController",
-    "Method": "GetWishlist",
-    "RelativePath": "api/v1/Wishlist",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "page",
-        "Type": "System.Int32",
-        "IsRequired": false
-      },
-      {
-        "Name": "pageSize",
-        "Type": "System.Int32",
-        "IsRequired": false
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "ShopWave.Controllers.WishlistController",
-    "Method": "AddToWishlist",
-    "RelativePath": "api/v1/Wishlist",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "request",
-        "Type": "ShopWave.Controllers.AddToWishlistRequest",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "ShopWave.Controllers.WishlistController",
-    "Method": "RemoveFromWishlist",
-    "RelativePath": "api/v1/Wishlist/{productId}",
-    "HttpMethod": "DELETE",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "productId",
-        "Type": "System.Guid",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "ShopWave.Controllers.WishlistController",
-    "Method": "CheckInWishlist",
-    "RelativePath": "api/v1/Wishlist/check/{productId}",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "productId",
-        "Type": "System.Guid",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "ShopWave.Controllers.WishlistController",
-    "Method": "ClearWishlist",
-    "RelativePath": "api/v1/Wishlist/clear",
-    "HttpMethod": "DELETE",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "ShopWave.Controllers.WishlistController",
-    "Method": "MoveToCart",
-    "RelativePath": "api/v1/Wishlist/move-to-cart/{productId}",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "productId",
-        "Type": "System.Guid",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
     "ContainingType": "Program\u002B\u003C\u003Ec",
     "Method": "\u003C\u003CMain\u003E$\u003Eb__0_10",
     "RelativePath": "health",
@@ -1211,7 +1049,7 @@
     "Parameters": [],
     "ReturnTypes": [
       {
-        "Type": "\u003C\u003Ef__AnonymousType54\u00602[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.DateTime, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "Type": "\u003C\u003Ef__AnonymousType56\u00602[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.DateTime, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
         "MediaTypes": [
           "application/json"
         ],

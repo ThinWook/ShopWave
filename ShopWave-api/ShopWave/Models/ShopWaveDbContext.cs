@@ -11,13 +11,10 @@ namespace ShopWave.Models
         public DbSet<User> Users { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<Product> Products { get; set; }
-        public DbSet<Review> Reviews { get; set; }
+        public DbSet<Cart> Carts { get; set; }
         public DbSet<CartItem> CartItems { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
-        public DbSet<WishlistItem> WishlistItems { get; set; }
-        public DbSet<ProductRecommendation> ProductRecommendations { get; set; }
-        public DbSet<BrowsingHistory> BrowsingHistory { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<UserSetting> UserSettings { get; set; }
         public DbSet<UserSession> UserSessions { get; set; }
@@ -25,6 +22,16 @@ namespace ShopWave.Models
         public DbSet<ProductMedia> ProductMedia { get; set; }
         public DbSet<UserMedia> UserMedia { get; set; }
         public DbSet<ProductVariant> ProductVariants { get; set; }
+
+        // New DbSets
+        public DbSet<ProductOption> ProductOptions { get; set; }
+        public DbSet<OptionValue> OptionValues { get; set; }
+        public DbSet<VariantValue> VariantValues { get; set; }
+        
+        // Cart and Discount DbSets
+        public DbSet<Discount> Discounts { get; set; }
+        public DbSet<AppliedDiscount> AppliedDiscounts { get; set; }
+        public DbSet<DiscountTier> DiscountTiers { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -78,23 +85,27 @@ namespace ShopWave.Models
                 .HasForeignKey(p => p.CategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<Review>()
-                .HasOne(r => r.Product)
-                .WithMany(p => p.Reviews)
-                .HasForeignKey(r => r.ProductId)
+            // Cart relationships
+            modelBuilder.Entity<Cart>()
+                .HasOne(c => c.User)
+                .WithMany()
+                .HasForeignKey(c => c.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Review>()
-                .HasOne(r => r.User)
-                .WithMany(u => u.Reviews)
-                .HasForeignKey(r => r.UserId)
+            modelBuilder.Entity<Cart>()
+                .HasIndex(c => c.SessionId);
+
+            modelBuilder.Entity<CartItem>()
+                .HasOne(ci => ci.Cart)
+                .WithMany(c => c.CartItems)
+                .HasForeignKey(ci => ci.CartId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<CartItem>()
                 .HasOne(ci => ci.User)
                 .WithMany(u => u.CartItems)
                 .HasForeignKey(ci => ci.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<CartItem>()
                 .HasOne(ci => ci.Product)
@@ -106,6 +117,23 @@ namespace ShopWave.Models
                 .HasOne(ci => ci.ProductVariant)
                 .WithMany()
                 .HasForeignKey(ci => ci.ProductVariantId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Discount relationships
+            modelBuilder.Entity<Discount>()
+                .HasIndex(d => d.Code)
+                .IsUnique();
+
+            modelBuilder.Entity<AppliedDiscount>()
+                .HasOne(ad => ad.Cart)
+                .WithMany(c => c.AppliedDiscounts)
+                .HasForeignKey(ad => ad.CartId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<AppliedDiscount>()
+                .HasOne(ad => ad.Discount)
+                .WithMany(d => d.AppliedDiscounts)
+                .HasForeignKey(ad => ad.DiscountId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Order>()
@@ -132,42 +160,6 @@ namespace ShopWave.Models
                 .HasForeignKey(oi => oi.ProductVariantId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<WishlistItem>()
-                .HasOne(wi => wi.User)
-                .WithMany(u => u.WishlistItems)
-                .HasForeignKey(wi => wi.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<WishlistItem>()
-                .HasOne(wi => wi.Product)
-                .WithMany(p => p.WishlistItems)
-                .HasForeignKey(wi => wi.ProductId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<ProductRecommendation>()
-                .HasOne(pr => pr.User)
-                .WithMany(u => u.ProductRecommendations)
-                .HasForeignKey(pr => pr.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<ProductRecommendation>()
-                .HasOne(pr => pr.Product)
-                .WithMany(p => p.ProductRecommendations)
-                .HasForeignKey(pr => pr.ProductId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<BrowsingHistory>()
-                .HasOne(bh => bh.User)
-                .WithMany(u => u.BrowsingHistory)
-                .HasForeignKey(bh => bh.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<BrowsingHistory>()
-                .HasOne(bh => bh.Product)
-                .WithMany(p => p.BrowsingHistory)
-                .HasForeignKey(bh => bh.ProductId)
-                .OnDelete(DeleteBehavior.Cascade);
-
             modelBuilder.Entity<Notification>()
                 .HasOne(n => n.User)
                 .WithMany(u => u.Notifications)
@@ -186,20 +178,8 @@ namespace ShopWave.Models
                 .HasForeignKey(us => us.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<CartItem>()
-                .HasIndex(ci => new { ci.UserId, ci.ProductId })
-                .IsUnique();
-
-            modelBuilder.Entity<WishlistItem>()
-                .HasIndex(wi => new { wi.UserId, wi.ProductId })
-                .IsUnique();
-
             modelBuilder.Entity<UserSetting>()
                 .HasIndex(us => new { us.UserId, us.SettingKey })
-                .IsUnique();
-
-            modelBuilder.Entity<Review>()
-                .HasIndex(r => new { r.ProductId, r.UserId })
                 .IsUnique();
 
             // Media table configuration
@@ -248,6 +228,40 @@ namespace ShopWave.Models
                 .WithMany()
                 .HasForeignKey(um => um.MediaId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // New: product options and option values
+            modelBuilder.Entity<ProductOption>()
+                .HasOne(po => po.Product)
+                .WithMany(p => p.Options)
+                .HasForeignKey(po => po.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<OptionValue>()
+                .HasOne(ov => ov.Option)
+                .WithMany(o => o.Values)
+                .HasForeignKey(ov => ov.OptionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<OptionValue>()
+                .HasOne(ov => ov.Thumbnail)
+                .WithMany()
+                .HasForeignKey(ov => ov.ThumbnailId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<VariantValue>()
+                .HasKey(vv => new { vv.VariantId, vv.ValueId });
+
+            modelBuilder.Entity<VariantValue>()
+                .HasOne(vv => vv.Variant)
+                .WithMany(v => v.VariantValues)
+                .HasForeignKey(vv => vv.VariantId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<VariantValue>()
+                .HasOne(vv => vv.Value)
+                .WithMany()
+                .HasForeignKey(vv => vv.ValueId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

@@ -9,6 +9,9 @@ namespace ShopWave.Models
         public Guid Id { get; set; } = Guid.NewGuid();
 
         [Required]
+        public Guid CartId { get; set; }
+
+        [Required]
         public Guid UserId { get; set; }
 
         [Required]
@@ -31,6 +34,9 @@ namespace ShopWave.Models
 
         [NotMapped]
         public decimal TotalPrice => Quantity * UnitPrice;
+
+        [ForeignKey("CartId")]
+        public virtual Cart Cart { get; set; } = null!;
 
         [ForeignKey("UserId")]
         public virtual User User { get; set; } = null!;

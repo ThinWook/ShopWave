@@ -1,0 +1,28 @@
+-- Quick check - Copy và paste vào SQL Server ?? verify
+SELECT 
+    'Migration Status' AS CheckType,
+    CASE 
+        WHEN EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Carts') 
+        THEN '? SUCCESS - All tables created'
+        ELSE '? FAILED - Tables not found'
+    END AS Result
+UNION ALL
+SELECT 
+    'Carts Table',
+    CASE WHEN EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Carts') THEN '?' ELSE '?' END
+UNION ALL
+SELECT 
+    'Discounts Table',
+    CASE WHEN EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Discounts') THEN '?' ELSE '?' END
+UNION ALL
+SELECT 
+    'AppliedDiscounts Table',
+    CASE WHEN EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'AppliedDiscounts') THEN '?' ELSE '?' END
+UNION ALL
+SELECT 
+    'DiscountTiers Table',
+    CASE WHEN EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'DiscountTiers') THEN '?' ELSE '?' END
+UNION ALL
+SELECT 
+    'CartItems.CartId Column',
+    CASE WHEN EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'CartItems' AND COLUMN_NAME = 'CartId') THEN '?' ELSE '?' END;

@@ -23,11 +23,6 @@ namespace ShopWave.Models
         public long? MediaId { get; set; }
         public virtual Media? Media { get; set; }
 
-        [Range(0.0, 5.0)]
-        public double Rating { get; set; } = 0;
-
-        public int ReviewsCount { get; set; } = 0;
-
         public int Popularity { get; set; } = 0;
 
         public bool IsActive { get; set; } = true;
@@ -36,16 +31,22 @@ namespace ShopWave.Models
 
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+        // Denormalized fields for admin list performance
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal DisplayPrice { get; set; } = 0m; // minimal price among variants
+        public int TotalInventory { get; set; } = 0;    // sum of variant stock
+        public int VariantCount { get; set; } = 0;      // number of variants
+
         // Navigation properties
         [ForeignKey("CategoryId")]
         public virtual Category Category { get; set; } = null!;
 
-        public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
         public virtual ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
         public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
-        public virtual ICollection<WishlistItem> WishlistItems { get; set; } = new List<WishlistItem>();
-        public virtual ICollection<ProductRecommendation> ProductRecommendations { get; set; } = new List<ProductRecommendation>();
-        public virtual ICollection<BrowsingHistory> BrowsingHistory { get; set; } = new List<BrowsingHistory>();
         public virtual ICollection<ProductMedia> ProductMedia { get; set; } = new List<ProductMedia>();
+
+        // New navigations for options and variants
+        public virtual ICollection<ProductOption> Options { get; set; } = new List<ProductOption>();
+        public virtual ICollection<ProductVariant> Variants { get; set; } = new List<ProductVariant>();
     }
 }

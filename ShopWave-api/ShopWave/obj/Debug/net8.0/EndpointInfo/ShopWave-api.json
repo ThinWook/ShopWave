@@ -975,6 +975,120 @@
         }
       }
     },
+    "/api/v1/products/{productId}/options": {
+      "post": {
+        "tags": [
+          "ProductOptions"
+        ],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOptionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOptionRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOptionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "ProductOptions"
+        ],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/products/{productId}/options/{optionId}/values": {
+      "post": {
+        "tags": [
+          "ProductOptions"
+        ],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "optionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddOptionValueRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddOptionValueRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddOptionValueRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/v1/Products": {
       "post": {
         "tags": [
@@ -1023,14 +1137,6 @@
             "schema": {
               "type": "string",
               "format": "uuid"
-            }
-          },
-          {
-            "name": "MinRating",
-            "in": "query",
-            "schema": {
-              "type": "number",
-              "format": "double"
             }
           },
           {
@@ -1145,47 +1251,6 @@
             "schema": {
               "type": "string",
               "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/v1/Products/{id}/reviews": {
-      "get": {
-        "tags": [
-          "Products"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 1
-            }
-          },
-          {
-            "name": "pageSize",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 10
             }
           }
         ],
@@ -1453,200 +1518,6 @@
         }
       }
     },
-    "/api/Recommendations": {
-      "get": {
-        "tags": [
-          "Recommendations"
-        ],
-        "parameters": [
-          {
-            "name": "userId",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "productId",
-            "in": "query",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "k",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/v1/Reviews": {
-      "post": {
-        "tags": [
-          "Reviews"
-        ],
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateReviewRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateReviewRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateReviewRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/v1/Reviews/{id}": {
-      "delete": {
-        "tags": [
-          "Reviews"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "Reviews"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateReviewRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateReviewRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateReviewRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/v1/Reviews/user/me": {
-      "get": {
-        "tags": [
-          "Reviews"
-        ],
-        "parameters": [
-          {
-            "name": "page",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 1
-            }
-          },
-          {
-            "name": "pageSize",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 10
-            }
-          },
-          {
-            "name": "Authorization",
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
     "/": {
       "get": {
         "tags": [
@@ -1658,7 +1529,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StringStringStringDateTimeString<>f__AnonymousType53"
+                  "$ref": "#/components/schemas/StringStringStringDateTimeString<>f__AnonymousType55"
                 }
               }
             }
@@ -1677,7 +1548,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StringDateTime<>f__AnonymousType54"
+                  "$ref": "#/components/schemas/StringDateTime<>f__AnonymousType56"
                 }
               }
             }
@@ -1826,56 +1697,37 @@
         }
       }
     },
-    "/api/v1/Wishlist": {
-      "get": {
+    "/api/v1/products/{productId}/find-variant": {
+      "post": {
         "tags": [
-          "Wishlist"
+          "VariantLookup"
         ],
         "parameters": [
           {
-            "name": "page",
-            "in": "query",
+            "name": "productId",
+            "in": "path",
+            "required": true,
             "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 1
-            }
-          },
-          {
-            "name": "pageSize",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 12
+              "type": "string",
+              "format": "uuid"
             }
           }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Wishlist"
         ],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AddToWishlistRequest"
+                "$ref": "#/components/schemas/FindVariantByValuesRequest"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/AddToWishlistRequest"
+                "$ref": "#/components/schemas/FindVariantByValuesRequest"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/AddToWishlistRequest"
+                "$ref": "#/components/schemas/FindVariantByValuesRequest"
               }
             }
           }
@@ -1886,91 +1738,24 @@
           }
         }
       }
-    },
-    "/api/v1/Wishlist/{productId}": {
-      "delete": {
-        "tags": [
-          "Wishlist"
-        ],
-        "parameters": [
-          {
-            "name": "productId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/v1/Wishlist/check/{productId}": {
-      "get": {
-        "tags": [
-          "Wishlist"
-        ],
-        "parameters": [
-          {
-            "name": "productId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/v1/Wishlist/clear": {
-      "delete": {
-        "tags": [
-          "Wishlist"
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/v1/Wishlist/move-to-cart/{productId}": {
-      "post": {
-        "tags": [
-          "Wishlist"
-        ],
-        "parameters": [
-          {
-            "name": "productId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
     }
   },
   "components": {
     "schemas": {
+      "AddOptionValueRequest": {
+        "required": [
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "value": {
+            "maxLength": 255,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "AddToCartRequest": {
         "required": [
           "productId",
@@ -1992,19 +1777,6 @@
             "minimum": 1,
             "type": "integer",
             "format": "int32"
-          }
-        },
-        "additionalProperties": false
-      },
-      "AddToWishlistRequest": {
-        "required": [
-          "productId"
-        ],
-        "type": "object",
-        "properties": {
-          "productId": {
-            "type": "string",
-            "format": "uuid"
           }
         },
         "additionalProperties": false
@@ -2107,6 +1879,27 @@
         },
         "additionalProperties": false
       },
+      "CreateOptionRequest": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 255,
+            "minLength": 1,
+            "type": "string"
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CreateOrderRequest": {
         "required": [
           "paymentMethod",
@@ -2132,27 +1925,18 @@
         },
         "additionalProperties": false
       },
-      "CreateReviewRequest": {
+      "FindVariantByValuesRequest": {
         "required": [
-          "productId",
-          "rating"
+          "valueIds"
         ],
         "type": "object",
         "properties": {
-          "productId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "rating": {
-            "maximum": 5,
-            "minimum": 1,
-            "type": "integer",
-            "format": "int32"
-          },
-          "comment": {
-            "maxLength": 2000,
-            "type": "string",
-            "nullable": true
+          "valueIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         },
         "additionalProperties": false
@@ -2172,6 +1956,9 @@
         "additionalProperties": false
       },
       "GalleryMediaDto": {
+        "required": [
+          "mediaId"
+        ],
         "type": "object",
         "properties": {
           "mediaId": {
@@ -2251,6 +2038,24 @@
         },
         "additionalProperties": false
       },
+      "OptionValueDto": {
+        "required": [
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "value": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "thumbnailId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "ProblemDetails": {
         "type": "object",
         "properties": {
@@ -2279,11 +2084,15 @@
         "additionalProperties": { }
       },
       "ProductCreateRequest": {
+        "required": [
+          "categoryId",
+          "name"
+        ],
         "type": "object",
         "properties": {
           "name": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "type": "string"
           },
           "description": {
             "type": "string",
@@ -2292,6 +2101,10 @@
           "categoryId": {
             "type": "string",
             "format": "uuid"
+          },
+          "slug": {
+            "type": "string",
+            "nullable": true
           },
           "mainImageId": {
             "type": "integer",
@@ -2305,6 +2118,13 @@
             },
             "nullable": true
           },
+          "options": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductOptionDto"
+            },
+            "nullable": true
+          },
           "variants": {
             "type": "array",
             "items": {
@@ -2315,7 +2135,35 @@
         },
         "additionalProperties": false
       },
+      "ProductOptionDto": {
+        "required": [
+          "name",
+          "values"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "displayType": {
+            "type": "string",
+            "nullable": true
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OptionValueDto"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
       "ProductVariantDto": {
+        "required": [
+          "price",
+          "stock"
+        ],
         "type": "object",
         "properties": {
           "sku": {
@@ -2335,12 +2183,11 @@
             "format": "int64",
             "nullable": true
           },
-          "size": {
-            "type": "string",
-            "nullable": true
-          },
-          "color": {
-            "type": "string",
+          "selectedOptions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SelectedOptionDto"
+            },
             "nullable": true
           }
         },
@@ -2364,14 +2211,6 @@
           "imageId": {
             "type": "integer",
             "format": "int64",
-            "nullable": true
-          },
-          "size": {
-            "type": "string",
-            "nullable": true
-          },
-          "color": {
-            "type": "string",
             "nullable": true
           }
         },
@@ -2445,7 +2284,25 @@
         },
         "additionalProperties": false
       },
-      "StringDateTime<>f__AnonymousType54": {
+      "SelectedOptionDto": {
+        "required": [
+          "optionName",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "optionName": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "value": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "StringDateTime<>f__AnonymousType56": {
         "type": "object",
         "properties": {
           "status": {
@@ -2459,7 +2316,7 @@
         },
         "additionalProperties": false
       },
-      "StringStringStringDateTimeString<>f__AnonymousType53": {
+      "StringStringStringDateTimeString<>f__AnonymousType55": {
         "type": "object",
         "properties": {
           "status": {
@@ -2558,26 +2415,6 @@
           },
           "avatarUrl": {
             "maxLength": 500,
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "UpdateReviewRequest": {
-        "required": [
-          "rating"
-        ],
-        "type": "object",
-        "properties": {
-          "rating": {
-            "maximum": 5,
-            "minimum": 1,
-            "type": "integer",
-            "format": "int32"
-          },
-          "comment": {
-            "maxLength": 2000,
             "type": "string",
             "nullable": true
           }
