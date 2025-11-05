@@ -7,7 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export function ProductSearch() {
+type ProductSearchProps = {
+  className?: string;
+};
+
+export function ProductSearch({ className }: ProductSearchProps) {
   const { filters, setFilters } = useProducts();
   const [searchTerm, setSearchTerm] = useState(filters.searchQuery);
 
@@ -27,10 +31,10 @@ export function ProductSearch() {
   };
 
   return (
-    <form onSubmit={handleSearch} className="relative w-full max-w-md flex items-center">
+    <form onSubmit={handleSearch} className={`relative w-full max-w-md flex items-center ${className ?? ''}`}>
       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
       <Input
-        type="search"
+        type="text"
         placeholder="Search products..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}

@@ -46,12 +46,13 @@ export default function Header() {
           <NavLinkItems />
         </nav>
         
-        <div className="hidden md:flex flex-1 justify-center px-4">
-           <ProductSearch />
-        </div>
+      {/* Desktop: place search near the cart icon */}
 
 
         <div className="flex items-center gap-3">
+          <div className="hidden md:flex items-center mr-2">
+            <ProductSearch className="w-64" />
+          </div>
           {/* Wishlist removed from header */}
           <Button variant="ghost" size="icon" asChild className="relative hover:bg-accent/10 transition-colors">
             <Link href="/cart" aria-label="View Cart">
