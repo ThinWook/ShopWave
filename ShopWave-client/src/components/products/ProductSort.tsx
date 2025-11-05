@@ -10,17 +10,17 @@ export function ProductSort() {
   const { sortOption, setSortOption } = useProducts();
 
   const sortOptions: { value: SortOption; label: string }[] = [
-    { value: 'popularity', label: 'Popularity' },
-    { value: 'price_asc', label: 'Price: Low to High' },
-    { value: 'price_desc', label: 'Price: High to Low' },
+    { value: 'popularity', label: 'Phổ biến' },
+    { value: 'price_asc', label: 'Giá: Tăng dần' },
+    { value: 'price_desc', label: 'Giá: Giảm dần' },
   ];
 
   return (
     <div className="flex items-center space-x-2">
-      <Label htmlFor="sort-select" className="text-sm font-medium">Sort by:</Label>
+      <Label htmlFor="sort-select" className="text-sm font-medium">Sắp xếp theo:</Label>
       <Select value={sortOption} onValueChange={(value) => setSortOption(value as SortOption)}>
         <SelectTrigger id="sort-select" className="w-[180px] h-10 shadow-sm">
-          <SelectValue placeholder="Sort products" />
+          <SelectValue placeholder="Sắp xếp" />
         </SelectTrigger>
         <SelectContent>
           {sortOptions.map((option) => (

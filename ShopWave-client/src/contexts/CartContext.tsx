@@ -6,16 +6,26 @@ import { createContext, useContext, useReducer, useEffect, useCallback, useRef }
 import { usePathname } from 'next/navigation';
 import { api, UnauthorizedError, getAuthToken } from '@/lib/api';
 import { formatApiError, humanizeFieldErrors } from '@/lib/error-format';
+import { useToast } from '@/hooks/use-toast';
 import type { FECartItem as CartItem, FEProduct as Product } from '@/lib/api';
+import type { ProgressiveDiscount, AppliedVoucher, AvailableVoucher } from '@/lib/types';
 
 interface CartState {
   items: CartItem[];
   isSyncing: boolean;
   error: string | null;
+  // Totals from backend when available
+  totalItems: number;
+  subTotal: number;
+  shippingFee: number;
+  total: number;
+  progressiveDiscount?: ProgressiveDiscount | null;
+  appliedVoucher?: AppliedVoucher | null;
+  availableVouchers?: AvailableVoucher[] | null;
 }
 
 type CartAction =
-  | { type: 'SET_CART'; items: CartItem[] }
+  | { type: 'SET_CART'; items: CartItem[]; totals?: Partial<Pick<CartState, 'totalItems' | 'subTotal' | 'shippingFee' | 'total'>>; extras?: Partial<Pick<CartState, 'progressiveDiscount' | 'appliedVoucher' | 'availableVouchers'>> }
   | { type: 'SET_SYNCING'; value: boolean }
   | { type: 'SET_ERROR'; message: string | null };
 
@@ -23,6 +33,13 @@ const initialState: CartState = {
   items: [],
   isSyncing: false,
   error: null,
+  totalItems: 0,
+  subTotal: 0,
+  shippingFee: 0,
+  total: 0,
+  progressiveDiscount: null,
+  appliedVoucher: null,
+  availableVouchers: null,
 };
 
 const CartContext = createContext<{
@@ -35,12 +52,24 @@ const CartContext = createContext<{
   getCartTotal: () => number;
   getItemCount: () => number;
   reload: () => Promise<void>;
+  applyVoucher: (code: string) => Promise<void>;
+  removeVoucher: () => Promise<void>;
 } | undefined>(undefined);
 
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
     case 'SET_CART':
-      return { ...state, items: action.items };
+      return {
+        ...state,
+        items: action.items,
+        totalItems: action.totals?.totalItems ?? action.items.reduce((c, it) => c + it.quantity, 0),
+        subTotal: action.totals?.subTotal ?? action.items.reduce((s, it) => s + it.price * it.quantity, 0),
+        shippingFee: action.totals?.shippingFee ?? state.shippingFee,
+        total: action.totals?.total ?? ((action.totals?.subTotal ?? action.items.reduce((s, it) => s + it.price * it.quantity, 0)) + (action.totals?.shippingFee ?? state.shippingFee)),
+        progressiveDiscount: action.extras?.progressiveDiscount ?? state.progressiveDiscount ?? null,
+        appliedVoucher: action.extras?.appliedVoucher ?? state.appliedVoucher ?? null,
+        availableVouchers: action.extras?.availableVouchers ?? state.availableVouchers ?? null,
+      };
     case 'SET_SYNCING':
       return { ...state, isSyncing: action.value };
     case 'SET_ERROR':
@@ -52,6 +81,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(cartReducer, initialState);
+  const { toast } = useToast();
   // Prevent race conditions between initial load and user actions (add/update/remove)
   // by tracking the latest async operation. Older responses will be ignored.
   const latestOpIdRef = useRef(0);
@@ -65,17 +95,20 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const loadRemote = useCallback(async () => {
-    // If not logged in, keep cart empty without calling backend
-    if (!getAuthToken()) {
-      dispatch({ type: 'SET_CART', items: [] });
-      return;
-    }
     const opId = beginOp();
     try {
       const res = await api.cart.get();
       // Ignore if a newer operation has started since this one began
       if (opId !== latestOpIdRef.current) return;
-      dispatch({ type: 'SET_CART', items: res.items });
+      // Totals might come nested in res.data from backend
+      const totals = res && (res as any).data ? (res as any).data : undefined;
+      const extras = extractExtras(res);
+      dispatch({ type: 'SET_CART', items: res.items, totals: totals ? {
+        totalItems: totals.totalItems,
+        subTotal: totals.subTotal,
+        shippingFee: totals.shippingFee,
+        total: totals.total,
+      } : undefined, extras });
       localStorage.setItem('shopwave-cart', JSON.stringify(res.items));
     } catch (e: any) {
       if (opId !== latestOpIdRef.current) return;
@@ -120,7 +153,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       const result: any = await fn();
       if (result?.items) {
         if (opId === latestOpIdRef.current) {
-          dispatch({ type: 'SET_CART', items: result.items });
+          const totals = result && (result as any).data ? (result as any).data : undefined;
+          const extras = extractExtras(result);
+          dispatch({ type: 'SET_CART', items: result.items, totals: totals ? {
+            totalItems: totals.totalItems,
+            subTotal: totals.subTotal,
+            shippingFee: totals.shippingFee,
+            total: totals.total,
+          } : undefined, extras });
           localStorage.setItem('shopwave-cart', JSON.stringify(result.items));
         }
       }
@@ -132,7 +172,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       const fe = formatApiError(e);
-      dispatch({ type: 'SET_ERROR', message: humanizeFieldErrors(fe.fieldErrors) || fe.message || 'Cart action failed' });
+      // Friendly toast + set error state. Show traceId when available to help support.
+      let toastDesc = humanizeFieldErrors(fe.fieldErrors) || fe.message || 'Cart action failed';
+      if (fe.message === 'OUT_OF_STOCK') toastDesc = 'Insufficient stock for selected variant.';
+      else if (fe.message === 'NOT_FOUND') toastDesc = 'Requested item not found. It may have been removed.';
+      else if (fe.message === 'INTERNAL_ERROR') toastDesc = 'Unexpected server error. Please try again later.';
+      const trace = fe.traceId ? ` Ref: ${fe.traceId}` : '';
+      try { toast({ title: 'Cart update failed', description: `${toastDesc}${trace}` }); } catch {}
+      dispatch({ type: 'SET_ERROR', message: toastDesc });
       throw e;
     } finally {
       if (opId === latestOpIdRef.current) {
@@ -142,6 +189,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addItem = async (product: Product, quantity = 1) => {
+    // For products with variants, product.id may be the variant id provided by caller
     await syncWrapper(() => api.cart.add(product.id, quantity));
   };
   const removeItem = async (cartItemId: string) => {
@@ -154,16 +202,19 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     await syncWrapper(() => api.cart.clear());
   };
 
-  const getCartTotal = () => {
-    return state.items.reduce((total, item) => total + item.price * item.quantity, 0);
+  const applyVoucher = async (code: string) => {
+    await syncWrapper(() => api.cart.applyVoucher(code));
+  };
+  const removeVoucher = async () => {
+    await syncWrapper(() => api.cart.removeVoucher());
   };
 
-  const getItemCount = () => {
-    return state.items.reduce((count, item) => count + item.quantity, 0);
-  };
+  const getCartTotal = () => state.subTotal;
+
+  const getItemCount = () => state.totalItems;
 
   return (
-    <CartContext.Provider value={{ state, dispatch, addItem, removeItem, updateQuantity, clearCart, getCartTotal, getItemCount, reload: loadRemote }}>
+    <CartContext.Provider value={{ state, dispatch, addItem, removeItem, updateQuantity, clearCart, getCartTotal, getItemCount, reload: loadRemote, applyVoucher, removeVoucher }}>
       {children}
     </CartContext.Provider>
   );
@@ -176,3 +227,26 @@ export const useCart = () => {
   }
   return context;
 };
+
+// ---- helpers to extract extras from various backend shapes ----
+function extractExtras(payload: any): Partial<Pick<CartState, 'progressiveDiscount' | 'appliedVoucher' | 'availableVouchers'>> {
+  const root = payload?.data && typeof payload.data === 'object' ? payload.data : payload;
+  const pd = root?.progressive_discount ?? root?.progressiveDiscount ?? null;
+  const av = root?.applied_voucher ?? root?.appliedVoucher ?? null;
+  const list = root?.available_vouchers ?? root?.availableVouchers ?? null;
+  const progressiveDiscount: ProgressiveDiscount | null = pd ? {
+    nextThresholdRemaining: Number(pd.next_threshold_remaining ?? pd.nextThresholdRemaining ?? 0),
+    nextDiscountValue: Number(pd.next_discount_value ?? pd.nextDiscountValue ?? 0),
+    currentDiscountValue: Number(pd.current_discount_value ?? pd.currentDiscountValue ?? 0),
+    progressPercent: Number(pd.progress_percent ?? pd.progressPercent ?? 0),
+  } : null;
+  const appliedVoucher: AppliedVoucher | null = av ? {
+    code: String(av.code ?? ''),
+    discountAmount: Number(av.discount_amount ?? av.discountAmount ?? 0),
+    description: av.description ?? null,
+  } : null;
+  const availableVouchers: AvailableVoucher[] | null = Array.isArray(list)
+    ? list.map((v: any) => ({ code: String(v.code ?? ''), description: v.description ?? null, discountAmount: typeof v.discount_amount === 'number' ? v.discount_amount : (typeof v.discountAmount === 'number' ? v.discountAmount : undefined) }))
+    : null;
+  return { progressiveDiscount, appliedVoucher, availableVouchers };
+}

@@ -3,7 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, Package, Truck, CheckCircle } from "lucide-react";
 import Link from "next/link";
-import { useRequireAuth } from "@/hooks/use-require-auth";
+import { formatPrice } from "@/lib/format";
+// Orders page is now accessible to guests (backend must support this); no auto-redirect to signin.
 
 // TODO: Lấy dữ liệu đơn hàng thực từ backend
 type Order = {
@@ -22,17 +23,15 @@ const statusIcons = {
 };
 
 export default function OrdersPage() {
-  useRequireAuth();
+  // no auth required
   if (orders.length === 0) {
     return (
       <div className="text-center py-12">
         <ShoppingBag className="mx-auto h-24 w-24 text-muted-foreground mb-6" />
-        <h1 className="text-3xl font-bold mb-4">No Orders Yet</h1>
-        <p className="text-muted-foreground mb-8">
-          You haven&apos;t placed any orders. Start shopping to see them here!
-        </p>
+        <h1 className="text-3xl font-bold mb-4">Chưa có đơn hàng</h1>
+        <p className="text-muted-foreground mb-8">Bạn chưa đặt đơn hàng nào. Hãy bắt đầu mua sắm để thấy đơn hàng ở đây!</p>
         <Button asChild size="lg">
-          <Link href="/">Start Shopping</Link>
+          <Link href="/">Bắt đầu mua sắm</Link>
         </Button>
       </div>
     );
@@ -40,14 +39,14 @@ export default function OrdersPage() {
 
   return (
     <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-8">My Orders</h1>
+      <h1 className="text-3xl font-bold mb-8">Đơn hàng của tôi</h1>
       <div className="space-y-6">
         {orders.map((order) => (
           <Card key={order.id} className="shadow-md hover:shadow-lg transition-shadow duration-200">
             <CardHeader className="flex flex-row justify-between items-center">
               <div>
-                <CardTitle className="text-xl">Order #{order.id}</CardTitle>
-                <CardDescription>Placed on: {new Date(order.date).toLocaleDateString()}</CardDescription>
+                <CardTitle className="text-xl">Đơn hàng #{order.id}</CardTitle>
+                <CardDescription>Ngày đặt: {new Date(order.date).toLocaleDateString("vi-VN")}</CardDescription>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium"
                 style={{ 
@@ -56,12 +55,12 @@ export default function OrdersPage() {
                 }}
               >
                 {statusIcons[order.status as keyof typeof statusIcons]}
-                {order.status}
+                {order.status === 'Delivered' ? 'Đã giao' : order.status === 'Shipped' ? 'Đang giao' : 'Đang xử lý'}
               </div>
             </CardHeader>
             <CardContent>
               <div className="mb-4">
-                <h4 className="font-semibold mb-1">Items:</h4>
+                <h4 className="font-semibold mb-1">Sản phẩm:</h4>
                 <ul className="list-disc list-inside text-sm text-muted-foreground">
                   {order.items.map((item, index) => (
                     <li key={index}>{item.name} (x{item.quantity})</li>
@@ -69,8 +68,8 @@ export default function OrdersPage() {
                 </ul>
               </div>
               <div className="flex justify-between items-center border-t pt-4">
-                <p className="font-semibold text-lg">Total: ${order.total.toFixed(2)}</p>
-                <Button variant="outline" size="sm">View Details</Button>
+                <p className="font-semibold text-lg">Tổng: {formatPrice(order.total)}</p>
+                <Button variant="outline" size="sm">Xem chi tiết</Button>
               </div>
             </CardContent>
           </Card>

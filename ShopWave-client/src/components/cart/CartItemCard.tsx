@@ -10,6 +10,7 @@ import type { CartItem } from '@/lib/types';
 import { useCart } from '@/contexts/CartContext';
 import { cn } from '@/lib/utils';
 import { resolveMediaUrl } from '@/lib/media';
+import { formatPrice } from '@/lib/format';
 
 interface CartItemCardProps {
   item: CartItem;
@@ -39,8 +40,18 @@ export function CartItemCard({ item }: CartItemCardProps) {
         <Link href={`/product/${item.id}`}>
           <h3 className="text-lg font-semibold hover:text-primary transition-colors">{item.name}</h3>
         </Link>
-        <p className="text-sm text-muted-foreground">{item.category}</p>
-        <p className="text-md font-medium text-primary mt-1">${item.price.toFixed(2)}</p>
+        {Array.isArray(item.selectedOptions) && item.selectedOptions.length > 0 && (
+          <div className="mt-1 space-y-0.5">
+            {item.selectedOptions.map((opt, idx) => (
+              <p key={`${opt.name}-${idx}`} className="text-sm text-muted-foreground">
+                {opt.name}: {opt.value}
+              </p>
+            ))}
+          </div>
+        )}
+        <p className="text-md font-medium text-foreground mt-1">
+          Đơn giá: {formatPrice(item.price)}
+        </p>
       </div>
       <div className="flex flex-col items-end gap-2">
         <div className="flex items-center gap-2">
@@ -60,10 +71,10 @@ export function CartItemCard({ item }: CartItemCardProps) {
           </Button>
         </div>
         <p className="text-md font-semibold">
-          Total: ${(item.price * item.quantity).toFixed(2)}
+          Tổng: {formatPrice(item.lineTotal)}
         </p>
         <Button variant="ghost" size="sm" onClick={() => removeItem(item.cartItemId)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
-          <Trash2 className="mr-1 h-4 w-4" /> Remove
+          <Trash2 className="mr-1 h-4 w-4" /> Xóa
         </Button>
       </div>
       <style jsx global>{`

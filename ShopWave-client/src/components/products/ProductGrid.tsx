@@ -27,9 +27,9 @@ export function ProductGrid({ products, isLoading = false, skeletonsCount = 8 }:
     return (
        <Alert className="mt-8 text-center">
          <Frown className="h-6 w-6 mx-auto mb-2" />
-         <AlertTitle className="font-semibold">No Products Found</AlertTitle>
+         <AlertTitle className="font-semibold">Không có sản phẩm</AlertTitle>
          <AlertDescription>
-           Sorry, we couldn&apos;t find any products matching your criteria. Try adjusting your filters or search.
+           Rất tiếc, không tìm thấy sản phẩm phù hợp với tiêu chí của bạn. Hãy thử điều chỉnh bộ lọc hoặc tìm kiếm.
          </AlertDescription>
        </Alert>
     );

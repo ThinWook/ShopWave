@@ -21,7 +21,7 @@ export default function LoginPage(props: { searchParams: any }) {
 
   return (
     <div className="flex min-h-dvh items-center justify-center">
-      <p className="text-sm text-muted-foreground">Redirecting…</p>
+      <p className="text-sm text-muted-foreground">Đang chuyển hướng…</p>
     </div>
   );
 }

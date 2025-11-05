@@ -13,7 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from "@/hooks/use-toast";
 import { resolveMediaUrl } from '@/lib/media';
 import { formatPrice } from '@/lib/format';
-import { getAuthToken, api } from '@/lib/api';
+import { api } from '@/lib/api';
 
 interface ProductCardProps {
   product: Product;
@@ -26,10 +26,18 @@ export function ProductCard({ product }: ProductCardProps) {
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent link navigation if card is wrapped in Link
     e.stopPropagation();
-    if (!getAuthToken()) {
-      router.replace(`/signin?from=${encodeURIComponent(`/product/${product.id}`)}`);
+    // If this product exposes variants, redirect to product detail so user can
+    // pick variant/option. Sending a top-level product id to the backend as
+    // `variantId` often results in a NOT_FOUND error if the backend expects a
+    // real variant id. Avoid auto-adding when variants exist.
+    const maybeVariants = (product as any).variants;
+    if (Array.isArray(maybeVariants) && maybeVariants.length > 0) {
+      // Navigate to product page for variant selection
+      router.push(`/product/${product.id}`);
       return;
     }
+
+    // No variants — safe to add the product id as variantId for simple products
     addToCart(product);
     toast({
       title: "Added to Cart",
@@ -40,7 +48,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <Card className="flex flex-col h-full overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-      <Link href={getAuthToken() ? `/product/${product.id}` : `/signin?from=${encodeURIComponent(`/product/${product.id}`)}`} className="block">
+  <Link href={`/product/${product.id}`} className="block">
         <CardHeader className="p-0 relative aspect-square overflow-hidden rounded-lg">
           <Image
             src={resolveMediaUrl(product.imageUrl)}

@@ -35,11 +35,11 @@ export function ProductSearch({ className }: ProductSearchProps) {
       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
       <Input
         type="text"
-        placeholder="Search products..."
+        placeholder="Tìm sản phẩm..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
         className="pl-10 pr-10 py-2 h-10 shadow-sm focus:ring-primary focus:border-primary"
-        aria-label="Search products"
+        aria-label="Tìm sản phẩm"
       />
       {searchTerm && (
         <Button 
@@ -48,7 +48,7 @@ export function ProductSearch({ className }: ProductSearchProps) {
           size="icon" 
           onClick={clearSearch}
           className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground hover:text-foreground"
-          aria-label="Clear search"
+          aria-label="Xóa tìm kiếm"
         >
           <X className="h-4 w-4" />
         </Button>

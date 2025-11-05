@@ -19,8 +19,8 @@ export default function Header() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const navLinks = [
-    { href: '/', label: 'Home' },
-    { href: '/products', label: 'All Products' },
+    { href: '/', label: 'Trang chủ' },
+    { href: '/products', label: 'Tất cả sản phẩm' },
     // Add more categories or links here if needed
   ];
 
@@ -55,7 +55,7 @@ export default function Header() {
           </div>
           {/* Wishlist removed from header */}
           <Button variant="ghost" size="icon" asChild className="relative hover:bg-accent/10 transition-colors">
-            <Link href="/cart" aria-label="View Cart">
+            <Link href="/cart" aria-label="Xem giỏ hàng">
               <ShoppingBag className="h-5 w-5" />
               {getItemCount() > 0 && (
                 <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-xs">
@@ -65,7 +65,7 @@ export default function Header() {
             </Link>
           </Button>
           <Button variant="ghost" size="icon" asChild className="hover:bg-accent/10 transition-colors">
-            <Link href="/profile" aria-label="User Profile"> {/* Placeholder for profile */}
+            <Link href="/profile" aria-label="Hồ sơ người dùng"> {/* Placeholder for profile */}
               <User className="h-5 w-5" />
             </Link>
           </Button>
@@ -75,7 +75,7 @@ export default function Header() {
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon">
                   <Menu className="h-6 w-6" />
-                  <span className="sr-only">Toggle menu</span>
+                  <span className="sr-only">Mở menu</span>
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-full max-w-xs sm:max-w-sm">

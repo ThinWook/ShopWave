@@ -20,7 +20,7 @@ export default function HomeBanner() {
         {/* Base gradient is kept so it still looks ok if the image is missing */}
         <Image
           src={imgSrc}
-          alt="Ocean Threads - Beachwear & Accessories"
+          alt="Ocean Threads - Thời trang biển & Phụ kiện"
           // Avoid using the server-side image optimizer in dev (self-signed backend certs,
           // turbopack limitations). Let the browser fetch the asset directly.
           unoptimized
@@ -39,14 +39,14 @@ export default function HomeBanner() {
       {/* Content overlay */}
       <div className="absolute inset-0 flex items-center justify-end p-6 sm:p-10">
         <div className="w-full max-w-md rounded-lg bg-background/80 p-6 backdrop-blur-md shadow-sm">
-          <p className="text-sm tracking-widest text-muted-foreground uppercase">Beachwear & Accessories</p>
+          <p className="text-sm tracking-widest text-muted-foreground uppercase">Thời trang biển & Phụ kiện</p>
           <h2 className="mt-2 text-3xl sm:text-4xl font-extrabold leading-tight">Ocean Threads</h2>
           <p className="mt-3 text-sm sm:text-base text-muted-foreground">
-            New-season essentials for your seaside escape.
+            Những món thiết yếu mùa mới cho kỳ nghỉ bên bờ biển của bạn.
           </p>
           <div className="mt-5">
             <Link href="/products">
-              <Button size="lg">Shop Now</Button>
+              <Button size="lg">Mua ngay</Button>
             </Link>
           </div>
         </div>

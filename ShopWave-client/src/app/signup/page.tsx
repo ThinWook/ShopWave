@@ -5,7 +5,7 @@ import SignUpForm from "@/components/auth/SignUpForm";
 export default function SignUpPage() {
   return (
     <>
-      <PageMeta title={"Đăng ký | Bảng điều khiển quản trị"} description={"Tạo tài khoản để bắt đầu sử dụng bảng điều khiển quản trị."} />
+      <PageMeta title={"Đăng ký | ShopWave"} description={"Tạo tài khoản để mua sắm cùng ShopWave."} />
       <AuthLayout>
         <SignUpForm />
       </AuthLayout>

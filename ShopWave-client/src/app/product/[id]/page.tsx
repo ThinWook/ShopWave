@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
 import type { FEProduct as Product, FEReview as Review } from '@/lib/api';
-import { api, UnauthorizedError } from '@/lib/api';
+import { api } from '@/lib/api';
 import { ShoppingCart, ChevronLeft } from 'lucide-react';
 import { useProducts } from '@/contexts/ProductContext';
 import Link from 'next/link';
@@ -46,8 +46,8 @@ export default function ProductDetailPage(props: { params: any }) {
             existing = await api.products.get(p.id);
             // do not trigger global catalog reload from detail page
         }
-        if (cancelled) return;
-        setProduct(existing ?? null);
+  if (cancelled) return;
+  setProduct(existing ?? null);
         if (existing) {
           addToBrowsingHistory(existing.id);
           // Reviews are intentionally not loaded on the product detail page to
@@ -73,13 +73,7 @@ export default function ProductDetailPage(props: { params: any }) {
           }
         }
       } catch (e) {
-        if (e instanceof UnauthorizedError) {
-          // Redirect to signin with return url
-          const p = typeof props.params?.then === 'function' ? await props.params : props.params;
-          const from = `/product/${p.id}`;
-          router.replace(`/signin?from=${encodeURIComponent(from)}`);
-          return;
-        }
+        // Do not force login for product detail — show not found / error state instead
         if (!cancelled) setProduct(null);
       }
     };
@@ -95,10 +89,10 @@ export default function ProductDetailPage(props: { params: any }) {
   if (!product) {
     return (
       <div className="text-center py-12">
-        <h1 className="text-3xl font-bold mb-4">Product Not Found</h1>
-        <p className="text-muted-foreground mb-8">Sorry, we couldn&apos;t find the product you&apos;re looking for.</p>
+        <h1 className="text-3xl font-bold mb-4">Không tìm thấy sản phẩm</h1>
+        <p className="text-muted-foreground mb-8">Rất tiếc, chúng tôi không thể tìm thấy sản phẩm bạn đang tìm.</p>
         <Button asChild>
-          <Link href="/"><ChevronLeft className="mr-2 h-4 w-4" /> Back to Shop</Link>
+          <Link href="/"><ChevronLeft className="mr-2 h-4 w-4" /> Quay lại cửa hàng</Link>
         </Button>
       </div>
     );
@@ -107,8 +101,8 @@ export default function ProductDetailPage(props: { params: any }) {
   const handleAddToCart = () => {
     addToCart(product);
     toast({
-      title: "Added to Cart",
-      description: `${product.name} has been added to your cart.`,
+      title: "Đã thêm vào giỏ hàng",
+      description: `${product.name} đã được thêm vào giỏ hàng của bạn.`,
     });
   };
   
@@ -126,7 +120,7 @@ export default function ProductDetailPage(props: { params: any }) {
               // If a variantId was chosen and it represents a specific product id, use it; otherwise fallback to main product
               const prodForCart = variantId ? { ...product, id: variantId } : product;
               addToCart(prodForCart, quantity);
-              toast({ title: 'Added to Cart', description: `${product.name} đã được thêm vào giỏ hàng.` });
+              toast({ title: 'Đã thêm vào giỏ hàng', description: `${product.name} đã được thêm vào giỏ hàng.` });
             }}
             onBuyNow={(variantId, quantity) => {
               const prodForCart = variantId ? { ...product, id: variantId } : product;

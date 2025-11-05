@@ -1,6 +1,8 @@
 // Centralized API client for backend integration
 // Backend response envelope: { success: boolean; message: string; data: T; errors: string[] }
 
+import session from './session';
+
 // ---------- Envelope & Error Types (enhanced) ----------
 export interface ApiFieldError {
   field: string | null;
@@ -129,13 +131,19 @@ export interface ReviewDto {
 
 export interface CartItemDto {
   id: string;
+  // Backend returns both productId and variantId; use both when present
   productId: string;
+  variantId?: string;
   productName: string;
-  productImageUrl: string | null;
+  // Some APIs return productImageUrl, others variantImageUrl
+  productImageUrl?: string | null;
+  variantImageUrl?: string | null;
   unitPrice: number;
   quantity: number;
   totalPrice: number;
   stockQuantity: number;
+  // Selected options like Color/Size
+  selectedOptions?: Array<{ name: string; value: string }>;
 }
 
 export interface CartResponseDto {
@@ -144,6 +152,15 @@ export interface CartResponseDto {
   subTotal: number;
   shippingFee: number;
   total: number;
+  // Optional discount-related fields (backend when available)
+  progressive_discount?: {
+    next_threshold_remaining?: number;
+    next_discount_value?: number;
+    current_discount_value?: number;
+    progress_percent?: number;
+  } | null;
+  applied_voucher?: { code: string; discount_amount: number; description?: string | null } | null;
+  available_vouchers?: Array<{ code: string; description?: string | null; discount_amount?: number }> | null;
 }
 
 export interface OrderItemDto {
@@ -222,6 +239,9 @@ export interface CartItem extends Product {
   cartItemId: string; // unique id of the item in cart (needed for update/remove)
   quantity: number;
   lineTotal: number;
+  // Optional variant meta to render in cart UI
+  variantId?: string;
+  selectedOptions?: Array<{ name: string; value: string }>;
 }
 
 // ---------- Helpers ----------
@@ -305,7 +325,7 @@ interface RequestOptions extends RequestInit {
   auth?: boolean; // whether to attach Authorization header
   searchParams?: Record<string, string | number | boolean | undefined | null>;
   disableCache?: boolean; // bypass ETag cache
-  redirectOn401?: boolean; // auto redirect to /signin when unauthorized (default: true on client)
+  redirectOn401?: boolean; // auto redirect to /signin when unauthorized (default: false)
 }
 
 interface CacheEntry {
@@ -376,6 +396,10 @@ function redirectToLogin(from?: string) {
 }
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  // By default we do NOT auto-redirect on 401. Callers can opt in by
+  // passing { redirectOn401: true } when they want the helper to perform
+  // a navigation to the signin page on unauthorized responses.
+  const shouldRedirectOn401 = options.redirectOn401 ?? false;
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string> || {})
@@ -431,7 +455,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     // Attempt auto refresh once for 401 on auth requests
     if (res.status === 401 && options.auth) {
       // Refresh only once per concurrent burst
-      if (!refreshingPromise) {
+    if (!refreshingPromise) {
         const rt = getRefreshToken();
         if (!rt) {
           if (options.redirectOn401 !== false) redirectToLogin();
@@ -447,7 +471,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
             const jr = await refreshed.json().catch(() => null);
             if (!refreshed.ok || !jr?.success) {
               clearAuthTokens();
-              if (options.redirectOn401 !== false) redirectToLogin();
+              if (shouldRedirectOn401) redirectToLogin();
               return null;
             }
             const newAt = jr.data?.accessToken as string | undefined;
@@ -462,7 +486,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       }
       const newToken = await refreshingPromise;
       if (!newToken) {
-        if (options.redirectOn401 !== false) redirectToLogin();
+        if (shouldRedirectOn401) redirectToLogin();
         throw new UnauthorizedError('Unauthorized');
       }
       // retry original request once with new token
@@ -475,7 +499,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       // fall-through to parse normal envelope below
     } else {
       if (res.status === 401) {
-        if (options.redirectOn401 !== false) redirectToLogin();
+        if (shouldRedirectOn401) redirectToLogin();
         throw new UnauthorizedError(json?.message || 'Unauthorized');
       }
       if (res.status === 304) {
@@ -516,7 +540,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     const env = json as ApiEnvelope<any>;
     if (!env.success) {
       if (res.status === 401 || unauthorizedMessages.includes(env.message)) {
-        if (options.redirectOn401 !== false) redirectToLogin();
+        if (shouldRedirectOn401) redirectToLogin();
         throw new UnauthorizedError(env.message || 'Unauthorized');
       }
       throw new ApiError(env.message || 'Request unsuccessful', { status: res.status, fieldErrors: env.errors, meta: env.meta });
@@ -570,7 +594,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   // CASE 4: Plain object (single DTO) possibly unauthorized disguised
   if (json && typeof json === 'object') {
     if ((json as any).message && unauthorizedMessages.includes((json as any).message)) {
-      if (options.redirectOn401 !== false) redirectToLogin();
+      if (shouldRedirectOn401) redirectToLogin();
       throw new UnauthorizedError((json as any).message);
     }
     lastMeta = undefined;
@@ -655,13 +679,14 @@ function mapProduct(dto: ProductDto | ProductDtoExtended): Product {
 }
 
 function mapCartItem(dto: CartItemDto): CartItem {
+  const imageUrl = dto.variantImageUrl || dto.productImageUrl || '/placeholder.png';
   return {
     id: dto.productId, // keep product id for linking/UI
     name: dto.productName,
     description: '',
     price: dto.unitPrice,
     category: '',
-    imageUrl: dto.productImageUrl || '/placeholder.png',
+    imageUrl,
     rating: 0,
     reviewsCount: 0,
     popularity: 0,
@@ -670,6 +695,8 @@ function mapCartItem(dto: CartItemDto): CartItem {
     cartItemId: dto.id,
     quantity: dto.quantity,
     lineTotal: dto.totalPrice,
+    variantId: dto.variantId,
+    selectedOptions: dto.selectedOptions,
   };
 }
 
@@ -708,6 +735,18 @@ export const api = {
         { method: 'POST', body: JSON.stringify({ email, password }) }
       );
       setAuthTokens({ accessToken: data.accessToken, refreshToken: data.refreshToken });
+      // If there is a guest session id present, merge guest cart into user cart
+      try {
+        const sid = session.readSessionId();
+        if (sid) {
+          // Send merge request to backend with auth token attached
+          await request('/api/v1/cart/merge-on-login', { method: 'POST', body: JSON.stringify({ sessionId: sid }), auth: true });
+          // Clear the guest session after successful merge (best-effort)
+          session.clearSessionId();
+        }
+      } catch (err) {
+        try { console.warn('merge-on-login failed', err); } catch {}
+      }
       return data;
     },
     register: async (payload: { email: string; fullName: string; phone?: string | null; password: string }) => {
@@ -716,6 +755,16 @@ export const api = {
         { method: 'POST', body: JSON.stringify(payload) }
       );
       setAuthTokens({ accessToken: data.accessToken, refreshToken: data.refreshToken });
+      // Merge guest cart if present
+      try {
+        const sid = session.readSessionId();
+        if (sid) {
+          await request('/api/v1/cart/merge-on-login', { method: 'POST', body: JSON.stringify({ sessionId: sid }), auth: true });
+          session.clearSessionId();
+        }
+      } catch (err) {
+        try { console.warn('merge-on-login failed', err); } catch {}
+      }
       return data;
     },
     me: async () => {
@@ -749,6 +798,16 @@ export const api = {
         { method: 'POST', body: JSON.stringify({ idToken }), credentials: 'include' }
       );
       setAuthTokens({ accessToken: data.accessToken, refreshToken: data.refreshToken });
+      // Merge guest cart if present
+      try {
+        const sid = session.readSessionId();
+        if (sid) {
+          await request('/api/v1/cart/merge-on-login', { method: 'POST', body: JSON.stringify({ sessionId: sid }), auth: true });
+          session.clearSessionId();
+        }
+      } catch (err) {
+        try { console.warn('merge-on-login failed', err); } catch {}
+      }
       return data;
     }
   },
@@ -1132,36 +1191,65 @@ export const api = {
   
   cart: {
     get: async () => {
-  const data = await request<CartResponseDto>('/api/v1/cart', { auth: true });
+  const sid = session.ensureSessionId();
+  const data = await request<CartResponseDto>('/api/v1/cart', { headers: { 'X-Session-Id': sid }, credentials: 'include' });
       const normalized = normalizeCartResponse(data);
       if (normalized) return normalized;
       // Fallback to empty structure if unexpected
       return { items: [], totalItems: 0, subTotal: 0, shippingFee: 0, total: 0 } as any;
     },
-    add: async (productId: string, quantity = 1) => {
-  const data = await request<CartResponseDto>('/api/v1/cart/add', { auth: true, method: 'POST', body: JSON.stringify({ productId, quantity }) });
+    add: async (variantId: string, quantity = 1) => {
+  const sid = session.ensureSessionId();
+  const data = await request<CartResponseDto>('/api/v1/cart/add', { method: 'POST', body: JSON.stringify({ variantId, quantity }), headers: { 'X-Session-Id': sid }, credentials: 'include' });
       const normalized = normalizeCartResponse(data);
       if (normalized) return normalized;
       // If response didn't include cart, reload
       return await api.cart.get();
     },
     update: async (cartItemId: string, quantity: number) => {
-  const data = await request<CartResponseDto>(`/api/v1/cart/${cartItemId}`, { auth: true, method: 'PUT', body: JSON.stringify({ quantity }) });
+  const sid = session.ensureSessionId();
+  const data = await request<CartResponseDto>(`/api/v1/cart/${cartItemId}`, { method: 'PUT', body: JSON.stringify({ quantity }), headers: { 'X-Session-Id': sid }, credentials: 'include' });
       const normalized = normalizeCartResponse(data);
       if (normalized) return normalized;
       return await api.cart.get();
     },
     remove: async (cartItemId: string) => {
-  const data = await request<CartResponseDto>(`/api/v1/cart/${cartItemId}`, { auth: true, method: 'DELETE' });
+  const sid = session.ensureSessionId();
+  const data = await request<CartResponseDto>(`/api/v1/cart/${cartItemId}`, { method: 'DELETE', headers: { 'X-Session-Id': sid }, credentials: 'include' });
       const normalized = normalizeCartResponse(data);
       if (normalized) return normalized;
       return await api.cart.get();
     },
     clear: async () => {
-  const data = await request<CartResponseDto>('/api/v1/cart/clear', { auth: true, method: 'DELETE' });
+  const sid = session.ensureSessionId();
+  const data = await request<CartResponseDto>('/api/v1/cart/clear', { method: 'DELETE', headers: { 'X-Session-Id': sid }, credentials: 'include' });
       const normalized = normalizeCartResponse(data);
       if (normalized) return normalized;
       return { items: [], totalItems: 0, subTotal: 0, shippingFee: 0, total: 0 } as any;
+    }
+    ,
+    applyVoucher: async (code: string) => {
+      const sid = session.ensureSessionId();
+      const data = await request<CartResponseDto>('/api/v1/cart/voucher', {
+        method: 'POST',
+        body: JSON.stringify({ code }),
+        headers: { 'X-Session-Id': sid },
+        credentials: 'include'
+      });
+      const normalized = normalizeCartResponse(data);
+      if (normalized) return normalized;
+      return await api.cart.get();
+    },
+    removeVoucher: async () => {
+      const sid = session.ensureSessionId();
+      const data = await request<CartResponseDto>('/api/v1/cart/voucher', {
+        method: 'DELETE',
+        headers: { 'X-Session-Id': sid },
+        credentials: 'include'
+      });
+      const normalized = normalizeCartResponse(data);
+      if (normalized) return normalized;
+      return await api.cart.get();
     }
   }
 };

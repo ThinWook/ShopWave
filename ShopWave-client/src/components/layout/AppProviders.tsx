@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { CartProvider } from '@/contexts/CartContext';
+import session from '@/lib/session';
 import { ProductProvider } from '@/contexts/ProductContext';
 // Lazy-load Toaster to avoid pulling it into initial chunks
 const Toaster = dynamic(() => import('@/components/ui/toaster').then(m => m.Toaster), { ssr: false });
@@ -21,6 +22,8 @@ export function AppProviders({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   useEffect(() => {
+    // Ensure a guest session id exists for cart operations (creates cookie + localStorage)
+    try { session.ensureSessionId(); } catch { /* ignore */ }
     const origin = window.location.origin;
     const envList = (process.env.NEXT_PUBLIC_GOOGLE_ALLOWED_ORIGINS || 'http://localhost:3000')
       .split(',')

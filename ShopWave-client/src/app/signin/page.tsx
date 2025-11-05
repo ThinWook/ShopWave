@@ -5,7 +5,7 @@ import SignInForm from "@/components/auth/SignInForm";
 export default function SignInPage() {
   return (
     <>
-      <PageMeta title={"Đăng nhập | Bảng điều khiển quản trị"} description={"Đăng nhập để truy cập bảng điều khiển quản trị."} />
+      <PageMeta title={"Đăng nhập | ShopWave"} description={"Đăng nhập để mua sắm cùng ShopWave."} />
       <AuthLayout>
         <SignInForm />
       </AuthLayout>

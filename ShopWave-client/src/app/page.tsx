@@ -44,7 +44,7 @@ export default function HomePage() {
       <section className="w-full">
         <div className="mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
           <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            Discover Our Products
+            Khám phá sản phẩm
           </h1>
           <ProductSort />
         </div>
