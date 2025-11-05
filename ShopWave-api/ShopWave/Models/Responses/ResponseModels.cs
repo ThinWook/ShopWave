@@ -57,6 +57,12 @@ namespace ShopWave.Models.Responses
         public decimal SubTotal { get; set; }
         public decimal ShippingFee { get; set; }
         public decimal Total { get; set; }
+
+        /// <summary>
+        /// Progressive discount information based on cart subtotal and DiscountTiers
+        /// This is calculated automatically by the backend
+        /// </summary>
+        public ProgressiveDiscountDto? ProgressiveDiscount { get; set; }
     }
 
     public class OrderResponse

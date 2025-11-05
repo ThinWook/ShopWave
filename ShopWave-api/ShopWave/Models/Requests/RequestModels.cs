@@ -73,10 +73,7 @@ namespace ShopWave.Models.Requests
     public class AddToCartRequest
     {
         [Required]
-        public Guid ProductId { get; set; }
-
-        // Optional: add specific variant
-        public Guid? VariantId { get; set; }
+        public Guid VariantId { get; set; }
 
         [Required]
         [Range(1, int.MaxValue, ErrorMessage = "Số lượng phải lớn hơn 0")]
@@ -177,5 +174,10 @@ namespace ShopWave.Models.Requests
     {
         [Required]
         public List<Guid> ValueIds { get; set; } = new List<Guid>();
+    }
+
+    public class ApplyVoucherRequest
+    {
+        public string VoucherCode { get; set; } = string.Empty;
     }
 }

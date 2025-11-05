@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ShopWave.Models;
 
@@ -11,9 +12,11 @@ using ShopWave.Models;
 namespace ShopWaveapi.Migrations
 {
     [DbContext(typeof(ShopWaveDbContext))]
-    partial class ShopWaveDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251105175842_MakeCartItemUserIdNullable")]
+    partial class MakeCartItemUserIdNullable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

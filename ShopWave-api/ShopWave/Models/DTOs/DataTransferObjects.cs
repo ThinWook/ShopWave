@@ -88,6 +88,10 @@ namespace ShopWave.Models.DTOs
         public int Quantity { get; set; }
         public decimal TotalPrice { get; set; }
         public int StockQuantity { get; set; }
+
+        // Added fields for variant display
+        public string? VariantImageUrl { get; set; }
+        public List<KeyValuePair<string, string>>? SelectedOptions { get; set; }
     }
 
     public class ReviewDto
@@ -109,5 +113,35 @@ namespace ShopWave.Models.DTOs
         public long? ImageId { get; set; }
         public string? Size { get; set; }
         public string? Color { get; set; }
+    }
+
+    /// <summary>
+    /// DTO for progressive discount information based on DiscountTiers table
+    /// This is calculated server-side and returned in cart responses
+    /// </summary>
+    public class ProgressiveDiscountDto
+    {
+        /// <summary>
+        /// Current discount value being applied (e.g., 40000)
+        /// </summary>
+        public decimal CurrentDiscountValue { get; set; } = 0;
+
+        /// <summary>
+        /// Next discount threshold amount (e.g., 999000)
+        /// Null if already at highest tier
+        /// </summary>
+        public decimal? NextDiscountThreshold { get; set; }
+
+        /// <summary>
+        /// Discount value for the next tier (e.g., 70000)
+        /// Null if already at highest tier
+        /// </summary>
+        public decimal? NextDiscountValue { get; set; }
+
+        /// <summary>
+        /// Amount needed to reach next tier (e.g., 121000)
+        /// Null if already at highest tier
+        /// </summary>
+        public decimal? AmountToNext { get; set; }
     }
 }

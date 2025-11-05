@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ShopWave-api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9ce050fde003f380d815b3df439bcce6eef0ba5f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6cd2fdaadcf7e17457d32f2bbfebe2b4b5af14af")]
 [assembly: System.Reflection.AssemblyProductAttribute("ShopWave-api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ShopWave-api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

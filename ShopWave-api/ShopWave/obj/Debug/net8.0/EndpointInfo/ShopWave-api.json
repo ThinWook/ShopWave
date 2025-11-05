@@ -333,6 +333,47 @@
         }
       }
     },
+    "/api/v1/Cart/voucher": {
+      "post": {
+        "tags": [
+          "Cart"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyVoucherRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyVoucherRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyVoucherRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Cart"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/v1/Categories": {
       "post": {
         "tags": [
@@ -1529,7 +1570,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StringStringStringDateTimeString<>f__AnonymousType55"
+                  "$ref": "#/components/schemas/StringStringStringDateTimeString<>f__AnonymousType56"
                 }
               }
             }
@@ -1548,7 +1589,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StringDateTime<>f__AnonymousType56"
+                  "$ref": "#/components/schemas/StringDateTime<>f__AnonymousType57"
                 }
               }
             }
@@ -1738,6 +1779,131 @@
           }
         }
       }
+    },
+    "/api/admin/vouchers": {
+      "get": {
+        "tags": [
+          "VouchersAdmin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "VouchersAdmin"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVoucherDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVoucherDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVoucherDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/vouchers/{id}": {
+      "get": {
+        "tags": [
+          "VouchersAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "VouchersAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVoucherDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVoucherDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVoucherDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "VouchersAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1758,19 +1924,14 @@
       },
       "AddToCartRequest": {
         "required": [
-          "productId",
-          "quantity"
+          "quantity",
+          "variantId"
         ],
         "type": "object",
         "properties": {
-          "productId": {
-            "type": "string",
-            "format": "uuid"
-          },
           "variantId": {
             "type": "string",
-            "format": "uuid",
-            "nullable": true
+            "format": "uuid"
           },
           "quantity": {
             "maximum": 2147483647,
@@ -1817,6 +1978,16 @@
             "type": "string"
           },
           "notes": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ApplyVoucherRequest": {
+        "type": "object",
+        "properties": {
+          "voucherCode": {
             "type": "string",
             "nullable": true
           }
@@ -1924,6 +2095,66 @@
           }
         },
         "additionalProperties": false
+      },
+      "CreateVoucherDto": {
+        "required": [
+          "code",
+          "discountType",
+          "discountValue"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string"
+          },
+          "description": {
+            "maxLength": 500,
+            "type": "string",
+            "nullable": true
+          },
+          "discountType": {
+            "$ref": "#/components/schemas/DiscountType"
+          },
+          "discountValue": {
+            "minimum": 0,
+            "type": "number",
+            "format": "double"
+          },
+          "minOrderAmount": {
+            "minimum": 0,
+            "type": "number",
+            "format": "double"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "usageLimit": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DiscountType": {
+        "enum": [
+          0,
+          1
+        ],
+        "type": "integer",
+        "format": "int32"
       },
       "FindVariantByValuesRequest": {
         "required": [
@@ -2302,7 +2533,7 @@
         },
         "additionalProperties": false
       },
-      "StringDateTime<>f__AnonymousType56": {
+      "StringDateTime<>f__AnonymousType57": {
         "type": "object",
         "properties": {
           "status": {
@@ -2316,7 +2547,7 @@
         },
         "additionalProperties": false
       },
-      "StringStringStringDateTimeString<>f__AnonymousType55": {
+      "StringStringStringDateTimeString<>f__AnonymousType56": {
         "type": "object",
         "properties": {
           "status": {

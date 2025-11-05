@@ -1,0 +1,110 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build directories
+bin/
+obj/
+out/
+
+# NuGet
+*.nupkg
+packages/
+project.lock.json
+project.fragment.lock.json
+
+# Visual Studio Code
+.vscode/
+
+# Rider
+.idea/
+*.sln.iml
+
+# User secrets (keep out of source control)
+secrets.json
+*/secrets.json
+
+# ASP.NET Core
+wwwroot/node_modules/
+node_modules/
+
+# Logs
+*.log
+logs/
+
+# Runtime files
+*.pid
+*.seed
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Database files
+*.mdf
+*.ldf
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+
+# EF Core migrations (usually committed) - don't ignore unless you want them excluded
+# Migrations/
+
+# Publish output
+publish/
+*.publishsettings
+
+# Test results
+TestResults/
+*.trx
+*.coverage
+coverage/
+
+# Coverage and profiling
+*.coveragexml
+artifacts/
+
+# Rider and ReSharper
+_ReSharper*/
+*.DotSettings.user
+
+# Generated files
+*.Generated.cs
+
+# Certificates
+*.pfx
+*.key
+
+# Docker
+docker-compose.override.yml
+.env
+
+# Local development files
+appsettings.Local.json
+appsettings.*.Local.json
+
+# Logs and profiling outputs
+*.log
+*.trace
+
+# Ignore local db or large data files if you don't want them in repo
+/data/*.json
+/data/*.db
+
+# Ignore IDE workspace/state
+.vs/
+
+# Git hooks (if you use local-only hooks)
+.githooks/
+
+# Ignore user-specific files
+*.user
+*.suo
+
+# Keep this file tracked
+!.gitignore

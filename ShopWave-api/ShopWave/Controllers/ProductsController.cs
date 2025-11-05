@@ -332,7 +332,7 @@ namespace ShopWave.Controllers
             }
         }
 
-        [Authorize]
+        [AllowAnonymous]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProduct(Guid id)
         {

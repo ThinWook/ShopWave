@@ -11,8 +11,8 @@ namespace ShopWave.Models
         [Required]
         public Guid CartId { get; set; }
 
-        [Required]
-        public Guid UserId { get; set; }
+        // Make UserId nullable to support guest carts
+        public Guid? UserId { get; set; }
 
         [Required]
         public Guid ProductId { get; set; }
@@ -39,7 +39,7 @@ namespace ShopWave.Models
         public virtual Cart Cart { get; set; } = null!;
 
         [ForeignKey("UserId")]
-        public virtual User User { get; set; } = null!;
+        public virtual User? User { get; set; }
 
         [ForeignKey("ProductId")]
         public virtual Product Product { get; set; } = null!;
