@@ -50,21 +50,10 @@ export default function ProductDetailPage(props: { params: any }) {
         setProduct(existing ?? null);
         if (existing) {
           addToBrowsingHistory(existing.id);
-          try {
-            const reviewPaged = await api.products.reviews(existing.id, 1, 20);
-            if (!cancelled) {
-              // Map ReviewDto to Review (already compatible fields except comment nullable)
-              setReviews(reviewPaged.data.map(r => ({
-                id: r.id,
-                userName: r.userName,
-                rating: r.rating,
-                comment: r.comment || '',
-                date: r.date,
-                productId: existing!.id,
-                verified: r.isVerified
-              })));
-            }
-          } catch { /* ignore reviews error */ }
+          // Reviews are intentionally not loaded on the product detail page to
+          // avoid additional API traffic. The reviews UI has been removed from
+          // the current scope; keep `reviews` state empty.
+          setReviews([]);
 
           // Load related products (same category) in parallel
           try {
