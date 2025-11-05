@@ -86,6 +86,21 @@ The Products page now fetches data from your backend using `src/utils/apiClient.
 
 The API client handles access/refresh tokens via `src/utils/tokenStorage.ts`. Make sure your auth endpoints conform to the paths in `src/services/authService.ts` or update them accordingly.
 
+## Product detail editor (Admin)
+
+The product edit page (`src/pages/ProductEdit.tsx` -> `EditProductForm`) has been redesigned into cards to reflect the backend data model:
+
+- General: name, editable slug, rich-text description.
+- Images: drag-and-drop upload, gallery grid with drag-to-reorder, choose primary image (saved to `mainImageId`).
+- Classification: Options and Variants. Options support text/color/image swatches and auto-generate variant combinations. Variants allow inline edit of price, stock, SKU, and image.
+- Organization (sidebar): status (Đang bán/Nháp/Ngừng bán), category selection, and tags input.
+
+Notes
+
+- API integration for update uses `updateProduct` in `src/services/productService.ts` (PUT `/api/v1/products/{id}`).
+- If your backend doesn't support a Draft status, "Nháp" is currently mapped as inactive (`isActive = false`). Adjust on the server or extend the payload with a `status` field if available.
+- Gallery order is sent as `galleryMedia: [{ mediaId, sortOrder }]`.
+
 ## Components
 
 TailAdmin is a pre-designed starting point for building a web-based dashboard using React.js and Tailwind CSS. The template includes:

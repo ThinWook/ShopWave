@@ -3,7 +3,7 @@ import { SkeletonTableRows } from '../components/ui/Skeleton';
 import { formatCurrencyVi } from '../utils/format';
 import { Link } from 'react-router';
 import type { Product } from '../types/product';
-import { getProducts, getProductDetail, deleteProduct, type ProductDto } from '../services/productService';
+import { getProducts, getProductDetail, deleteProduct, updateVariant, type ProductDto } from '../services/productService';
 import Modal from '../components/ui/modal';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
@@ -28,6 +28,9 @@ export default function Products() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [detailCache, setDetailCache] = useState<Record<string, ProductDto | { loading: true }>>({});
   const [confirmOpen, setConfirmOpen] = useState<{ id: string | number | null; name?: string } | null>(null);
+  // inline editing state for variant cells: key format `${productId}:${variantId}:${field}`
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [tempVal, setTempVal] = useState<string>("");
   const pageSize = 7; // matches provided layout display
 
   const getErrorMessage = (err: unknown): string => {
@@ -162,7 +165,7 @@ export default function Products() {
                 <th className="px-5 py-4 text-left whitespace-nowrap">Trạng thái</th>
                 <th className="px-5 py-4 text-left whitespace-nowrap">Biến thể</th>
                 <th className="px-5 py-4 text-left whitespace-nowrap">Kho hàng (Tổng)</th>
-                <th className="px-5 py-4 text-left whitespace-nowrap">Giá (Khoảng)</th>
+                <th className="px-5 py-4 text-left whitespace-nowrap">Giá từ</th>
                 <th className="px-5 py-4 text-left whitespace-nowrap">&nbsp;</th>
               </tr>
             </thead>
@@ -301,31 +304,113 @@ export default function Products() {
                     </td>
                     </tr>
 
+                    {/* Sub-header labels for variant rows when expanded */}
+                    {isOpen && (
+                      <tr className="bg-gray-50/60 dark:bg-gray-900/40">
+                        <td className="px-5 py-2" />
+                        <td className="px-5 py-2 text-xs font-medium text-gray-600 dark:text-gray-400">Biến thể (thuộc tính)</td>
+                        <td className="px-5 py-2 text-xs font-medium text-gray-600 dark:text-gray-400">SKU</td>
+                        <td className="px-5 py-2 text-xs font-medium text-gray-600 dark:text-gray-400">Giá</td>
+                        <td className="px-5 py-2 text-xs font-medium text-gray-600 dark:text-gray-400">Kho hàng</td>
+                        <td className="px-5 py-2" />
+                        <td className="px-5 py-2" />
+                      </tr>
+                    )}
+
                     {/* Variant detail rows when expanded and data available */}
                     {isOpen && detailCache[key] && !('loading' in (detailCache[key] as any)) && (detailCache[key] as ProductDto).variants && (
-                      (detailCache[key] as ProductDto).variants!.map((v, vi) => (
-                        <tr key={`${key}-v-${vi}`} className="bg-white/50 even:bg-gray-50 dark:even:bg-gray-900">
-                          <td />
-                          <td className="px-5 py-3 whitespace-nowrap">
-                            <div className="flex items-center gap-3 text-sm">
-                              {/* variant image if available by id -> attempt to find in galleryImages */}
-                              <div className="h-10 w-10">
-                                {/* no direct url; show placeholder */}
-                                <img src={(detailCache[key] as ProductDto).galleryImages?.find(g => g.id === v.imageId)?.url || '/images/product/default.png'} alt={v.sku || ''} className="h-10 w-10 rounded object-cover" />
+                      (detailCache[key] as ProductDto).variants!.map((v, vi) => {
+                        const variantId = String(v.id ?? vi);
+                        // Display only option values, e.g., "Đen S" instead of "Màu sắc: Đen, Size: S"
+                        const attrValues = Array.isArray((v as any).selected_options)
+                          ? (v as any).selected_options.map((o: any) => String(o?.value ?? '')).filter(Boolean).join(' ')
+                          : [v.color, v.size].filter(Boolean).join(' ');
+
+                        const priceKey = `${key}:${variantId}:price`;
+                        const stockKey = `${key}:${variantId}:stock`;
+
+                        const commit = async (field: 'price' | 'stock') => {
+                          try {
+                            const raw = tempVal.trim();
+                            if (raw === '') return setEditingKey(null);
+                            const num = Number(raw);
+                            if (!Number.isFinite(num) || num < 0) throw new Error('Giá trị không hợp lệ');
+                            await updateVariant(variantId, { [field]: num } as any);
+                            // update cache immutably
+                            setDetailCache(prev => {
+                              const current = prev[key] as ProductDto;
+                              if (!current?.variants) return prev;
+                              const next: ProductDto = { ...current, variants: current.variants.map((vv, i) => (i === vi ? { ...vv, [field]: num } : vv)) } as ProductDto;
+                              return { ...prev, [key]: next };
+                            });
+                            show({ type: 'success', message: 'Đã cập nhật' });
+                          } catch (e: any) {
+                            show({ type: 'error', message: getErrorMessage(e) || 'Cập nhật thất bại' });
+                          } finally {
+                            setEditingKey(null);
+                          }
+                        };
+
+                        return (
+                          <tr key={`${key}-v-${vi}`} className="bg-white/50 even:bg-gray-50 dark:even:bg-gray-900">
+                            <td />
+                            {/* Biến thể (thuộc tính) */}
+                            <td className="px-5 py-3 whitespace-nowrap">
+                              <div className="flex items-center gap-3 text-sm">
+                                <div className="h-10 w-10">
+                                  <img src={(detailCache[key] as ProductDto).galleryImages?.find(g => g.id === v.imageId)?.url || '/images/product/default.png'} alt={v.sku || ''} className="h-10 w-10 rounded object-cover" />
+                                </div>
+                                <div>
+                                  <div className="text-sm font-medium text-gray-700 dark:text-gray-300">{attrValues || v.sku || 'Biến thể'}</div>
+                                </div>
                               </div>
-                              <div>
-                                <div className="text-sm font-medium text-gray-700 dark:text-gray-300">{[v.size, v.color].filter(Boolean).join(' / ') || v.sku || 'Biến thể'}</div>
-                                <div className="text-xs text-gray-500">SKU: {v.sku || '—'}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-5 py-3 whitespace-nowrap">&nbsp;</td>
-                          <td className="px-5 py-3 whitespace-nowrap"><p className={`text-sm ${v.price === undefined ? 'text-gray-500' : 'text-gray-700 dark:text-gray-300'}`}>{v.price ? formatMoney(Number(v.price)) : '—'}</p></td>
-                          <td className="px-5 py-3 whitespace-nowrap"><p className={`text-sm ${v.stock && v.stock > 0 ? 'text-gray-700 dark:text-gray-300' : 'text-red-600 font-medium'}`}>{v.stock ?? 0}{v.stock === 0 ? ' (Hết hàng)' : ''}</p></td>
-                          <td className="px-5 py-3 whitespace-nowrap">&nbsp;</td>
-                          <td className="px-5 py-3 whitespace-nowrap">&nbsp;</td>
-                        </tr>
-                      ))
+                            </td>
+                            {/* SKU (dùng cột Trạng thái cho child-row) */}
+                            <td className="px-5 py-3 whitespace-nowrap">
+                              <span className="text-xs text-gray-700 dark:text-gray-300">{v.sku || '—'}</span>
+                            </td>
+                            {/* Giá (inline edit) dùng cột "Biến thể" của header */}
+                            <td className="px-5 py-3 whitespace-nowrap">
+                              {editingKey === priceKey ? (
+                                <input
+                                  autoFocus
+                                  type="number"
+                                  className="h-8 w-28 rounded border px-2 text-sm"
+                                  value={tempVal}
+                                  onChange={e => setTempVal(e.target.value)}
+                                  onBlur={() => commit('price')}
+                                  onKeyDown={e => { if (e.key === 'Enter') commit('price'); if (e.key === 'Escape') setEditingKey(null); }}
+                                />
+                              ) : (
+                                <button type="button" className={`text-sm ${v.price === undefined ? 'text-gray-500' : 'text-gray-700 dark:text-gray-300'}`} onClick={() => { setEditingKey(priceKey); setTempVal(String(v.price ?? 0)); }}>
+                                  {v.price ? formatMoney(Number(v.price)) : '—'}
+                                </button>
+                              )}
+                            </td>
+                            {/* Kho hàng (inline edit) */}
+                            <td className="px-5 py-3 whitespace-nowrap">
+                              {editingKey === stockKey ? (
+                                <input
+                                  autoFocus
+                                  type="number"
+                                  className="h-8 w-24 rounded border px-2 text-sm"
+                                  value={tempVal}
+                                  onChange={e => setTempVal(e.target.value)}
+                                  onBlur={() => commit('stock')}
+                                  onKeyDown={e => { if (e.key === 'Enter') commit('stock'); if (e.key === 'Escape') setEditingKey(null); }}
+                                />
+                              ) : (
+                                <button type="button" className={`text-sm ${v.stock && v.stock > 0 ? 'text-gray-700 dark:text-gray-300' : 'text-red-600 font-medium'}`} onClick={() => { setEditingKey(stockKey); setTempVal(String(v.stock ?? 0)); }}>
+                                  {v.stock ?? 0}{v.stock === 0 ? ' (Hết hàng)' : ''}
+                                </button>
+                              )}
+                            </td>
+                            {/* Giá từ + actions bỏ trống cho hàng con */}
+                            <td className="px-5 py-3 whitespace-nowrap">&nbsp;</td>
+                            <td className="px-5 py-3 whitespace-nowrap">&nbsp;</td>
+                          </tr>
+                        );
+                      })
                     )}
 
                       {/* Loading skeleton while variants are being fetched */}

@@ -27,15 +27,34 @@ export type VariantAttributeDto = {
   value: string;
 };
 
+// Product options for configurable variants
+export type ProductOptionValueDto = {
+  value: string;
+  thumbnailId?: number | null;
+};
+
+export type ProductOptionDto = {
+  name: string;
+  displayType: "text_button" | "color_swatch" | "image_swatch" | string;
+  values: ProductOptionValueDto[];
+};
+
+export type VariantSelectedOptionDto = {
+  option_name: string;
+  value: string;
+};
+
 export type VariantDto = {
   id?: string | null;
   sku?: string | null;
   price: number;
   stock: number;
   imageId?: number | null;
+  // New flexible mapping of variant option selections
+  selected_options?: VariantSelectedOptionDto[];
+  // Deprecated fields kept for temporary backward compatibility
   size?: string | null;
   color?: string | null;
-  // attributes removed
 };
 
 export type GalleryMediaDto = {
@@ -65,10 +84,32 @@ export type ProductDto = {
   } | null;
   galleryImages?: GalleryMediaDto[];
   variants?: VariantDto[];
+  // Optional options definition (for configurable products)
+  options?: ProductOptionDto[];
 };
 
 // ETag cache: key = query string
 const etagCache = new Map<string, { etag: string; payload: PagedResult<Product> }>();
+
+// Update product variant (price/stock/sku/imageId)
+export type UpdateVariantPayload = {
+  price?: number;
+  stock?: number;
+  sku?: string | null;
+  imageId?: number | null;
+};
+
+export async function updateVariant(variantId: string | number, payload: UpdateVariantPayload): Promise<VariantDto> {
+  const res = await api.raw(`/api/v1/variants/${encodeURIComponent(String(variantId))}` as string, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw await toApiError(res);
+  const json = await res.json();
+  const data = (json && typeof json === "object" && "data" in json) ? (json as any).data : json;
+  return data as VariantDto;
+}
 
 export async function getProducts(params: GetProductsParams = {}): Promise<PagedResult<Product>> {
   const { page = 1, pageSize = 20 } = params;
@@ -270,19 +311,19 @@ export async function deleteProduct(id: string): Promise<DeleteProductResponse> 
 export type CreateProductInput = {
   name: string;
   description?: string | null;
-  price: number; // in VND per provided example
+  price: number; // base price; can be 0 when variants carry prices
   categoryId: string; // Guid
-  // imageUrl removed — backend uses mainImageId/mediaIds for media
-  // Optional slug for the product (backend requires Slug in validation)
+  // Optional slug for the product
   slug?: string | null;
-  size?: 'XL' | 'L' | 'M';
   stockQuantity: number;
-  // Optional media support: array of uploaded media IDs and an optional main image id
+  // Media
   mediaIds?: number[];
   mainImageId?: number | null;
-  // Gallery media request (backend expects an array of mediaId / sortOrder objects)
+  // Gallery media request
   galleryMedia?: { mediaId: number; sortOrder?: number }[];
-  // Optional variants (each variant may include sku, price, stock, imageId, size, color)
+  // Options definition for configurable products
+  options?: ProductOptionDto[];
+  // Variants (each variant uses selected_options to map chosen option values)
   variants?: VariantDto[];
 };
 
@@ -290,6 +331,21 @@ export async function createProduct(input: CreateProductInput): Promise<ProductD
   // Diagnostic log: payload being sent
   try {
     console.debug('[productService] createProduct payload:', input);
+    // Log chi tiết options và variants để debug VariantValues
+    if (input.options && input.options.length > 0) {
+      console.debug('[productService] Product options:', input.options);
+    }
+    if (input.variants && input.variants.length > 0) {
+      console.debug('[productService] Variants count:', input.variants.length);
+      input.variants.forEach((v, idx) => {
+        console.debug(`[productService] Variant #${idx + 1}:`, {
+          sku: v.sku,
+          price: v.price,
+          stock: v.stock,
+          selected_options: v.selected_options,
+        });
+      });
+    }
   } catch {}
 
   const res = await api.raw(`/api/v1/products`, {
@@ -313,3 +369,21 @@ export async function createProduct(input: CreateProductInput): Promise<ProductD
 }
 
 // NOTE: createProductV2 removed — use `createProduct` which returns the created ProductDto
+
+// Partial update for product edit
+export type UpdateProductInput = Partial<CreateProductInput> & {
+  // Allow toggling status via isActive when backend doesn't support 3-state
+  isActive?: boolean;
+};
+
+export async function updateProduct(id: string, payload: UpdateProductInput): Promise<ProductDto> {
+  const res = await api.raw(`/api/v1/products/${encodeURIComponent(id)}` as string, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw await toApiError(res);
+  const json = await res.json();
+  const data = (json && typeof json === "object" && "data" in json) ? (json as any).data : json;
+  return data as ProductDto;
+}

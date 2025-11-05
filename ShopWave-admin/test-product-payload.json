@@ -1,0 +1,69 @@
+{
+  "name": "Giày Sneaker Test - Size & Color",
+  "description": "Sản phẩm test để kiểm tra VariantValues",
+  "price": 0,
+  "categoryId": "00000000-0000-0000-0000-000000000001",
+  "slug": "giay-sneaker-test-size-color",
+  "stockQuantity": 30,
+  "options": [
+    {
+      "name": "Size",
+      "displayType": "text_button",
+      "values": [
+        { "value": "42" },
+        { "value": "43" },
+        { "value": "44" }
+      ]
+    },
+    {
+      "name": "Color",
+      "displayType": "color_swatch",
+      "values": [
+        { "value": "Black" },
+        { "value": "White" }
+      ]
+    }
+  ],
+  "variants": [
+    {
+      "sku": "TEST-BLK-42",
+      "price": 1299000,
+      "stock": 5,
+      "imageId": null,
+      "selected_options": [
+        { "option_name": "Size", "value": "42" },
+        { "option_name": "Color", "value": "Black" }
+      ]
+    },
+    {
+      "sku": "TEST-BLK-43",
+      "price": 1299000,
+      "stock": 5,
+      "imageId": null,
+      "selected_options": [
+        { "option_name": "Size", "value": "43" },
+        { "option_name": "Color", "value": "Black" }
+      ]
+    },
+    {
+      "sku": "TEST-WHT-42",
+      "price": 1299000,
+      "stock": 10,
+      "imageId": null,
+      "selected_options": [
+        { "option_name": "Size", "value": "42" },
+        { "option_name": "Color", "value": "White" }
+      ]
+    },
+    {
+      "sku": "TEST-WHT-44",
+      "price": 1299000,
+      "stock": 10,
+      "imageId": null,
+      "selected_options": [
+        { "option_name": "Size", "value": "44" },
+        { "option_name": "Color", "value": "White" }
+      ]
+    }
+  ]
+}

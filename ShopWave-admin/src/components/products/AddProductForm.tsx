@@ -2,9 +2,10 @@ import { useEffect, useState, type FormEvent } from "react";
 import VariantTable, { type VariantForm } from "./VariantTable";
 import { getCategories, type CategoryDto } from "../../services/categoryService";
 import CategoryDropdown from './CategoryDropdown';
-import { createProduct, type CreateProductInput, type ProductDto, type VariantDto } from "../../services/productService";
+import { createProduct, type CreateProductInput, type ProductDto, type VariantDto, type ProductOptionDto } from "../../services/productService";
 import { uploadMany } from "../../services/mediaService";
 import { useToast } from "../../context/ToastContext";
+import OptionsEditor from "./OptionsEditor";
 
 export type AddProductFormProps = {
   onSuccess?: (created: ProductDto) => void;
@@ -23,14 +24,17 @@ export default function AddProductForm({ onSuccess, onCancel, initial }: AddProd
   // form state
   const [variants, setVariants] = useState<VariantForm[]>([]);
   const [name, setName] = useState("");
-  const [price, setPrice] = useState<string>("");
+  // single product fields (when not using variants)
+  const [singlePrice, setSinglePrice] = useState<string>("");
+  const [singleSku, setSingleSku] = useState<string>("");
+  const [singleStock, setSingleStock] = useState<string>("0");
   const [categoryId, setCategoryId] = useState("");
   const [description, setDescription] = useState("");
-  const [size, setSize] = useState<CreateProductInput['size'] | "">("");
-  const [stockQuantity, setStockQuantity] = useState<string>("0");
+  // no shared stock field; singleStock used when !hasVariants
+  const [options, setOptions] = useState<ProductOptionDto[]>([]);
+  const [hasVariants, setHasVariants] = useState(false);
 
   // media
-  const [mainImageFile, setMainImageFile] = useState<File | null>(null);
   const [files, setFiles] = useState<File[]>([]); // retained for local names if needed
   const [mediaIds, setMediaIds] = useState<number[]>([]); // ids returned by uploadMany, in same order as files
   const [mainImageId, setMainImageId] = useState<number | null>(null);
@@ -59,7 +63,7 @@ export default function AddProductForm({ onSuccess, onCancel, initial }: AddProd
   useEffect(() => {
     if (!initial) return;
     setName(initial.name || "");
-    setPrice(initial.price ? String(initial.price) : "");
+  setSinglePrice(initial.price ? String(initial.price) : "");
     setDescription(initial.description || "");
     const possibleCategoryId = (initial as any).category?.id ?? (initial as any).categoryId ?? (initial as any).categoryName ?? null;
     if (possibleCategoryId) setCategoryId(String(possibleCategoryId));
@@ -73,6 +77,9 @@ export default function AddProductForm({ onSuccess, onCancel, initial }: AddProd
       }
       setMediaPreviews(previews);
     }
+    if ((initial as any).options && Array.isArray((initial as any).options)) {
+      setOptions((initial as any).options as ProductOptionDto[]);
+    }
     if ((initial as any).variants && (initial as any).variants.length) {
       const mapped: VariantForm[] = (initial as any).variants.map((v: any) => ({
         id: v.id,
@@ -80,34 +87,22 @@ export default function AddProductForm({ onSuccess, onCancel, initial }: AddProd
         price: v.price ? String(v.price) : "",
         stock: v.stock ? String(v.stock) : "",
         imageId: v.imageId,
-        size: v.size ?? "",
-        color: v.color ?? "",
-        attributes: (v.attributes ?? []).map((a: any) => ({ name: a.name, value: a.value })),
+        selected_options: Array.isArray(v.selected_options)
+          ? v.selected_options
+          : [
+              v.size ? { option_name: 'Size', value: v.size } : null,
+              v.color ? { option_name: 'Color', value: v.color } : null,
+            ].filter(Boolean) as any,
       }));
       setVariants(mapped);
+      setHasVariants(true);
     }
   }, [initial]);
 
   // helpers
   const addFileList = (selected: File[]) => setFiles(prev => [...prev, ...selected]);
 
-  const handleMainImageSelect = async (file?: File | null) => {
-    if (!file) return;
-    setUploadingMedia(true);
-    try {
-      const [id] = await uploadMany([file]);
-      if (typeof id === 'number') {
-        setMainImageId(id);
-        setMediaIds(prev => prev.includes(id) ? prev : [...prev, id]);
-        setMediaPreviews(prev => ({ ...prev, [id]: URL.createObjectURL(file) }));
-        setMediaNames(prev => ({ ...prev, [id]: file.name }));
-      }
-    } catch (err) {
-      console.warn('Main image auto-upload failed', err);
-    } finally {
-      setUploadingMedia(false);
-    }
-  };
+  // no separate main image upload; main image is chosen from gallery
 
   const handleGallerySelect = async (selected: File[]) => {
     if (!selected || selected.length === 0) return;
@@ -144,11 +139,14 @@ export default function AddProductForm({ onSuccess, onCancel, initial }: AddProd
       setSubmitting(false);
       return;
     }
-    const priceNum = Number(price);
-    if (!price || !(priceNum > 0)) {
-      setErrors({ price: 'Giá phải lớn hơn 0' });
-      setSubmitting(false);
-      return;
+    const priceNum = Number(singlePrice);
+    // If single product, price must be > 0
+    if (!hasVariants) {
+      if (!singlePrice || !(priceNum > 0)) {
+        setErrors({ price: 'Giá phải lớn hơn 0' } as any);
+        setSubmitting(false);
+        return;
+      }
     }
     if (!categoryId) {
       setErrors(prev => ({ ...prev, categoryId: 'Vui lòng chọn danh mục' }));
@@ -157,34 +155,10 @@ export default function AddProductForm({ onSuccess, onCancel, initial }: AddProd
     }
 
     try {
-      // 1) Upload variant images first
+      // 1) Variant images are selected from existing media; no per-variant upload here
       const variantsCopy = [...variants];
-      const variantFiles = variantsCopy.map(v => (v as any).imageFile).filter(Boolean) as File[];
-      if (variantFiles.length) {
-        const uploadedVariantIds = await uploadMany(variantFiles);
-        let assignIdx = 0;
-        for (let i = 0; i < variantsCopy.length; i++) {
-          if ((variantsCopy[i] as any).imageFile) {
-            variantsCopy[i].imageId = uploadedVariantIds[assignIdx++] || undefined;
-          }
-        }
-        setVariants(variantsCopy);
-      }
 
-      // 2) Upload main image file (if provided)
-      let uploadedMainId: number | undefined;
-      if (mainImageFile) {
-        try {
-          const [mid] = await uploadMany([mainImageFile]);
-          uploadedMainId = mid;
-          setMainImageId(mid ?? null);
-          if (mid) setMediaPreviews(prev => ({ ...prev, [mid]: URL.createObjectURL(mainImageFile) }));
-        } catch (err) {
-          console.warn('Main image upload failed', err);
-        }
-      }
-
-      // 3) Upload gallery files
+      // 2) Upload gallery files
       let uploadedMediaIds: number[] = [];
       if (files.length) {
         uploadedMediaIds = await uploadMany(files);
@@ -204,29 +178,37 @@ export default function AddProductForm({ onSuccess, onCancel, initial }: AddProd
         name: name.trim(),
         description: description.trim() || null,
         categoryId,
-        price: priceNum,
-        size: (size as CreateProductInput['size']) || undefined,
-        stockQuantity: variants.length ? variants.reduce((s, v) => s + (Number(v.stock) || 0), 0) : Math.max(0, Number(stockQuantity) || 0),
+        price: hasVariants ? 0 : priceNum,
+        stockQuantity: hasVariants ? variants.reduce((s, v) => s + (Number(v.stock) || 0), 0) : Math.max(0, Number(singleStock) || 0),
         // slug required by backend — simple slugify from name
         slug: name.trim().toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-'),
       };
 
-      if (variantsCopy.length) {
+      if (hasVariants && options.length) {
+        payload.options = options;
+      }
+
+      if (hasVariants && variantsCopy.length) {
         payload.variants = variantsCopy.map(v => ({
           sku: v.sku || undefined,
           price: Number(v.price) || 0,
           stock: Number(v.stock) || 0,
           imageId: v.imageId,
-          size: v.size || undefined,
-          color: v.color || undefined,
+          selected_options: (v.selected_options || []).filter(so => so && so.option_name && so.value),
         } as VariantDto));
+      } else if (!hasVariants) {
+        payload.variants = [{
+          sku: singleSku || undefined,
+          price: Number(singlePrice) || 0,
+          stock: Number(singleStock) || 0,
+          imageId: mainImageId ?? undefined,
+        } as VariantDto];
       }
 
-      const finalMediaIds = Array.from(new Set([...(uploadedMainId ? [uploadedMainId] : []), ...uploadedMediaIds]));
-      if (finalMediaIds.length) {
-        payload.mediaIds = finalMediaIds;
-        if (mainImageId) payload.mainImageId = mainImageId;
+      if (mediaIds.length) {
+        payload.mediaIds = mediaIds;
       }
+      if (mainImageId) payload.mainImageId = mainImageId;
       // Build galleryMedia array expected by backend (mediaId + optional sortOrder)
       if (mediaIds && mediaIds.length) {
         payload.galleryMedia = mediaIds.map((mid, idx) => ({ mediaId: mid, sortOrder: idx }));
@@ -271,12 +253,6 @@ export default function AddProductForm({ onSuccess, onCancel, initial }: AddProd
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Giá (VND) <span className="text-red-600">*</span></label>
-            <input type="number" min={0} step="0.01" value={price} onChange={e => setPrice(e.target.value)} className="h-11 w-full rounded-lg border px-4 text-sm" />
-            {errors.price && <div className="text-xs text-red-600">{errors.price}</div>}
-          </div>
-
-          <div>
             <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Danh mục <span className="text-red-600">*</span></label>
             <CategoryDropdown categories={categories.filter(c => c.parentId != null).map(c => ({ id: c.id, name: c.name }))}
               value={categoryId} onSelect={id => setCategoryId(id)} />
@@ -284,28 +260,16 @@ export default function AddProductForm({ onSuccess, onCancel, initial }: AddProd
             {errors.categoryId && <div className="text-xs text-red-600">{errors.categoryId}</div>}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Ảnh đại diện (bắt buộc upload)</label>
-                  <div className="flex items-center gap-2">
-                    <input type="file" accept="image/*" onChange={e => {
-                      const f = e.target.files?.[0] ?? null;
-                      setMainImageFile(f);
-                      handleMainImageSelect(f ?? undefined);
-                    }} className="text-sm" />
-                    {uploadingMedia && <div className="text-xs text-gray-500">Đang tải ảnh...</div>}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Danh sách Media (ảnh/video liên quan) — upload ngay</label>
-                  <input type="file" accept="image/*,video/*" multiple onChange={e => {
-                    const selected = Array.from(e.target.files || []);
-                    // keep names locally if desired
-                    addFileList(selected);
-                    void handleGallerySelect(selected);
-                  }} className="block w-full text-sm" />
-                </div>
-              </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Danh sách Media (upload)</label>
+            <input type="file" accept="image/*,video/*" multiple onChange={e => {
+              const selected = Array.from(e.target.files || []);
+              addFileList(selected);
+              void handleGallerySelect(selected);
+            }} className="block w-full text-sm" />
+            {uploadingMedia && <div className="text-xs text-gray-500 mt-1">Đang tải ảnh...</div>}
+            <p className="mt-1 text-xs text-gray-500">Chọn ảnh đại diện bằng cách nhấn biểu tượng ★ trên ảnh trong danh sách bên dưới.</p>
+          </div>
 
               {mediaIds.length > 0 && (
                 <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -328,31 +292,48 @@ export default function AddProductForm({ onSuccess, onCancel, initial }: AddProd
                 </div>
               )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Kích cỡ (Size)</label>
-              <select value={size} onChange={e => setSize(e.target.value as CreateProductInput['size'] | "")} className="h-11 w-full rounded-lg border px-3 text-sm">
-                <option value="">Chọn hoặc nhập</option>
-                <option value="XL">XL</option>
-                <option value="L">L</option>
-                <option value="M">M</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Số lượng tồn kho</label>
-              <input type="number" min={0} value={stockQuantity} onChange={e => setStockQuantity(e.target.value)} className="h-11 w-full rounded-lg border px-3 text-sm" />
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <VariantTable variants={variants} setVariants={setVariants} mediaPreviews={mediaPreviews} />
 
           <div>
             <label className="block text-sm font-medium text-gray-700">Mô tả</label>
             <textarea value={description} onChange={e => setDescription(e.target.value)} rows={8} maxLength={max.description} className="w-full rounded-lg border px-4 py-2 text-sm" />
             <div className="mt-1 text-xs text-gray-500">{description.length}/{max.description}</div>
           </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="rounded-lg border p-4">
+            <label className="inline-flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={hasVariants} onChange={e => setHasVariants(e.target.checked)} />
+              <span>Sản phẩm này có nhiều phiên bản (ví dụ: Size, Màu sắc)</span>
+            </label>
+          </div>
+
+          {!hasVariants && (
+            <div className="space-y-3 rounded-lg border p-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700">Giá (VND)</label>
+                  <input type="number" min={0} step="1" value={singlePrice} onChange={e => setSinglePrice(e.target.value)} className="h-11 w-full rounded-lg border px-4 text-sm" />
+                  {(errors as any).price && <div className="text-xs text-red-600">{(errors as any).price}</div>}
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700">SKU</label>
+                  <input value={singleSku} onChange={e => setSingleSku(e.target.value)} className="h-11 w-full rounded-lg border px-4 text-sm" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700">Số lượng tồn kho</label>
+                  <input type="number" min={0} value={singleStock} onChange={e => setSingleStock(e.target.value)} className="h-11 w-full rounded-lg border px-4 text-sm" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {hasVariants && (
+            <>
+              <OptionsEditor options={options} setOptions={setOptions} mediaIds={mediaIds} mediaPreviews={mediaPreviews} />
+              <VariantTable variants={variants} setVariants={setVariants} mediaPreviews={mediaPreviews} mediaIds={mediaIds} options={options} hasVariants />
+            </>
+          )}
         </div>
       </div>
 

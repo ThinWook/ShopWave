@@ -1,95 +1,145 @@
-
-import { useEffect, useState } from "react";
-import { getProductDetail } from "../../services/productService";
-import { getCategories } from "../../services/categoryService";
-import InputField from "../form/input/InputField";
-import Label from "../form/Label";
-import Checkbox from "../form/input/Checkbox";
-// import type { ProductDto } from "../../services/productService";
+import { useEffect, useMemo, useState } from "react";
+import { getProductDetail, type ProductDto, type ProductOptionDto, type VariantDto, updateProduct } from "../../services/productService";
+import { getCategories, type CategoryDto } from "../../services/categoryService";
+import ProductGeneralCard from "./ProductGeneralCard";
+import ProductImagesCard from "./ProductImagesCard";
+import ProductOptionsVariantsCard from "./ProductOptionsVariantsCard";
+import ProductOrganizationCard from "./ProductOrganizationCard";
+import type { VariantForm } from "./VariantTable";
 
 interface EditProductFormProps {
 	productId: string;
-	onSuccess?: () => void;
+	onSuccess?: (updated?: ProductDto) => void;
 }
+
+type Status = "Đang bán" | "Nháp" | "Ngừng bán";
 
 export default function EditProductForm({ productId, onSuccess }: EditProductFormProps) {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
-		// Removed unused product state
-	const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
-	const [form, setForm] = useState<any>({});
 	const [saving, setSaving] = useState(false);
-	const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+	// General
+	const [name, setName] = useState("");
+	const [slug, setSlug] = useState("");
+	const [descriptionHtml, setDescriptionHtml] = useState("");
+
+	// Media
+	const [mediaIds, setMediaIds] = useState<number[]>([]);
+	const [mediaPreviews, setMediaPreviews] = useState<Record<number, string>>({});
+	const [mainImageId, setMainImageId] = useState<number | null>(null);
+
+	// Options & variants
+	const [options, setOptions] = useState<ProductOptionDto[]>([]);
+	const [variants, setVariants] = useState<VariantForm[]>([]);
+
+	// Organization
+	const [categories, setCategories] = useState<CategoryDto[]>([]);
+	const [categoryId, setCategoryId] = useState<string>("");
+	const [status, setStatus] = useState<Status>("Đang bán");
+	const [tags, setTags] = useState<string[]>([]);
+
+	const [fieldErrors, setFieldErrors] = useState<Partial<Record<"name" | "slug" | "categoryId", string>>>({});
 
 	useEffect(() => {
-		async function fetchData() {
+		(async () => {
 			setLoading(true);
 			setError(null);
 			try {
-				const prod = await getProductDetail(productId);
-						// Find categoryId by matching categoryName
-						let catId = "";
-					const fetchedCats = await getCategories();
-					setCategories(fetchedCats.map(c => ({ id: c.id, name: c.name })));
-					const foundCat = fetchedCats.find(c => c.name === prod.categoryName);
-					if (foundCat) catId = foundCat.id;
-						setForm({
-							name: prod.name || "",
-							description: prod.description || "",
-							price: prod.price || 0,
-							categoryId: catId,
-							imageUrl: prod.imageUrl || "",
-							size: prod.size || "",
-							stockQuantity: prod.stockQuantity || 0,
-							isActive: prod.isActive ?? true,
-						});
-				const cats = await getCategories();
-				setCategories(cats.map(c => ({ id: c.id, name: c.name })));
+				const [prod, cats] = await Promise.all([getProductDetail(productId), getCategories()]);
+				setCategories(cats);
+				hydrateFromProduct(prod, cats);
 			} catch (e: any) {
 				setError(e?.message || "Không thể tải thông tin sản phẩm");
 			} finally {
 				setLoading(false);
 			}
-		}
-		fetchData();
+		})();
 	}, [productId]);
 
-		function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
-			const { name, value, type } = e.target;
-			if (type === "checkbox") {
-				setForm((f: any) => ({ ...f, [name]: (e.target as HTMLInputElement).checked }));
-			} else {
-				setForm((f: any) => ({ ...f, [name]: value }));
-			}
+	const hydrateFromProduct = (prod: ProductDto, cats: CategoryDto[]) => {
+		setName(prod.name || "");
+		setSlug((prod.slug as string) || slugify(prod.name || ""));
+		setDescriptionHtml(prod.description || "");
+		// category match by name (backend returns name only)
+		const foundCat = cats.find(c => c.name === prod.categoryName);
+		setCategoryId(foundCat?.id || "");
+		setStatus(prod.isActive === false ? "Ngừng bán" : "Đang bán");
+		// media
+		const ids: number[] = Array.isArray(prod.galleryImages) ? prod.galleryImages.map(g => g.id).filter(Boolean) as number[] : [];
+		const preview: Record<number, string> = {};
+		(prod.galleryImages || []).forEach(g => { if (g.id && g.url) preview[g.id] = g.url!; });
+		setMediaIds(ids);
+		setMediaPreviews(preview);
+		setMainImageId((prod.mainImage && prod.mainImage.id) ? Number(prod.mainImage.id) : (ids[0] ?? null));
+		// options & variants
+		if (Array.isArray(prod.options)) setOptions(prod.options);
+		if (Array.isArray(prod.variants)) {
+			const mapped: VariantForm[] = prod.variants.map(v => ({
+				id: v.id || undefined,
+				sku: v.sku || undefined,
+				price: v.price != null ? String(v.price) : "",
+				stock: v.stock != null ? String(v.stock) : "",
+				imageId: v.imageId ?? undefined,
+				selected_options: (v.selected_options && Array.isArray(v.selected_options))
+					? v.selected_options
+					: [
+							v.size ? { option_name: 'Size', value: v.size } : null,
+							v.color ? { option_name: 'Color', value: v.color } : null,
+						].filter(Boolean) as any,
+			}));
+			setVariants(mapped);
+		} else {
+			setVariants([]);
 		}
+	};
 
-		function handleCheckboxChange(checked: boolean) {
-			setForm((f: any) => ({ ...f, isActive: checked }));
-		}
+	const totalStock = useMemo(() => variants.reduce((s, v) => s + (Number(v.stock) || 0), 0), [variants]);
 
 	function validate() {
-		const errors: Record<string, string> = {};
-		if (!form.name?.trim()) errors.name = "Tên sản phẩm không được để trống";
-		if (!form.price || isNaN(Number(form.price)) || Number(form.price) <= 0) errors.price = "Giá phải là số lớn hơn 0";
-		if (!form.categoryId) errors.categoryId = "Vui lòng chọn danh mục";
-		if (!form.size) errors.size = "Vui lòng chọn size";
-		if (form.stockQuantity == null || isNaN(Number(form.stockQuantity))) errors.stockQuantity = "Số lượng kho phải là số";
-		return errors;
+		const errs: typeof fieldErrors = {};
+		if (!name.trim()) errs.name = "Tên sản phẩm là bắt buộc";
+		if (!categoryId) errs.categoryId = "Vui lòng chọn danh mục";
+		if (!slug.trim()) errs.slug = "Slug không được trống";
+		return errs;
 	}
+
+	const onImagesChange = (ids: number[], previews: Record<number, string>, mainId: number | null) => {
+		setMediaIds(ids);
+		setMediaPreviews(previews);
+		setMainImageId(mainId);
+	};
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		setFieldErrors({});
-		const errors = validate();
-		if (Object.keys(errors).length) {
-			setFieldErrors(errors);
-			return;
-		}
+		const errs = validate();
+		if (Object.keys(errs).length) { setFieldErrors(errs); return; }
 		setSaving(true);
 		try {
-			// TODO: Call updateProduct API here
-			// await updateProduct(productId, { ...form });
-			if (onSuccess) onSuccess();
+			const payload = {
+				name: name.trim(),
+				slug: slug.trim(),
+				description: descriptionHtml,
+				categoryId,
+				// If variants exist, base price can be 0; server may compute from variants
+				price: variants.length ? 0 : undefined,
+				stockQuantity: totalStock,
+				options: options.length ? options : undefined,
+				variants: variants.map(v => ({
+					id: v.id,
+					sku: v.sku || undefined,
+					price: Number(v.price) || 0,
+					stock: Number(v.stock) || 0,
+					imageId: v.imageId ?? undefined,
+					selected_options: (v.selected_options || []).filter(so => so && so.option_name && so.value),
+				})) as VariantDto[],
+				mainImageId: mainImageId ?? undefined,
+				galleryMedia: mediaIds.map((mid, idx) => ({ mediaId: mid, sortOrder: idx })),
+				isActive: status === 'Đang bán',
+			} as const;
+			const updated = await updateProduct(productId, payload as any);
+			onSuccess?.(updated);
 		} catch (e: any) {
 			setError(e?.message || "Cập nhật sản phẩm thất bại");
 		} finally {
@@ -101,79 +151,52 @@ export default function EditProductForm({ productId, onSuccess }: EditProductFor
 	if (error) return <div className="text-red-600">{error}</div>;
 
 	return (
-		<form onSubmit={handleSubmit} className="space-y-6">
-			<div>
-				<Label htmlFor="name">Tên sản phẩm</Label>
-		<InputField name="name" value={form.name} onChange={handleChange} error={!!fieldErrors.name} />
-			</div>
-			<div>
-				<Label htmlFor="description">Mô tả</Label>
-				<textarea name="description" value={form.description} onChange={handleChange} className="w-full border rounded p-2" rows={3} />
-			</div>
-			<div>
-				<Label htmlFor="price">Giá</Label>
-		<InputField name="price" type="number" value={String(form.price)} onChange={handleChange} error={!!fieldErrors.price} min="0" />
-			</div>
-			<div>
-				<Label htmlFor="categoryId">Danh mục</Label>
-				<select name="categoryId" value={form.categoryId} onChange={handleChange} className="w-full border rounded p-2">
-					<option value="">-- Chọn danh mục --</option>
-					{categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-				</select>
-				{fieldErrors.categoryId && <div className="text-red-600 text-sm">{fieldErrors.categoryId}</div>}
-			</div>
-					<div>
-						<Label htmlFor="imageUrl">Ảnh sản phẩm</Label>
-						<div className="flex items-center gap-4">
-							{form.imageUrl ? (
-								<img src={form.imageUrl} alt="Ảnh sản phẩm" className="w-24 h-24 object-cover rounded border" />
-							) : (
-								<div className="w-24 h-24 flex items-center justify-center bg-gray-100 text-gray-400 rounded border">Không có ảnh</div>
-							)}
-							<div>
-								<input
-									type="file"
-									accept="image/*"
-									id="upload-image"
-									style={{ display: "none" }}
-									onChange={e => {
-										const file = e.target.files?.[0];
-										if (file) {
-											const reader = new FileReader();
-											reader.onload = ev => {
-												setForm((f: any) => ({ ...f, imageUrl: ev.target?.result as string }));
-											};
-											reader.readAsDataURL(file);
-										}
-									}}
-								/>
-								<label htmlFor="upload-image" className="inline-block bg-brand-500 text-white px-3 py-2 rounded cursor-pointer hover:bg-brand-600">
-									Tải ảnh lên
-								</label>
-							</div>
-						</div>
+		<form onSubmit={handleSubmit} className="space-y-5">
+			<div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+				<div className="xl:col-span-2 space-y-6">
+					<ProductGeneralCard
+						name={name}
+						onNameChange={(v) => { setName(v); if (!slug || slugify(name) === slug) setSlug(slugify(v)); }}
+						slug={slug}
+						onSlugChange={setSlug}
+						descriptionHtml={descriptionHtml}
+						onDescriptionChange={setDescriptionHtml}
+						errors={fieldErrors}
+					/>
+
+					<div className="rounded-lg border p-4">
+						<ProductImagesCard mediaIds={mediaIds} mediaPreviews={mediaPreviews} mainImageId={mainImageId} onChange={onImagesChange} />
 					</div>
-			<div>
-				<Label htmlFor="size">Size</Label>
-				<select name="size" value={form.size} onChange={handleChange} className="w-full border rounded p-2">
-					<option value="">-- Chọn size --</option>
-					<option value="XL">XL</option>
-					<option value="L">L</option>
-					<option value="M">M</option>
-				</select>
-				{fieldErrors.size && <div className="text-red-600 text-sm">{fieldErrors.size}</div>}
+
+					<ProductOptionsVariantsCard options={options} setOptions={setOptions} variants={variants} setVariants={setVariants} mediaPreviews={mediaPreviews} mediaIds={mediaIds} />
+				</div>
+
+				<div className="xl:col-span-1">
+					<ProductOrganizationCard
+						status={status}
+						onStatusChange={setStatus}
+						categories={categories.filter(c => c.parentId != null).map(c => ({ id: c.id, name: c.name }))}
+						categoryId={categoryId}
+						onCategoryChange={setCategoryId}
+						tags={tags}
+						onTagsChange={setTags}
+					/>
+				</div>
 			</div>
-			<div>
-				<Label htmlFor="stockQuantity">Số lượng kho</Label>
-		<InputField name="stockQuantity" type="number" value={String(form.stockQuantity)} onChange={handleChange} error={!!fieldErrors.stockQuantity} min="0" />
-			</div>
-			<div>
-				<Label htmlFor="isActive">Trạng thái hoạt động</Label>
-		<Checkbox checked={!!form.isActive} onChange={handleCheckboxChange} label="Đang bán" />
-			</div>
-			<div>
-				<button type="submit" className="bg-brand-500 text-white px-4 py-2 rounded" disabled={saving}>{saving ? "Đang lưu..." : "Lưu thay đổi"}</button>
+
+			<div className="flex items-center justify-end gap-2 pt-1">
+				<button type="submit" disabled={saving} className="rounded-lg bg-brand-500 px-4 py-2 text-sm text-white">{saving ? 'Đang lưu...' : 'Lưu thay đổi'}</button>
 			</div>
 		</form>
 	);
+}
+
+function slugify(str: string) {
+	return (str || "")
+		.toLowerCase()
+		.normalize('NFD').replace(/\p{Diacritic}/gu, '')
+		.replace(/[^a-z0-9\s-]/g, '')
+		.trim()
+		.replace(/\s+/g, '-')
+		.replace(/-+/g, '-');
 }
