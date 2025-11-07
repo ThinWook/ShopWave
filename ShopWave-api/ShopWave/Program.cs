@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using ShopWave.Models;
 using ShopWave.Extensions;
 using ShopWave.Services;
@@ -26,6 +27,7 @@ builder.Services.AddDbContext<ShopWaveDbContext>(options =>
 builder.Services.AddScoped<DatabaseTestService>();
 builder.Services.AddSingleton<JwtTokenService>();
 builder.Services.AddSingleton<GoogleTokenValidator>();
+builder.Services.AddScoped<IPaymentGatewayService, PaymentGatewayService>();
 
 // Media services
 builder.Services.AddHttpContextAccessor();
@@ -42,6 +44,8 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
     options.SerializerOptions.WriteIndented = true;
+    // Allow enums to be (de)serialized from their string names
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
 // Cấu hình CORS cho Next.js frontend

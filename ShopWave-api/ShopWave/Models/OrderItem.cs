@@ -11,11 +11,9 @@ namespace ShopWave.Models
         [Required]
         public Guid OrderId { get; set; }
 
+        // ProductVariantId is the only reference needed
         [Required]
-        public Guid ProductId { get; set; }
-
-        // Optional reference to variant bought
-        public Guid? ProductVariantId { get; set; }
+        public Guid ProductVariantId { get; set; }
 
         [Required]
         [MaxLength(255)]
@@ -39,10 +37,7 @@ namespace ShopWave.Models
         [ForeignKey("OrderId")]
         public virtual Order Order { get; set; } = null!;
 
-        [ForeignKey("ProductId")]
-        public virtual Product Product { get; set; } = null!;
-
         [ForeignKey("ProductVariantId")]
-        public virtual ProductVariant? ProductVariant { get; set; }
+        public virtual ProductVariant ProductVariant { get; set; } = null!;
     }
 }

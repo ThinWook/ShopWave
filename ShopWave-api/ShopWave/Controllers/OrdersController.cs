@@ -5,7 +5,6 @@ using ShopWave.Models;
 using ShopWave.Models.DTOs;
 using ShopWave.Models.Responses;
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
@@ -37,9 +36,17 @@ namespace ShopWave.Controllers
                     return Unauthorized(EnvelopeBuilder.Fail<object>(HttpContext, "UNAUTHORIZED", new[] { new ErrorItem("auth", "Unauthorized", "UNAUTHORIZED") }, 401));
                 }
 
+                // Get user's cart
+                var cart = await _context.Carts.FirstOrDefaultAsync(c => c.UserId == userId);
+                if (cart == null)
+                {
+                    return BadRequest(EnvelopeBuilder.Fail<object>(HttpContext, "CART_EMPTY", new[] { new ErrorItem("cart", "Cart is empty", "CART_EMPTY") }, 400));
+                }
+
                 var cartItems = await _context.CartItems
-                    .Include(ci => ci.Product)
-                    .Where(ci => ci.UserId == userId)
+                    .Include(ci => ci.ProductVariant)
+                        .ThenInclude(v => v.Product)
+                    .Where(ci => ci.CartId == cart.Id)
                     .ToListAsync();
 
                 if (!cartItems.Any())
@@ -47,16 +54,12 @@ namespace ShopWave.Controllers
                     return BadRequest(EnvelopeBuilder.Fail<object>(HttpContext, "CART_EMPTY", new[] { new ErrorItem("cart", "Cart is empty", "CART_EMPTY") }, 400));
                 }
 
-                // Check availability by summing variant stocks per product
-                var productIds = cartItems.Select(ci => ci.ProductId).Distinct().ToList();
-                var variants = await _context.ProductVariants.Where(v => productIds.Contains(v.ProductId)).OrderBy(v => v.Price).ToListAsync();
-
+                // Check availability using ProductVariant stock
                 foreach (var cartItem in cartItems)
                 {
-                    var totalStock = variants.Where(v => v.ProductId == cartItem.ProductId).Sum(v => v.Stock);
-                    if (totalStock < cartItem.Quantity)
+                    if (cartItem.ProductVariant.Stock < cartItem.Quantity)
                     {
-                        return BadRequest(EnvelopeBuilder.Fail<object>(HttpContext, "OUT_OF_STOCK", new[] { new ErrorItem("product", $"Insufficient stock for '{cartItem.Product.Name}'", "OUT_OF_STOCK") }, 400));
+                        return BadRequest(EnvelopeBuilder.Fail<object>(HttpContext, "OUT_OF_STOCK", new[] { new ErrorItem("product", $"Insufficient stock for '{cartItem.ProductVariant.Product.Name}'", "OUT_OF_STOCK") }, 400));
                     }
                 }
 
@@ -71,8 +74,22 @@ namespace ShopWave.Controllers
                     OrderNumber = orderNumber,
                     TotalAmount = totalAmount,
                     Status = "Pending",
-                    ShippingAddress = JsonSerializer.Serialize(request.ShippingAddress),
-                    BillingAddress = request.BillingAddress != null ? JsonSerializer.Serialize(request.BillingAddress) : null,
+                    // Structured Shipping Address
+                    ShippingFullName = request.ShippingAddress.FullName,
+                    ShippingPhone = request.ShippingAddress.Phone,
+                    ShippingStreet = request.ShippingAddress.Address,
+                    ShippingWard = request.ShippingAddress.Ward,
+                    ShippingDistrict = request.ShippingAddress.District,
+                    ShippingProvince = request.ShippingAddress.City,
+                    ShippingNotes = request.ShippingAddress.Notes,
+                    // Structured Billing Address (optional)
+                    BillingFullName = request.BillingAddress?.FullName,
+                    BillingPhone = request.BillingAddress?.Phone,
+                    BillingStreet = request.BillingAddress?.Address,
+                    BillingWard = request.BillingAddress?.Ward,
+                    BillingDistrict = request.BillingAddress?.District,
+                    BillingProvince = request.BillingAddress?.City,
+                    BillingNotes = request.BillingAddress?.Notes,
                     PaymentMethod = request.PaymentMethod,
                     PaymentStatus = "Pending",
                     OrderDate = DateTime.UtcNow,
@@ -89,8 +106,8 @@ namespace ShopWave.Controllers
                     var orderItem = new OrderItem
                     {
                         OrderId = order.Id,
-                        ProductId = cartItem.ProductId,
-                        ProductName = cartItem.Product.Name,
+                        ProductVariantId = cartItem.ProductVariantId,
+                        ProductName = cartItem.ProductVariant.Product.Name,
                         Quantity = cartItem.Quantity,
                         UnitPrice = cartItem.UnitPrice,
                         TotalPrice = cartItem.Quantity * cartItem.UnitPrice,
@@ -98,16 +115,8 @@ namespace ShopWave.Controllers
                     };
                     orderItems.Add(orderItem);
 
-                    // Allocate stock from variants (cheapest-first)
-                    var productVariants = variants.Where(v => v.ProductId == cartItem.ProductId).OrderBy(v => v.Price).ToList();
-                    var remaining = cartItem.Quantity;
-                    foreach (var v in productVariants)
-                    {
-                        if (remaining <= 0) break;
-                        var deduct = Math.Min(remaining, v.Stock);
-                        v.Stock -= deduct;
-                        remaining -= deduct;
-                    }
+                    // Deduct stock from variant
+                    cartItem.ProductVariant.Stock -= cartItem.Quantity;
                 }
                 _context.OrderItems.AddRange(orderItems);
                 _context.CartItems.RemoveRange(cartItems);
@@ -240,8 +249,26 @@ namespace ShopWave.Controllers
                     OrderDate = order.OrderDate,
                     ShippedDate = order.ShippedDate,
                     DeliveredDate = order.DeliveredDate,
-                    ShippingAddress = order.ShippingAddress,
-                    BillingAddress = order.BillingAddress,
+                    ShippingAddress = new AddressDto
+                    {
+                        FullName = order.ShippingFullName,
+                        Phone = order.ShippingPhone,
+                        Address = order.ShippingStreet,
+                        Ward = order.ShippingWard,
+                        District = order.ShippingDistrict,
+                        City = order.ShippingProvince,
+                        Notes = order.ShippingNotes
+                    },
+                    BillingAddress = !string.IsNullOrEmpty(order.BillingFullName) ? new AddressDto
+                    {
+                        FullName = order.BillingFullName,
+                        Phone = order.BillingPhone ?? "",
+                        Address = order.BillingStreet ?? "",
+                        Ward = order.BillingWard ?? "",
+                        District = order.BillingDistrict ?? "",
+                        City = order.BillingProvince ?? "",
+                        Notes = order.BillingNotes
+                    } : null,
                     OrderItems = order.OrderItems.Select(oi => new OrderItemDto
                     {
                         Id = oi.Id,
@@ -274,7 +301,9 @@ namespace ShopWave.Controllers
 
                 var order = await _context.Orders
                     .Include(o => o.OrderItems)
+                        .ThenInclude(oi => oi.ProductVariant)
                     .FirstOrDefaultAsync(o => o.Id == id && o.UserId == userId);
+                
                 if (order == null)
                 {
                     return NotFound(EnvelopeBuilder.Fail<object>(HttpContext, "NOT_FOUND", new[] { new ErrorItem("id", "Order not found", "NOT_FOUND") }, 404));
@@ -284,23 +313,12 @@ namespace ShopWave.Controllers
                     return BadRequest(EnvelopeBuilder.Fail<object>(HttpContext, "INVALID_STATE", new[] { new ErrorItem("status", "Order cannot be cancelled in current state", "INVALID_STATE") }, 400));
                 }
 
-                // Return stock to variants: add back to variants in order they were deducted (we'll add to cheapest-first)
-                var productIds = order.OrderItems.Select(oi => oi.ProductId).Distinct().ToList();
-                var variants = await _context.ProductVariants.Where(v => productIds.Contains(v.ProductId)).OrderBy(v => v.Price).ToListAsync();
-
+                // Return stock to variants directly
                 foreach (var orderItem in order.OrderItems)
                 {
-                    var remaining = orderItem.Quantity;
-                    var productVariants = variants.Where(v => v.ProductId == orderItem.ProductId).OrderBy(v => v.Price).ToList();
-                    foreach (var v in productVariants)
-                    {
-                        if (remaining <= 0) break;
-                        // Return stock proportionally: we'll just add back to the first variants until quantity filled
-                        var add = Math.Min(remaining, int.MaxValue);
-                        v.Stock += add;
-                        remaining -= add;
-                    }
+                    orderItem.ProductVariant.Stock += orderItem.Quantity;
                 }
+                
                 order.Status = "Cancelled";
                 order.UpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
@@ -340,23 +358,5 @@ namespace ShopWave.Controllers
         [MaxLength(100)]
         public string PaymentMethod { get; set; } = string.Empty;
         public string? Notes { get; set; }
-    }
-
-    public class AddressDto
-    {
-        [Required] public string FullName { get; set; } = string.Empty;
-        [Required] public string Phone { get; set; } = string.Empty;
-        [Required] public string Address { get; set; } = string.Empty;
-        [Required] public string Ward { get; set; } = string.Empty;
-        [Required] public string District { get; set; } = string.Empty;
-        [Required] public string City { get; set; } = string.Empty;
-        public string? Notes { get; set; }
-    }
-
-    public class OrderDetailDto : OrderDto
-    {
-        public string? PaymentMethod { get; set; }
-        public string? ShippingAddress { get; set; }
-        public string? BillingAddress { get; set; }
     }
 }

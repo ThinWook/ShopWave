@@ -23,11 +23,55 @@ namespace ShopWave.Models
         [MaxLength(50)]
         public string Status { get; set; } = "Pending";
 
-        [Column(TypeName = "nvarchar(max)")]
-        public string? ShippingAddress { get; set; }
+        // Structured Shipping Address Fields
+        [Required]
+        [MaxLength(100)]
+        public string ShippingFullName { get; set; } = string.Empty;
 
-        [Column(TypeName = "nvarchar(max)")]
-        public string? BillingAddress { get; set; }
+        [Required]
+        [MaxLength(20)]
+        public string ShippingPhone { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(500)]
+        public string ShippingStreet { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(100)]
+        public string ShippingWard { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(100)]
+        public string ShippingDistrict { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(100)]
+        public string ShippingProvince { get; set; } = string.Empty;
+
+        [MaxLength(500)]
+        public string? ShippingNotes { get; set; }
+
+        // Structured Billing Address Fields (optional, defaults to shipping if not provided)
+        [MaxLength(100)]
+        public string? BillingFullName { get; set; }
+
+        [MaxLength(20)]
+        public string? BillingPhone { get; set; }
+
+        [MaxLength(500)]
+        public string? BillingStreet { get; set; }
+
+        [MaxLength(100)]
+        public string? BillingWard { get; set; }
+
+        [MaxLength(100)]
+        public string? BillingDistrict { get; set; }
+
+        [MaxLength(100)]
+        public string? BillingProvince { get; set; }
+
+        [MaxLength(500)]
+        public string? BillingNotes { get; set; }
 
         [MaxLength(100)]
         public string? PaymentMethod { get; set; }
@@ -49,5 +93,7 @@ namespace ShopWave.Models
         public virtual User User { get; set; } = null!;
 
         public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+        
+        public virtual ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
     }
 }

@@ -41,8 +41,6 @@ namespace ShopWave.Models
         [ForeignKey("CategoryId")]
         public virtual Category Category { get; set; } = null!;
 
-        public virtual ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
-        public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
         public virtual ICollection<ProductMedia> ProductMedia { get; set; } = new List<ProductMedia>();
 
         // New navigations for options and variants

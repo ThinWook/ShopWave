@@ -32,6 +32,9 @@ namespace ShopWave.Models
         public DbSet<Discount> Discounts { get; set; }
         public DbSet<AppliedDiscount> AppliedDiscounts { get; set; }
         public DbSet<DiscountTier> DiscountTiers { get; set; }
+        
+        // Payment Transactions
+        public DbSet<Transaction> Transactions { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -102,18 +105,6 @@ namespace ShopWave.Models
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<CartItem>()
-                .HasOne(ci => ci.User)
-                .WithMany(u => u.CartItems)
-                .HasForeignKey(ci => ci.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<CartItem>()
-                .HasOne(ci => ci.Product)
-                .WithMany(p => p.CartItems)
-                .HasForeignKey(ci => ci.ProductId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<CartItem>()
                 .HasOne(ci => ci.ProductVariant)
                 .WithMany()
                 .HasForeignKey(ci => ci.ProductVariantId)
@@ -147,12 +138,6 @@ namespace ShopWave.Models
                 .WithMany(o => o.OrderItems)
                 .HasForeignKey(oi => oi.OrderId)
                 .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<OrderItem>()
-                .HasOne(oi => oi.Product)
-                .WithMany(p => p.OrderItems)
-                .HasForeignKey(oi => oi.ProductId)
-                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<OrderItem>()
                 .HasOne(oi => oi.ProductVariant)
@@ -262,6 +247,23 @@ namespace ShopWave.Models
                 .WithMany()
                 .HasForeignKey(vv => vv.ValueId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Transaction relationships
+            modelBuilder.Entity<Transaction>()
+                .Property(t => t.Amount)
+                .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<Transaction>()
+                .HasOne(t => t.Order)
+                .WithMany(o => o.Transactions)
+                .HasForeignKey(t => t.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Transaction>()
+                .HasIndex(t => t.GatewayTransactionId);
+
+            modelBuilder.Entity<Transaction>()
+                .HasIndex(t => new { t.OrderId, t.Status });
         }
     }
 }

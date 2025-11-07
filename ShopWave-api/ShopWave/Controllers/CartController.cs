@@ -7,6 +7,7 @@ using ShopWave.Models.Requests;
 using ShopWave.Models.Responses;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using ShopWave.DTOs.Cart;
 
 namespace ShopWave.Controllers
 {
@@ -125,7 +126,9 @@ namespace ShopWave.Controllers
                 Cart cart = await GetOrCreateCartAsync(userId, sessionId);
 
                 var cartEntities = await _context.CartItems
-                    .Include(ci => ci.Product)
+                    .Include(ci => ci.ProductVariant)
+                        .ThenInclude(v => v.Product)
+                            .ThenInclude(p => p.Media)
                     .Include(ci => ci.ProductVariant)
                         .ThenInclude(v => v.VariantValues)
                             .ThenInclude(vv => vv.Value)
@@ -137,19 +140,11 @@ namespace ShopWave.Controllers
 
                 var cartItems = cartEntities.Select(ci =>
                 {
-                    int stock = 0;
-                    if (ci.ProductVariant != null)
-                    {
-                        stock = ci.ProductVariant.Stock;
-                    }
-                    else
-                    {
-                        stock = _context.ProductVariants.Where(v => v.ProductId == ci.ProductId).Sum(v => v.Stock);
-                    }
+                    int stock = ci.ProductVariant.Stock;
 
                     // Prepare selected options from variant
                     List<KeyValuePair<string, string>>? selectedOptions = null;
-                    if (ci.ProductVariant != null && ci.ProductVariant.VariantValues != null)
+                    if (ci.ProductVariant.VariantValues != null)
                     {
                         selectedOptions = ci.ProductVariant.VariantValues
                             .Select(vv => new KeyValuePair<string, string>(vv.Value.Option.Name, vv.Value.Value))
@@ -162,18 +157,18 @@ namespace ShopWave.Controllers
                     {
                         variantImageUrl = ci.ProductVariant.Image.Url;
                     }
-                    else if (ci.Product?.Media != null)
+                    else if (ci.ProductVariant?.Product?.Media != null)
                     {
-                        variantImageUrl = ci.Product.Media.Url;
+                        variantImageUrl = ci.ProductVariant.Product.Media.Url;
                     }
 
                     return new CartItemDto
                     {
                         Id = ci.Id,
-                        ProductId = ci.ProductId,
+                        ProductId = ci.ProductVariant.ProductId,
                         VariantId = ci.ProductVariantId,
-                        ProductName = ci.Product?.Name,
-                        ProductMediaId = ci.Product?.MediaId,
+                        ProductName = ci.ProductVariant?.Product?.Name,
+                        ProductMediaId = ci.ProductVariant?.Product?.MediaId,
                         UnitPrice = ci.UnitPrice,
                         Quantity = ci.Quantity,
                         TotalPrice = ci.Quantity * ci.UnitPrice,
@@ -256,7 +251,15 @@ namespace ShopWave.Controllers
                 }
                 else
                 {
-                    var cartItem = new CartItem { CartId = cart.Id, UserId = userId, ProductId = variant.ProductId, ProductVariantId = variantId, Quantity = request.Quantity, UnitPrice = variant.Price, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+                    var cartItem = new CartItem 
+                    { 
+                        CartId = cart.Id, 
+                        ProductVariantId = variantId, 
+                        Quantity = request.Quantity, 
+                        UnitPrice = variant.Price, 
+                        CreatedAt = DateTime.UtcNow, 
+                        UpdatedAt = DateTime.UtcNow 
+                    };
                     _context.CartItems.Add(cartItem);
                 }
                 await _context.SaveChangesAsync();
@@ -288,15 +291,7 @@ namespace ShopWave.Controllers
                     return NotFound(EnvelopeBuilder.Fail<object>(HttpContext, "NOT_FOUND", new[] { new ErrorItem("id", "Cart item not found", "NOT_FOUND") }, 404));
                 }
 
-                int available = 0;
-                if (cartItem.ProductVariant != null)
-                {
-                    available = cartItem.ProductVariant.Stock;
-                }
-                else
-                {
-                    available = await _context.ProductVariants.Where(v => v.ProductId == cartItem.ProductId).SumAsync(v => v.Stock);
-                }
+                int available = cartItem.ProductVariant.Stock;
 
                 if (available < request.Quantity)
                 {
@@ -349,10 +344,15 @@ namespace ShopWave.Controllers
         {
             try
             {
-                var uid = User.FindFirstValue("uid") ?? User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-                if (!Guid.TryParse(uid, out var userId)) return Unauthorized(EnvelopeBuilder.Fail<object>(HttpContext, "UNAUTHORIZED", new[] { new ErrorItem("auth", "Unauthorized", "UNAUTHORIZED") }, 401));
+                var userId = GetUserIdFromClaims();
+                var sessionId = GetSessionIdFromRequest();
+                if (!userId.HasValue && string.IsNullOrWhiteSpace(sessionId))
+                {
+                    return Unauthorized(EnvelopeBuilder.Fail<object>(HttpContext, "UNAUTHORIZED", new[] { new ErrorItem("auth", "Unauthorized", "UNAUTHORIZED") }, 401));
+                }
 
-                var items = await _context.CartItems.Where(ci => ci.UserId == userId).ToListAsync();
+                var cart = await GetOrCreateCartAsync(userId, sessionId);
+                var items = await _context.CartItems.Where(ci => ci.CartId == cart.Id).ToListAsync();
                 if (items.Count > 0)
                 {
                     _context.CartItems.RemoveRange(items);
@@ -437,24 +437,58 @@ namespace ShopWave.Controllers
 
                 await _context.SaveChangesAsync();
 
-                // Recompute cart view
+                // Recompute cart view (INCLUDE full navigation properties like GetCart)
                 var cartEntities = await _context.CartItems
-                    .Include(ci => ci.Product)
                     .Include(ci => ci.ProductVariant)
+                        .ThenInclude(v => v.Product)
+                            .ThenInclude(p => p.Media)
+                    .Include(ci => ci.ProductVariant)
+                        .ThenInclude(v => v.VariantValues)
+                            .ThenInclude(vv => vv.Value)
+                                .ThenInclude(ov => ov.Option)
+                    .Include(ci => ci.ProductVariant)
+                        .ThenInclude(v => v.Image)
                     .Where(ci => ci.CartId == cart.Id)
                     .ToListAsync();
 
-                var items = cartEntities.Select(ci => new CartItemDto
+                var items = cartEntities.Select(ci =>
                 {
-                    Id = ci.Id,
-                    ProductId = ci.ProductId,
-                    VariantId = ci.ProductVariantId,
-                    ProductName = ci.Product?.Name,
-                    ProductMediaId = ci.Product?.MediaId,
-                    UnitPrice = ci.UnitPrice,
-                    Quantity = ci.Quantity,
-                    TotalPrice = ci.Quantity * ci.UnitPrice,
-                    StockQuantity = ci.ProductVariant != null ? ci.ProductVariant.Stock : _context.ProductVariants.Where(v => v.ProductId == ci.ProductId).Sum(v => v.Stock)
+                    int stock = ci.ProductVariant.Stock;
+
+                    // Prepare selected options from variant
+                    List<KeyValuePair<string, string>>? selectedOptions = null;
+                    if (ci.ProductVariant.VariantValues != null)
+                    {
+                        selectedOptions = ci.ProductVariant.VariantValues
+                            .Select(vv => new KeyValuePair<string, string>(vv.Value.Option.Name, vv.Value.Value))
+                            .ToList();
+                    }
+
+                    // Determine variant image URL (prefer variant image)
+                    string? variantImageUrl = null;
+                    if (ci.ProductVariant?.Image != null)
+                    {
+                        variantImageUrl = ci.ProductVariant.Image.Url;
+                    }
+                    else if (ci.ProductVariant?.Product?.Media != null)
+                    {
+                        variantImageUrl = ci.ProductVariant.Product.Media.Url;
+                    }
+
+                    return new CartItemDto
+                    {
+                        Id = ci.Id,
+                        ProductId = ci.ProductVariant.ProductId,
+                        VariantId = ci.ProductVariantId,
+                        ProductName = ci.ProductVariant?.Product?.Name,
+                        ProductMediaId = ci.ProductVariant?.Product?.MediaId,
+                        UnitPrice = ci.UnitPrice,
+                        Quantity = ci.Quantity,
+                        TotalPrice = ci.Quantity * ci.UnitPrice,
+                        StockQuantity = stock,
+                        VariantImageUrl = variantImageUrl,
+                        SelectedOptions = selectedOptions
+                    };
                 }).ToList();
 
                 var discountTotal = await _context.AppliedDiscounts.Where(ad => ad.CartId == cart.Id).SumAsync(ad => ad.DiscountAmountApplied);
@@ -507,23 +541,58 @@ namespace ShopWave.Controllers
                     await _context.SaveChangesAsync();
                 }
 
+                // Reload cart with full navigation properties (same as GetCart)
                 var cartEntities = await _context.CartItems
-                    .Include(ci => ci.Product)
                     .Include(ci => ci.ProductVariant)
+                        .ThenInclude(v => v.Product)
+                            .ThenInclude(p => p.Media)
+                    .Include(ci => ci.ProductVariant)
+                        .ThenInclude(v => v.VariantValues)
+                            .ThenInclude(vv => vv.Value)
+                                .ThenInclude(ov => ov.Option)
+                    .Include(ci => ci.ProductVariant)
+                        .ThenInclude(v => v.Image)
                     .Where(ci => ci.CartId == cart.Id)
                     .ToListAsync();
 
-                var items = cartEntities.Select(ci => new CartItemDto
+                var items = cartEntities.Select(ci =>
                 {
-                    Id = ci.Id,
-                    ProductId = ci.ProductId,
-                    VariantId = ci.ProductVariantId,
-                    ProductName = ci.Product?.Name,
-                    ProductMediaId = ci.Product?.MediaId,
-                    UnitPrice = ci.UnitPrice,
-                    Quantity = ci.Quantity,
-                    TotalPrice = ci.Quantity * ci.UnitPrice,
-                    StockQuantity = ci.ProductVariant != null ? ci.ProductVariant.Stock : _context.ProductVariants.Where(v => v.ProductId == ci.ProductId).Sum(v => v.Stock)
+                    int stock = ci.ProductVariant.Stock;
+
+                    // Prepare selected options from variant
+                    List<KeyValuePair<string, string>>? selectedOptions = null;
+                    if (ci.ProductVariant.VariantValues != null)
+                    {
+                        selectedOptions = ci.ProductVariant.VariantValues
+                            .Select(vv => new KeyValuePair<string, string>(vv.Value.Option.Name, vv.Value.Value))
+                            .ToList();
+                    }
+
+                    // Determine variant image URL (prefer variant image)
+                    string? variantImageUrl = null;
+                    if (ci.ProductVariant?.Image != null)
+                    {
+                        variantImageUrl = ci.ProductVariant.Image.Url;
+                    }
+                    else if (ci.ProductVariant?.Product?.Media != null)
+                    {
+                        variantImageUrl = ci.ProductVariant.Product.Media.Url;
+                    }
+
+                    return new CartItemDto
+                    {
+                        Id = ci.Id,
+                        ProductId = ci.ProductVariant.ProductId,
+                        VariantId = ci.ProductVariantId,
+                        ProductName = ci.ProductVariant?.Product?.Name,
+                        ProductMediaId = ci.ProductVariant?.Product?.MediaId,
+                        UnitPrice = ci.UnitPrice,
+                        Quantity = ci.Quantity,
+                        TotalPrice = ci.Quantity * ci.UnitPrice,
+                        StockQuantity = stock,
+                        VariantImageUrl = variantImageUrl,
+                        SelectedOptions = selectedOptions
+                    };
                 }).ToList();
 
                 var newSubTotal = items.Sum(i => i.TotalPrice);
@@ -551,6 +620,55 @@ namespace ShopWave.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error removing voucher");
+                return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500));
+            }
+        }
+
+        // === ENDPOINT M?I: L?Y CÁC VOUCHER H?P L? ===
+        [HttpGet("available-vouchers")]
+        public async Task<IActionResult> GetAvailableVouchers()
+        {
+            try
+            {
+                // Attempt to get cart for subtotal calculation. Reuse existing helper to read user/session.
+                var userId = GetUserIdFromClaims();
+                var sessionId = GetSessionIdFromRequest();
+
+                Cart? cart = null;
+                if (userId.HasValue || !string.IsNullOrWhiteSpace(sessionId))
+                {
+                    cart = await GetOrCreateCartAsync(userId, sessionId);
+                }
+
+                decimal subTotal = 0m;
+                if (cart != null)
+                {
+                    var cartEntities = await _context.CartItems.Where(ci => ci.CartId == cart.Id).ToListAsync();
+                    subTotal = cartEntities.Sum(ci => ci.UnitPrice * ci.Quantity);
+                }
+
+                var now = DateTime.UtcNow;
+
+                var available = await _context.Discounts
+                    .Where(v => v.IsActive)
+                    .Where(v => (v.StartDate == null || v.StartDate <= now) && (v.EndDate == null || v.EndDate >= now))
+                    .Where(v => v.UsageLimit == null || v.UsageCount < v.UsageLimit)
+                    .Where(v => v.MinOrderAmount <= subTotal)
+                    .Select(v => new AvailableVoucherDto
+                    {
+                        Code = v.Code,
+                        Description = v.Description,
+                        MinOrderAmount = v.MinOrderAmount,
+                        DiscountValue = v.DiscountValue,
+                        DiscountType = v.DiscountType.ToString()
+                    })
+                    .ToListAsync();
+
+                return Ok(EnvelopeBuilder.Ok(HttpContext, "VOUCHERS_RETRIEVED", available));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving available vouchers");
                 return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR", new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500));
             }
         }

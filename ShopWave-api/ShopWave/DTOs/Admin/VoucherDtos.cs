@@ -15,6 +15,8 @@ namespace ShopWave.DTOs.Admin
         public bool IsActive { get; set; }
         public int? UsageLimit { get; set; }
         public int UsageCount { get; set; }
+        // New: expose discount type as string for clients
+        public string DiscountType { get; set; } = string.Empty;
     }
 
     public class CreateVoucherDto

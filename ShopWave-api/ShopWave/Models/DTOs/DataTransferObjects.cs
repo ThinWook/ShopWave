@@ -55,6 +55,29 @@ namespace ShopWave.Models.DTOs
         public DateTime CreatedAt { get; set; }
     }
 
+    public class AddressDto
+    {
+        [Required]
+        public string FullName { get; set; } = string.Empty;
+        
+        [Required]
+        public string Phone { get; set; } = string.Empty;
+        
+        [Required]
+        public string Address { get; set; } = string.Empty;
+        
+        [Required]
+        public string Ward { get; set; } = string.Empty;
+        
+        [Required]
+        public string District { get; set; } = string.Empty;
+        
+        [Required]
+        public string City { get; set; } = string.Empty;
+        
+        public string? Notes { get; set; }
+    }
+
     public class OrderDto
     {
         public Guid Id { get; set; }
@@ -66,6 +89,13 @@ namespace ShopWave.Models.DTOs
         public DateTime? ShippedDate { get; set; }
         public DateTime? DeliveredDate { get; set; }
         public List<OrderItemDto> OrderItems { get; set; } = new List<OrderItemDto>();
+    }
+
+    public class OrderDetailDto : OrderDto
+    {
+        public string? PaymentMethod { get; set; }
+        public AddressDto ShippingAddress { get; set; } = null!;
+        public AddressDto? BillingAddress { get; set; }
     }
 
     public class OrderItemDto

@@ -1,234 +1,237 @@
-# POST Product API - Options System Documentation
+# ?? ShopWave Documentation
 
-## ?? Th? m?c này ch?a
-
-1. **SUMMARY_PostProductChanges.md** - Tóm t?t t?t c? thay ??i
-2. **POST_Product_API_NewStructure.md** - Chi ti?t API specification
-3. **sample-product-request.json** - Ví d? request hoàn ch?nh
-4. **TESTING_CHECKLIST.md** - Checklist ?? test API
-
-## ?? Quick Start
-
-### 1. Apply Database Migration
-```bash
-cd ShopWave
-dotnet ef database update
-```
-
-### 2. Test API v?i curl
-```bash
-# T?o product
-curl -X POST https://localhost:5001/api/v1/products \
-  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d @Docs/sample-product-request.json
-
-# L?y thông tin product
-curl https://localhost:5001/api/v1/products/{product-id} \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
-
-### 3. Verify trong Database
-```sql
--- Check options
-SELECT * FROM ProductOptions WHERE ProductId = 'your-product-guid'
-
--- Check option values
-SELECT po.Name, ov.Value, ov.ThumbnailId
-FROM ProductOptions po
-JOIN OptionValues ov ON po.Id = ov.OptionId
-WHERE po.ProductId = 'your-product-guid'
-
--- Check variant mappings
-SELECT pv.Sku, po.Name, ov.Value
-FROM ProductVariants pv
-JOIN VariantValues vv ON pv.Id = vv.VariantId
-JOIN OptionValues ov ON vv.ValueId = ov.Id
-JOIN ProductOptions po ON ov.OptionId = po.Id
-WHERE pv.ProductId = 'your-product-guid'
-```
-
-## ?? Key Concepts
-
-### Options (Thu?c tính)
-- ??nh ngh?a các nhóm l?a ch?n: Size, Color, Material, v.v.
-- M?i s?n ph?m có th? có nhi?u options
-- M?i option có nhi?u values
-
-### Option Values (Giá tr?)
-- Các giá tr? c? th? c?a option: 42, 43, Black, White
-- Có th? có thumbnail (cho color swatch)
-
-### Variants (Bi?n th?)
-- K?t h?p c? th? các option values
-- Ví d?: Size=42 + Color=Black ? Variant "UR-42-BLK"
-- M?i variant có price, stock, image riêng
-
-### Display Types
-- `text_button` - Hi?n th? d?ng nút text (Size)
-- `color_swatch` - Hi?n th? d?ng màu v?i thumbnail (Color)
-- `dropdown` - (Future) Hi?n th? d?ng dropdown
-
-## ?? Request Structure
-
-```
-Product
-??? name, description, categoryId (basics)
-??? mainImageId (?nh ??i di?n)
-??? galleryMedia[] (th? vi?n ?nh)
-?
-??? options[] (??nh ngh?a thu?c tính)
-?   ??? name (Size, Color, ...)
-?   ??? displayType (text_button, color_swatch)
-?   ??? values[]
-?       ??? value (42, Black, ...)
-?       ??? thumbnailId (cho color swatch)
-?
-??? variants[] (các bi?n th?)
-    ??? sku, price, stock
-    ??? imageId
-    ??? selectedOptions[] (liên k?t)
-        ??? optionName
-        ??? value
-```
-
-## ?? Database Schema
-
-```
-Products
-  ??? Id, Name, Description, CategoryId
-  ??? MediaId (main image)
-  ??? DisplayPrice, TotalInventory, VariantCount (denormalized)
-
-ProductOptions
-  ??? Id, ProductId
-  ??? Name (Size, Color)
-  ??? DisplayType (text_button, color_swatch)
-
-OptionValues
-  ??? Id, OptionId
-  ??? Value (42, Black)
-  ??? ThumbnailId (nullable)
-
-ProductVariants
-  ??? Id, ProductId
-  ??? Sku, Price, Stock
-  ??? ImageId
-
-VariantValues (junction table)
-  ??? VariantId
-  ??? ValueId
-```
-
-## ?? Workflow
-
-```
-1. POST /api/v1/products
-   ?
-2. Create Product
-   ?
-3. Create ProductOptions (Size, Color)
-   ?
-4. Create OptionValues (42, 43, Black, White)
-   ?
-5. Create ProductVariants (SKUs)
-   ?
-6. Create VariantValues (mappings)
-   ?
-7. Update denormalized fields
-   ?
-8. Return product ID
-```
-
-## ?? Frontend Integration
-
-### Step 1: Hi?n th? Options
-```jsx
-{product.options.map(option => (
-  <div key={option.name}>
-    <label>{option.name}</label>
-    {option.displayType === 'color_swatch' ? (
-      // Render color swatches v?i thumbnails
-      <ColorSwatchPicker values={option.values} />
-    ) : (
-      // Render text buttons
-      <ButtonGroup values={option.values} />
-    )}
-  </div>
-))}
-```
-
-### Step 2: Tìm Variant
-```javascript
-// User ch?n Size=42, Color=Black
-const selectedValues = {
-  Size: '42',
-  Color: 'Black'
-};
-
-// Tìm variant phù h?p
-const variant = product.variants.find(v => {
-  return v.selectedOptions.every(so => 
-    selectedValues[so.optionName] === so.value
-  );
-});
-
-// Hi?n th? thông tin variant
-console.log(variant.price, variant.stock, variant.imageId);
-```
-
-### Step 3: Ho?c dùng API
-```javascript
-// L?y option value IDs
-const valueIds = getSelectedValueIds(selectedValues);
-
-// Call API
-const response = await fetch(`/api/v1/products/${productId}/variants/find`, {
-  method: 'POST',
-  body: JSON.stringify({ valueIds })
-});
-```
-
-## ?? Debugging
-
-### Logs
-```csharp
-// Controller có log chi ti?t
-_logger.LogInformation("Created product {ProductId} with {OptionCount} options", ...);
-_logger.LogWarning("Could not find option value for {Key}", ...);
-```
-
-### Common Issues
-1. **selectedOptions không kh?p** ? Check option name và value spelling
-2. **Variant không có price** ? Thi?u trong request
-3. **Options không hi?n th?** ? Check Include() trong query
-4. **ThumbnailId null** ? Media ch?a upload ho?c ID sai
-
-## ?? Additional Resources
-
-- **API Docs**: `POST_Product_API_NewStructure.md`
-- **Testing Guide**: `TESTING_CHECKLIST.md`
-- **Sample Request**: `sample-product-request.json`
-- **Migration File**: `../Migrations/AddDisplayTypeToProductOption.cs`
-
-## ?? Contributing
-
-Khi thêm display type m?i:
-1. Thêm vào enum ho?c constant
-2. Update frontend renderer
-3. Update documentation
-4. Add test cases
-
-## ?? Support
-
-Issues ho?c questions:
-- Check logs trong controller
-- Verify database v?i SQL queries ? trên
-- Xem testing checklist
-- Review API documentation
+Welcome to ShopWave API documentation! This directory contains comprehensive guides, SQL scripts, and references for the ShopWave e-commerce platform.
 
 ---
 
-**Last Updated**: 2024
-**Version**: 1.0
-**Breaking Changes**: Yes (thêm options system)
+## ?? Quick Navigation
+
+### ?? Checkout & Payment System
+**Status:** ? Implementation Complete
+
+| Document | Description | Audience |
+|----------|-------------|----------|
+| [CHECKOUT_MASTER_CHECKLIST.md](./CHECKOUT_MASTER_CHECKLIST.md) | **START HERE** - Complete checklist | All |
+| [CHECKOUT_FINAL_SUMMARY.md](./CHECKOUT_FINAL_SUMMARY.md) | High-level overview | All |
+| [CHECKOUT_FLOWS_VISUAL.md](./CHECKOUT_FLOWS_VISUAL.md) | Visual diagrams | Developers, PM |
+| [CHECKOUT_PAYMENT_GUIDE.md](./CHECKOUT_PAYMENT_GUIDE.md) | Complete implementation guide | Developers |
+| [CHECKOUT_QUICK_START.md](./CHECKOUT_QUICK_START.md) | Quick setup (5 min) | Developers |
+| [CHECKOUT_PAYMENT_COMPLETE.md](./CHECKOUT_PAYMENT_COMPLETE.md) | Implementation summary | Developers |
+
+#### COD (Cash On Delivery)
+| Document | Description | Audience |
+|----------|-------------|----------|
+| [COD_IMPLEMENTATION_SUMMARY.md](./COD_IMPLEMENTATION_SUMMARY.md) | Complete COD details | Developers |
+| [COD_TESTING_CHECKLIST.md](./COD_TESTING_CHECKLIST.md) | Test cases | QA, Developers |
+| [COD_QUICK_REF.md](./COD_QUICK_REF.md) | Quick reference card | Developers |
+| [COD_FLOW_COMPLETE.md](./COD_FLOW_COMPLETE.md) | Completion report | All |
+| [SQL_VerifyCODTransactions.sql](./SQL_VerifyCODTransactions.sql) | Verification script | DBA, Developers |
+
+---
+
+### ?? Transactions
+**Status:** ? Complete
+
+| Document | Description | Audience |
+|----------|-------------|----------|
+| [TRANSACTIONS_COMPLETE.md](./TRANSACTIONS_COMPLETE.md) | Complete guide | Developers |
+| [TRANSACTIONS_TABLE_GUIDE.md](./TRANSACTIONS_TABLE_GUIDE.md) | Table structure | DBA, Developers |
+| [TRANSACTIONS_QUICK_REF.md](./TRANSACTIONS_QUICK_REF.md) | Quick reference | Developers |
+| [SQL_VerifyTransactions.sql](./SQL_VerifyTransactions.sql) | Verification script | DBA |
+
+---
+
+### ?? Cart & Discounts
+**Status:** ? Complete
+
+| Document | Description | Audience |
+|----------|-------------|----------|
+| [CART_DISCOUNT_GUIDE.md](./CART_DISCOUNT_GUIDE.md) | Complete cart guide | Developers |
+| [PROGRESSIVE_DISCOUNT_SUMMARY.md](./PROGRESSIVE_DISCOUNT_SUMMARY.md) | Progressive discounts | Developers |
+| [PROGRESSIVE_DISCOUNT_IMPLEMENTATION.md](./PROGRESSIVE_DISCOUNT_IMPLEMENTATION.md) | Implementation details | Developers |
+| [SUMMARY_ProgressiveDiscountFix.md](./SUMMARY_ProgressiveDiscountFix.md) | Fix summary | Developers |
+| [CART_ITEMS_CLEANUP.md](./CART_ITEMS_CLEANUP.md) | Cleanup guide | Developers |
+| [SQL_ProgressiveDiscountSetup.sql](./SQL_ProgressiveDiscountSetup.sql) | Setup script | DBA |
+| [SQL_QuickFixDiscountTiers.sql](./SQL_QuickFixDiscountTiers.sql) | Quick fix | DBA |
+| [SQL_VerifyDiscountTiers.sql](./SQL_VerifyDiscountTiers.sql) | Verification | DBA |
+
+---
+
+### ?? Orders
+**Status:** ? Complete
+
+| Document | Description | Audience |
+|----------|-------------|----------|
+| [ORDER_FIX_COMPLETE.md](./ORDER_FIX_COMPLETE.md) | Complete guide | Developers |
+| [ORDER_STRUCTURE_FIX.md](./ORDER_STRUCTURE_FIX.md) | Structure changes | Developers |
+| [SQL_FixOrderStructure.sql](./SQL_FixOrderStructure.sql) | Migration script | DBA |
+| [SQL_VerifyOrderFix.sql](./SQL_VerifyOrderFix.sql) | Verification | DBA |
+
+---
+
+### ?? Products
+**Status:** ? Complete
+
+| Document | Description | Audience |
+|----------|-------------|----------|
+| [POST_Product_API_NewStructure.md](./POST_Product_API_NewStructure.md) | API structure | Developers |
+| [SUMMARY_PostProductChanges.md](./SUMMARY_PostProductChanges.md) | Changes summary | Developers |
+| [sample-product-request.json](./sample-product-request.json) | Sample request | Developers |
+| [SQL_CheckVariantValues.sql](./SQL_CheckVariantValues.sql) | Variant check | DBA |
+
+---
+
+### ?? Database Management
+
+#### Migration Guides
+| Document | Description | Audience |
+|----------|-------------|----------|
+| [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) | Master migration guide | DBA, Developers |
+| [HOW_TO_REFRESH_DATABASE.md](./HOW_TO_REFRESH_DATABASE.md) | Database refresh | DBA |
+| [CART_MIGRATION_FIX.md](./CART_MIGRATION_FIX.md) | Cart migration | DBA |
+| [QUICK_FIX_CART_MIGRATION.md](./QUICK_FIX_CART_MIGRATION.md) | Quick cart fix | DBA |
+
+#### SQL Scripts
+| Script | Purpose | Use When |
+|--------|---------|----------|
+| [SQL_RecreateDatabaseFromScratch.sql](./SQL_RecreateDatabaseFromScratch.sql) | Full recreation | Fresh start |
+| [SQL_PrepareForCartMigration.sql](./SQL_PrepareForCartMigration.sql) | Cart prep | Before cart migration |
+| [SQL_VerifyCartTables.sql](./SQL_VerifyCartTables.sql) | Cart verification | After cart changes |
+| [SQL_QuickCheck.sql](./SQL_QuickCheck.sql) | Quick health check | Anytime |
+| [SQL_DebugMigration.sql](./SQL_DebugMigration.sql) | Debug migrations | Troubleshooting |
+| [SQL_FinalVerification.sql](./SQL_FinalVerification.sql) | Final check | After deployment |
+
+---
+
+### ?? Testing
+| Document | Description | Audience |
+|----------|-------------|----------|
+| [TESTING_CHECKLIST.md](./TESTING_CHECKLIST.md) | Master test checklist | QA, Developers |
+| [COD_TESTING_CHECKLIST.md](./COD_TESTING_CHECKLIST.md) | COD-specific tests | QA, Developers |
+
+---
+
+## ?? Getting Started
+
+### For Developers:
+1. **Start with:** [CHECKOUT_MASTER_CHECKLIST.md](./CHECKOUT_MASTER_CHECKLIST.md)
+2. **Setup quickly:** [CHECKOUT_QUICK_START.md](./CHECKOUT_QUICK_START.md)
+3. **Understand flows:** [CHECKOUT_FLOWS_VISUAL.md](./CHECKOUT_FLOWS_VISUAL.md)
+4. **Implement features:** [CHECKOUT_PAYMENT_GUIDE.md](./CHECKOUT_PAYMENT_GUIDE.md)
+
+### For QA:
+1. **Test COD:** [COD_TESTING_CHECKLIST.md](./COD_TESTING_CHECKLIST.md)
+2. **Test Payments:** [CHECKOUT_PAYMENT_GUIDE.md](./CHECKOUT_PAYMENT_GUIDE.md) (Testing section)
+3. **Run SQL checks:** [SQL_VerifyCODTransactions.sql](./SQL_VerifyCODTransactions.sql)
+
+### For DBA:
+1. **Database setup:** [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md)
+2. **Verify orders:** [SQL_VerifyOrderFix.sql](./SQL_VerifyOrderFix.sql)
+3. **Verify transactions:** [SQL_VerifyTransactions.sql](./SQL_VerifyTransactions.sql)
+4. **Verify COD:** [SQL_VerifyCODTransactions.sql](./SQL_VerifyCODTransactions.sql)
+
+### For Product Managers:
+1. **System overview:** [CHECKOUT_FINAL_SUMMARY.md](./CHECKOUT_FINAL_SUMMARY.md)
+2. **Visual flows:** [CHECKOUT_FLOWS_VISUAL.md](./CHECKOUT_FLOWS_VISUAL.md)
+3. **Feature status:** [CHECKOUT_MASTER_CHECKLIST.md](./CHECKOUT_MASTER_CHECKLIST.md)
+
+---
+
+## ?? Feature Status
+
+| Feature | Status | Documentation |
+|---------|--------|---------------|
+| Checkout (COD) | ? Complete | [COD_IMPLEMENTATION_SUMMARY.md](./COD_IMPLEMENTATION_SUMMARY.md) |
+| Checkout (VNPay) | ? Complete | [CHECKOUT_PAYMENT_GUIDE.md](./CHECKOUT_PAYMENT_GUIDE.md) |
+| Checkout (MoMo) | ? Complete | [CHECKOUT_PAYMENT_GUIDE.md](./CHECKOUT_PAYMENT_GUIDE.md) |
+| Transactions Logging | ? Complete | [TRANSACTIONS_COMPLETE.md](./TRANSACTIONS_COMPLETE.md) |
+| Cart Management | ? Complete | [CART_DISCOUNT_GUIDE.md](./CART_DISCOUNT_GUIDE.md) |
+| Progressive Discounts | ? Complete | [PROGRESSIVE_DISCOUNT_SUMMARY.md](./PROGRESSIVE_DISCOUNT_SUMMARY.md) |
+| Order Management | ? Complete | [ORDER_FIX_COMPLETE.md](./ORDER_FIX_COMPLETE.md) |
+| Product Variants | ? Complete | [POST_Product_API_NewStructure.md](./POST_Product_API_NewStructure.md) |
+| Email Service | ?? TODO | - |
+| Admin Payment Confirm | ?? TODO | - |
+
+---
+
+## ?? Search Guide
+
+### Find by Topic:
+- **"How to test COD?"** ? [COD_TESTING_CHECKLIST.md](./COD_TESTING_CHECKLIST.md)
+- **"How to setup VNPay?"** ? [CHECKOUT_QUICK_START.md](./CHECKOUT_QUICK_START.md)
+- **"What happens in COD flow?"** ? [CHECKOUT_FLOWS_VISUAL.md](./CHECKOUT_FLOWS_VISUAL.md)
+- **"How to verify database?"** ? [SQL_FinalVerification.sql](./SQL_FinalVerification.sql)
+- **"How to migrate database?"** ? [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md)
+- **"What is progressive discount?"** ? [PROGRESSIVE_DISCOUNT_SUMMARY.md](./PROGRESSIVE_DISCOUNT_SUMMARY.md)
+
+### Find by Role:
+- **Backend Developer:** Start with [CHECKOUT_PAYMENT_GUIDE.md](./CHECKOUT_PAYMENT_GUIDE.md)
+- **Frontend Developer:** See [CHECKOUT_FLOWS_VISUAL.md](./CHECKOUT_FLOWS_VISUAL.md)
+- **QA Engineer:** Use [TESTING_CHECKLIST.md](./TESTING_CHECKLIST.md)
+- **DBA:** Follow [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md)
+- **DevOps:** Check [CHECKOUT_QUICK_START.md](./CHECKOUT_QUICK_START.md)
+
+---
+
+## ?? Troubleshooting
+
+| Issue | Check Document |
+|-------|----------------|
+| COD order not created | [COD_TESTING_CHECKLIST.md](./COD_TESTING_CHECKLIST.md) |
+| Cart not deleted | [COD_FLOW_COMPLETE.md](./COD_FLOW_COMPLETE.md) |
+| Webhook not called | [CHECKOUT_PAYMENT_GUIDE.md](./CHECKOUT_PAYMENT_GUIDE.md) |
+| Stock inconsistency | [SQL_QuickCheck.sql](./SQL_QuickCheck.sql) |
+| Migration failed | [SQL_DebugMigration.sql](./SQL_DebugMigration.sql) |
+| Discount not applied | [PROGRESSIVE_DISCOUNT_SUMMARY.md](./PROGRESSIVE_DISCOUNT_SUMMARY.md) |
+
+---
+
+## ?? Document Conventions
+
+### Emoji Guide:
+- ? Complete/Success
+- ?? Warning/TODO/In Progress
+- ? Error/Failed
+- ?? Important
+- ?? Data/Statistics
+- ?? Verification
+- ?? Testing
+- ?? Configuration
+- ?? Documentation
+- ?? Deployment
+
+### File Naming:
+- `FEATURE_TYPE.md` - General documentation
+- `SQL_Purpose.sql` - SQL scripts
+- `FEATURE_QUICK_REF.md` - Quick reference
+- `FEATURE_TESTING_CHECKLIST.md` - Test checklists
+
+---
+
+## ?? Support
+
+### Internal:
+- **Documentation Issues:** Create GitHub issue
+- **Code Questions:** Check relevant .md files first
+- **Database Issues:** Run verification SQL scripts
+
+### External:
+- **VNPay:** support@vnpay.vn | https://sandbox.vnpayment.vn/apis/
+- **MoMo:** developer@momo.vn | https://developers.momo.vn/
+
+---
+
+## ?? Document Maintenance
+
+**Last Updated:** 2025-01-15  
+**Maintained By:** Development Team  
+**Review Cycle:** Before each major release
+
+### Recent Updates:
+- 2025-01-15: Added complete checkout & payment documentation
+- 2025-01-15: Added COD flow documentation
+- 2025-01-15: Added visual flow diagrams
+
+---
+
+**Made with ?? for ShopWave**

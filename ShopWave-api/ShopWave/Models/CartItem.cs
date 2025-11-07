@@ -11,14 +11,8 @@ namespace ShopWave.Models
         [Required]
         public Guid CartId { get; set; }
 
-        // Make UserId nullable to support guest carts
-        public Guid? UserId { get; set; }
-
         [Required]
-        public Guid ProductId { get; set; }
-
-        // Optional link to a specific product variant
-        public Guid? ProductVariantId { get; set; }
+        public Guid ProductVariantId { get; set; }
 
         [Required]
         [Range(1, int.MaxValue)]
@@ -38,13 +32,7 @@ namespace ShopWave.Models
         [ForeignKey("CartId")]
         public virtual Cart Cart { get; set; } = null!;
 
-        [ForeignKey("UserId")]
-        public virtual User? User { get; set; }
-
-        [ForeignKey("ProductId")]
-        public virtual Product Product { get; set; } = null!;
-
         [ForeignKey("ProductVariantId")]
-        public virtual ProductVariant? ProductVariant { get; set; }
+        public virtual ProductVariant ProductVariant { get; set; } = null!;
     }
 }

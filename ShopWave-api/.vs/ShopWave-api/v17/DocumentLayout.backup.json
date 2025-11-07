@@ -3,8 +3,67 @@
   "WorkspaceRootPath": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\checkout_final_summary.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\checkout_final_summary.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\controllers\\paymentwebhookcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\controllers\\paymentwebhookcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\checkout_flows_visual.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\checkout_flows_visual.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\sql_verifyorderfix.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\sql_verifyorderfix.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\sql_fixorderstructure.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\sql_fixorderstructure.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\sql_verifytransactions.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\sql_verifytransactions.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\models\\order.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\models\\order.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\models\\dtos\\datatransferobjects.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\models\\dtos\\datatransferobjects.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\sql_quickfixdiscounttiers.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\sql_quickfixdiscounttiers.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\controllers\\cartcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\controllers\\cartcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\HasHisShuU\\AppData\\Local\\Temp\\yl52ujur.cs||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\models\\applieddiscount.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\models\\applieddiscount.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\controllers\\admin\\vouchersadmincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\controllers\\admin\\vouchersadmincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\dtos\\admin\\voucherdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\dtos\\admin\\voucherdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\sql_progressivediscountsetup.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\sql_progressivediscountsetup.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\models\\responses\\responsemodels.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -13,14 +72,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\models\\requests\\requestmodels.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\models\\requests\\requestmodels.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\dtos\\admin\\voucherdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\dtos\\admin\\voucherdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\controllers\\admin\\vouchersadmincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\controllers\\admin\\vouchersadmincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\sql_checkvariantvalues.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}",
@@ -33,10 +84,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\models\\cartitem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\models\\cartitem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\models\\dtos\\datatransferobjects.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\models\\dtos\\datatransferobjects.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\models\\productvariant.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -101,10 +148,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\models\\designtimeshopwavedbcontextfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\models\\designtimeshopwavedbcontextfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave.Tests\\RecommendationServiceTests.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -199,10 +242,6 @@
       "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\models\\discount.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\models\\applieddiscount.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\models\\applieddiscount.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\models\\discounttier.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\models\\discounttier.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -215,68 +254,160 @@
       "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\cart_migration_fix.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\sql_prepareforcartmigration.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame",
-      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\sql_prepareforcartmigration.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\quick_fix_cart_migration.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|",
       "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\quick_fix_cart_migration.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\sql_verifycarttables.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame",
-      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\sql_verifycarttables.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame"
     },
     {
       "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\how_to_refresh_database.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|",
       "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\how_to_refresh_database.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\sql_finalverification.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame",
-      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\sql_finalverification.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\sql_recreatedatabasefromscratch.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}",
       "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\sql_recreatedatabasefromscratch.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\sql_recreatedatabasefromscratch.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame",
-      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\sql_recreatedatabasefromscratch.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame"
     },
     {
       "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\sql_debugmigration.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}",
       "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\sql_debugmigration.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\sql_debugmigration.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame",
-      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\sql_debugmigration.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\sql_quickcheck.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}",
       "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\sql_quickcheck.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\sql_quickcheck.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame",
-      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\sql_quickcheck.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\sql_checkvariantvalues.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame",
-      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\sql_checkvariantvalues.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame"
     },
     {
       "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\progressive_discount_implementation.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|",
       "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\progressive_discount_implementation.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\sql_progressivediscountsetup.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}",
-      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\sql_progressivediscountsetup.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\sql_progressivediscountsetup.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame",
-      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\sql_progressivediscountsetup.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\progressive_discount_summary.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|",
       "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\progressive_discount_summary.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\dtos\\cart\\availablevoucherdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\dtos\\cart\\availablevoucherdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\controllers\\orderscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\controllers\\orderscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\cart_items_cleanup.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\cart_items_cleanup.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\summary_progressivediscountfix.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\summary_progressivediscountfix.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\sql_quickfixdiscounttiers.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\sql_quickfixdiscounttiers.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\sql_verifydiscounttiers.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\sql_verifydiscounttiers.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\sql_verifydiscounttiers.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\sql_verifydiscounttiers.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\sql_fixorderstructure.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\sql_fixorderstructure.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\order_structure_fix.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\order_structure_fix.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\order_fix_complete.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\order_fix_complete.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\sql_verifyorderfix.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\sql_verifyorderfix.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\models\\transaction.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\models\\transaction.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\dtos\\transaction\\transactiondtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\dtos\\transaction\\transactiondtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\controllers\\transactionscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\controllers\\transactionscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\transactions_table_guide.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\transactions_table_guide.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\sql_verifytransactions.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\sql_verifytransactions.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\transactions_complete.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\transactions_complete.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\transactions_quick_ref.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\transactions_quick_ref.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\controllers\\checkoutcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\controllers\\checkoutcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\services\\ipaymentgatewayservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\services\\ipaymentgatewayservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\services\\paymentgatewayservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\services\\paymentgatewayservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\checkout_payment_guide.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\checkout_payment_guide.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\checkout_payment_complete.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\checkout_payment_complete.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\checkout_quick_start.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\checkout_quick_start.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\sql_verifycodtransactions.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\sql_verifycodtransactions.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\sql_verifycodtransactions.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\sql_verifycodtransactions.sql||{CC5D8DF0-88F4-4BB2-9DBB-B48CEE65C30A}|CodeFrame"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\cod_testing_checklist.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\cod_testing_checklist.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\cod_implementation_summary.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\cod_implementation_summary.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\cod_quick_ref.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\cod_quick_ref.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\cod_flow_complete.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\cod_flow_complete.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|c:\\users\\hashisshuu\\source\\repos\\shopwave\\shopwave-api\\shopwave\\docs\\checkout_master_checklist.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|",
+      "RelativeMoniker": "D:0:0:{C995630E-C82B-4D47-B3D0-1884F7B67968}|ShopWave\\ShopWave-api.csproj|solutionrelative:shopwave\\docs\\checkout_master_checklist.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}|"
     }
   ],
   "DocumentGroupContainers": [
@@ -285,8 +416,8 @@
       "VerticalTabListWidth": 256,
       "DocumentGroups": [
         {
-          "DockedHeight": 334,
-          "SelectedChildIndex": 7,
+          "DockedHeight": 314,
+          "SelectedChildIndex": 6,
           "Children": [
             {
               "$type": "Bookmark",
@@ -294,40 +425,41 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 68,
-              "Title": "PROGRESSIVE_DISCOUNT_SUMMARY.md",
-              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\PROGRESSIVE_DISCOUNT_SUMMARY.md",
-              "RelativeDocumentMoniker": "ShopWave\\Docs\\PROGRESSIVE_DISCOUNT_SUMMARY.md",
-              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\PROGRESSIVE_DISCOUNT_SUMMARY.md",
-              "RelativeToolTip": "ShopWave\\Docs\\PROGRESSIVE_DISCOUNT_SUMMARY.md",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAMUAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 101,
+              "Title": "CHECKOUT_MASTER_CHECKLIST.md",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\CHECKOUT_MASTER_CHECKLIST.md",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\CHECKOUT_MASTER_CHECKLIST.md",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\CHECKOUT_MASTER_CHECKLIST.md",
+              "RelativeToolTip": "ShopWave\\Docs\\CHECKOUT_MASTER_CHECKLIST.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAEEBAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
-              "WhenOpened": "2025-11-05T20:00:37.238Z",
+              "WhenOpened": "2025-11-07T10:25:40.796Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 66,
-              "Title": "SQL_ProgressiveDiscountSetup.sql ",
-              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_ProgressiveDiscountSetup.sql",
-              "RelativeDocumentMoniker": "ShopWave\\Docs\\SQL_ProgressiveDiscountSetup.sql",
-              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_ProgressiveDiscountSetup.sql",
-              "RelativeToolTip": "ShopWave\\Docs\\SQL_ProgressiveDiscountSetup.sql",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000826|",
-              "WhenOpened": "2025-11-05T19:59:56.659Z",
+              "DocumentIndex": 87,
+              "Title": "TRANSACTIONS_QUICK_REF.md",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\TRANSACTIONS_QUICK_REF.md",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\TRANSACTIONS_QUICK_REF.md",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\TRANSACTIONS_QUICK_REF.md",
+              "RelativeToolTip": "ShopWave\\Docs\\TRANSACTIONS_QUICK_REF.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAANgAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-11-07T09:26:43.781Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 65,
-              "Title": "PROGRESSIVE_DISCOUNT_IMPLEMENTATION.md",
-              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\PROGRESSIVE_DISCOUNT_IMPLEMENTATION.md",
-              "RelativeDocumentMoniker": "ShopWave\\Docs\\PROGRESSIVE_DISCOUNT_IMPLEMENTATION.md",
-              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\PROGRESSIVE_DISCOUNT_IMPLEMENTATION.md",
-              "RelativeToolTip": "ShopWave\\Docs\\PROGRESSIVE_DISCOUNT_IMPLEMENTATION.md",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAADsBAAAAAAAAAAAAAA==",
+              "DocumentIndex": 86,
+              "Title": "TRANSACTIONS_COMPLETE.md",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\TRANSACTIONS_COMPLETE.md",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\TRANSACTIONS_COMPLETE.md",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\TRANSACTIONS_COMPLETE.md",
+              "RelativeToolTip": "ShopWave\\Docs\\TRANSACTIONS_COMPLETE.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAALgBAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
-              "WhenOpened": "2025-11-05T19:59:29.054Z",
+              "WhenOpened": "2025-11-07T09:26:05.822Z",
               "EditorCaption": ""
             },
             {
@@ -336,277 +468,465 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "ResponseModels.cs",
-              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\Responses\\ResponseModels.cs",
-              "RelativeDocumentMoniker": "ShopWave\\Models\\Responses\\ResponseModels.cs",
-              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\Responses\\ResponseModels.cs",
-              "RelativeToolTip": "ShopWave\\Models\\Responses\\ResponseModels.cs",
-              "ViewState": "AgIAAGYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-05T19:55:37.921Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "VoucherDtos.cs",
-              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\DTOs\\Admin\\VoucherDtos.cs",
-              "RelativeDocumentMoniker": "ShopWave\\DTOs\\Admin\\VoucherDtos.cs",
-              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\DTOs\\Admin\\VoucherDtos.cs",
-              "RelativeToolTip": "ShopWave\\DTOs\\Admin\\VoucherDtos.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-05T19:42:18.192Z",
+              "DocumentIndex": 2,
+              "Title": "CHECKOUT_FLOWS_VISUAL.md",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\CHECKOUT_FLOWS_VISUAL.md",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\CHECKOUT_FLOWS_VISUAL.md",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\CHECKOUT_FLOWS_VISUAL.md",
+              "RelativeToolTip": "ShopWave\\Docs\\CHECKOUT_FLOWS_VISUAL.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAALwBAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-11-07T10:24:44.402Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "CartController.cs",
-              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Controllers\\CartController.cs",
-              "RelativeDocumentMoniker": "ShopWave\\Controllers\\CartController.cs",
-              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Controllers\\CartController.cs",
-              "RelativeToolTip": "ShopWave\\Controllers\\CartController.cs",
-              "ViewState": "AgIAABECAAAAAAAAAAAnwC8CAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-19T10:07:35.113Z",
+              "Title": "CHECKOUT_FINAL_SUMMARY.md",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\CHECKOUT_FINAL_SUMMARY.md",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\CHECKOUT_FINAL_SUMMARY.md",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\CHECKOUT_FINAL_SUMMARY.md",
+              "RelativeToolTip": "ShopWave\\Docs\\CHECKOUT_FINAL_SUMMARY.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAJgBAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-11-07T10:23:36.573Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "RequestModels.cs",
-              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\Requests\\RequestModels.cs",
-              "RelativeDocumentMoniker": "ShopWave\\Models\\Requests\\RequestModels.cs",
-              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\Requests\\RequestModels.cs",
-              "RelativeToolTip": "ShopWave\\Models\\Requests\\RequestModels.cs",
-              "ViewState": "AgIAAJsAAAAAAAAAAAA2wLIAAAAkAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-19T06:56:17.342Z",
+              "DocumentIndex": 97,
+              "Title": "COD_TESTING_CHECKLIST.md",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\COD_TESTING_CHECKLIST.md",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\COD_TESTING_CHECKLIST.md",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\COD_TESTING_CHECKLIST.md",
+              "RelativeToolTip": "ShopWave\\Docs\\COD_TESTING_CHECKLIST.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAHMBAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-11-07T10:20:26.831Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "VouchersAdminController.cs",
-              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Controllers\\Admin\\VouchersAdminController.cs",
-              "RelativeDocumentMoniker": "ShopWave\\Controllers\\Admin\\VouchersAdminController.cs",
-              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Controllers\\Admin\\VouchersAdminController.cs",
-              "RelativeToolTip": "ShopWave\\Controllers\\Admin\\VouchersAdminController.cs",
-              "ViewState": "AgIAAFcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-05T19:43:00.56Z",
+              "DocumentIndex": 98,
+              "Title": "COD_IMPLEMENTATION_SUMMARY.md",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\COD_IMPLEMENTATION_SUMMARY.md",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\COD_IMPLEMENTATION_SUMMARY.md",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\COD_IMPLEMENTATION_SUMMARY.md",
+              "RelativeToolTip": "ShopWave\\Docs\\COD_IMPLEMENTATION_SUMMARY.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAKcBAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-11-07T10:21:31.927Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "ProductsController.cs",
-              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Controllers\\ProductsController.cs",
-              "RelativeDocumentMoniker": "ShopWave\\Controllers\\ProductsController.cs",
-              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Controllers\\ProductsController.cs",
-              "RelativeToolTip": "ShopWave\\Controllers\\ProductsController.cs",
-              "ViewState": "AgIAAFYBAAAAAAAAAAAuwP4CAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-02T07:36:45.421Z",
+              "DocumentIndex": 99,
+              "Title": "COD_QUICK_REF.md",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\COD_QUICK_REF.md",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\COD_QUICK_REF.md",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\COD_QUICK_REF.md",
+              "RelativeToolTip": "ShopWave\\Docs\\COD_QUICK_REF.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAE0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-11-07T10:21:47.793Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "ProductVariant.cs",
-              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\ProductVariant.cs",
-              "RelativeDocumentMoniker": "ShopWave\\Models\\ProductVariant.cs",
-              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\ProductVariant.cs",
-              "RelativeToolTip": "ShopWave\\Models\\ProductVariant.cs",
-              "ViewState": "AgIAABYAAAAAAAAAAAAuwCAAAAABAAAAAAAAAA==",
+              "DocumentIndex": 100,
+              "Title": "COD_FLOW_COMPLETE.md",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\COD_FLOW_COMPLETE.md",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\COD_FLOW_COMPLETE.md",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\COD_FLOW_COMPLETE.md",
+              "RelativeToolTip": "ShopWave\\Docs\\COD_FLOW_COMPLETE.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4BAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-11-07T10:22:39.901Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 95,
+              "Title": "SQL_VerifyCODTransactions.sql ",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_VerifyCODTransactions.sql",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\SQL_VerifyCODTransactions.sql",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_VerifyCODTransactions.sql",
+              "RelativeToolTip": "ShopWave\\Docs\\SQL_VerifyCODTransactions.sql",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000826|",
+              "WhenOpened": "2025-11-07T10:19:38.583Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 93,
+              "Title": "CHECKOUT_PAYMENT_COMPLETE.md",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\CHECKOUT_PAYMENT_COMPLETE.md",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\CHECKOUT_PAYMENT_COMPLETE.md",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\CHECKOUT_PAYMENT_COMPLETE.md",
+              "RelativeToolTip": "ShopWave\\Docs\\CHECKOUT_PAYMENT_COMPLETE.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAGMBAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-11-07T10:01:27.388Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 89,
+              "Title": "IPaymentGatewayService.cs",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Services\\IPaymentGatewayService.cs",
+              "RelativeDocumentMoniker": "ShopWave\\Services\\IPaymentGatewayService.cs",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Services\\IPaymentGatewayService.cs",
+              "RelativeToolTip": "ShopWave\\Services\\IPaymentGatewayService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABkAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-21T11:39:37.721Z",
+              "WhenOpened": "2025-11-07T09:49:06.622Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 88,
+              "Title": "CheckoutController.cs",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Controllers\\CheckoutController.cs",
+              "RelativeDocumentMoniker": "ShopWave\\Controllers\\CheckoutController.cs",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Controllers\\CheckoutController.cs",
+              "RelativeToolTip": "ShopWave\\Controllers\\CheckoutController.cs",
+              "ViewState": "AgIAAC0BAAAAAAAAAMBbwDEBAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-07T09:48:14.202Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 94,
+              "Title": "CHECKOUT_QUICK_START.md",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\CHECKOUT_QUICK_START.md",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\CHECKOUT_QUICK_START.md",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\CHECKOUT_QUICK_START.md",
+              "RelativeToolTip": "ShopWave\\Docs\\CHECKOUT_QUICK_START.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAI8AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-11-07T10:01:48.803Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 92,
+              "Title": "CHECKOUT_PAYMENT_GUIDE.md",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\CHECKOUT_PAYMENT_GUIDE.md",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\CHECKOUT_PAYMENT_GUIDE.md",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\CHECKOUT_PAYMENT_GUIDE.md",
+              "RelativeToolTip": "ShopWave\\Docs\\CHECKOUT_PAYMENT_GUIDE.md",
+              "ViewState": "AgIAANcBAAAAAAAAAABRwNoBAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-11-07T09:51:34.637Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 91,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\appsettings.json",
+              "RelativeDocumentMoniker": "ShopWave\\appsettings.json",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\appsettings.json",
+              "RelativeToolTip": "ShopWave\\appsettings.json",
+              "ViewState": "AgIAACEAAAAAAAAAAABRwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-11-07T09:49:52.41Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 90,
+              "Title": "PaymentGatewayService.cs",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Services\\PaymentGatewayService.cs",
+              "RelativeDocumentMoniker": "ShopWave\\Services\\PaymentGatewayService.cs",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Services\\PaymentGatewayService.cs",
+              "RelativeToolTip": "ShopWave\\Services\\PaymentGatewayService.cs",
+              "ViewState": "AgIAAMAAAAAAAAAAAABRwMMAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-07T09:49:36.442Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 82,
+              "Title": "TransactionDtos.cs",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\DTOs\\Transaction\\TransactionDtos.cs",
+              "RelativeDocumentMoniker": "ShopWave\\DTOs\\Transaction\\TransactionDtos.cs",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\DTOs\\Transaction\\TransactionDtos.cs",
+              "RelativeToolTip": "ShopWave\\DTOs\\Transaction\\TransactionDtos.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAGoAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-07T09:21:38.241Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 83,
+              "Title": "TransactionsController.cs",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Controllers\\TransactionsController.cs",
+              "RelativeDocumentMoniker": "ShopWave\\Controllers\\TransactionsController.cs",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Controllers\\TransactionsController.cs",
+              "RelativeToolTip": "ShopWave\\Controllers\\TransactionsController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAIMBAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-07T09:22:31.042Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 84,
+              "Title": "TRANSACTIONS_TABLE_GUIDE.md",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\TRANSACTIONS_TABLE_GUIDE.md",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\TRANSACTIONS_TABLE_GUIDE.md",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\TRANSACTIONS_TABLE_GUIDE.md",
+              "RelativeToolTip": "ShopWave\\Docs\\TRANSACTIONS_TABLE_GUIDE.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAALABAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-11-07T09:23:25.509Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 5,
-              "Title": "SQL_CheckVariantValues.sql ",
-              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_CheckVariantValues.sql",
-              "RelativeDocumentMoniker": "ShopWave\\Docs\\SQL_CheckVariantValues.sql",
-              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_CheckVariantValues.sql",
-              "RelativeToolTip": "ShopWave\\Docs\\SQL_CheckVariantValues.sql",
+              "Title": "SQL_VerifyTransactions.sql ",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_VerifyTransactions.sql",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\SQL_VerifyTransactions.sql",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_VerifyTransactions.sql",
+              "RelativeToolTip": "ShopWave\\Docs\\SQL_VerifyTransactions.sql",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000826|",
-              "WhenOpened": "2025-11-04T15:11:28.745Z",
+              "WhenOpened": "2025-11-07T09:24:07.048Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "SQL_VerifyOrderFix.sql ",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_VerifyOrderFix.sql",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\SQL_VerifyOrderFix.sql",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_VerifyOrderFix.sql",
+              "RelativeToolTip": "ShopWave\\Docs\\SQL_VerifyOrderFix.sql",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000826|",
+              "WhenOpened": "2025-11-07T09:19:16.418Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 81,
+              "Title": "Transaction.cs",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\Transaction.cs",
+              "RelativeDocumentMoniker": "ShopWave\\Models\\Transaction.cs",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\Transaction.cs",
+              "RelativeToolTip": "ShopWave\\Models\\Transaction.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAIUAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-07T09:20:36.449Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 79,
+              "Title": "ORDER_FIX_COMPLETE.md",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\ORDER_FIX_COMPLETE.md",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\ORDER_FIX_COMPLETE.md",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\ORDER_FIX_COMPLETE.md",
+              "RelativeToolTip": "ShopWave\\Docs\\ORDER_FIX_COMPLETE.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABkBAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-11-07T09:18:43.696Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 78,
+              "Title": "ORDER_STRUCTURE_FIX.md",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\ORDER_STRUCTURE_FIX.md",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\ORDER_STRUCTURE_FIX.md",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\ORDER_STRUCTURE_FIX.md",
+              "RelativeToolTip": "ShopWave\\Docs\\ORDER_STRUCTURE_FIX.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAIcBAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-11-07T09:17:26.51Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "SQL_FixOrderStructure.sql ",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_FixOrderStructure.sql",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\SQL_FixOrderStructure.sql",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_FixOrderStructure.sql",
+              "RelativeToolTip": "ShopWave\\Docs\\SQL_FixOrderStructure.sql",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000826|",
+              "WhenOpened": "2025-11-07T09:16:29.869Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "Order.cs",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\Order.cs",
+              "RelativeDocumentMoniker": "ShopWave\\Models\\Order.cs",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\Order.cs",
+              "RelativeToolTip": "ShopWave\\Models\\Order.cs",
+              "ViewState": "AgIAAGIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-07T09:03:16.859Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 75,
+              "Title": "SQL_VerifyDiscountTiers.sql ",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_VerifyDiscountTiers.sql",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\SQL_VerifyDiscountTiers.sql",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_VerifyDiscountTiers.sql",
+              "RelativeToolTip": "ShopWave\\Docs\\SQL_VerifyDiscountTiers.sql",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000826|",
+              "WhenOpened": "2025-11-07T01:00:33.751Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 8,
+              "Title": "SQL_QuickFixDiscountTiers.sql ",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_QuickFixDiscountTiers.sql",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\SQL_QuickFixDiscountTiers.sql",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_QuickFixDiscountTiers.sql",
+              "RelativeToolTip": "ShopWave\\Docs\\SQL_QuickFixDiscountTiers.sql",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000826|",
+              "WhenOpened": "2025-11-07T00:46:29.324Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
               "Title": "DataTransferObjects.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\DTOs\\DataTransferObjects.cs",
               "RelativeDocumentMoniker": "ShopWave\\Models\\DTOs\\DataTransferObjects.cs",
               "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\DTOs\\DataTransferObjects.cs",
               "RelativeToolTip": "ShopWave\\Models\\DTOs\\DataTransferObjects.cs",
-              "ViewState": "AgIAAH4AAAAAAAAAAAAcwJIAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAALAAAAAAAAAAAAAAALAAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-10-19T09:47:27.228Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "CartItem.cs",
-              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\CartItem.cs",
-              "RelativeDocumentMoniker": "ShopWave\\Models\\CartItem.cs",
-              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\CartItem.cs",
-              "RelativeToolTip": "ShopWave\\Models\\CartItem.cs",
-              "ViewState": "AgIAADEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 72,
+              "Title": "CART_ITEMS_CLEANUP.md",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\CART_ITEMS_CLEANUP.md",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\CART_ITEMS_CLEANUP.md",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\CART_ITEMS_CLEANUP.md",
+              "RelativeToolTip": "ShopWave\\Docs\\CART_ITEMS_CLEANUP.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAALIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-11-06T15:55:34.175Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "CartController.cs",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Controllers\\CartController.cs",
+              "RelativeDocumentMoniker": "ShopWave\\Controllers\\CartController.cs",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Controllers\\CartController.cs",
+              "RelativeToolTip": "ShopWave\\Controllers\\CartController.cs",
+              "ViewState": "AgIAAFoBAAAAAAAAAAAAAKUCAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-04T12:16:04.228Z",
+              "WhenOpened": "2025-10-19T10:07:35.113Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 62,
-              "Title": "SQL_QuickCheck.sql ",
-              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_QuickCheck.sql",
-              "RelativeDocumentMoniker": "ShopWave\\Docs\\SQL_QuickCheck.sql",
-              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_QuickCheck.sql",
-              "RelativeToolTip": "ShopWave\\Docs\\SQL_QuickCheck.sql",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000826|",
-              "WhenOpened": "2025-11-04T13:23:17.369Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 58,
-              "Title": "SQL_RecreateDatabaseFromScratch.sql ",
-              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_RecreateDatabaseFromScratch.sql",
-              "RelativeDocumentMoniker": "ShopWave\\Docs\\SQL_RecreateDatabaseFromScratch.sql",
-              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_RecreateDatabaseFromScratch.sql",
-              "RelativeToolTip": "ShopWave\\Docs\\SQL_RecreateDatabaseFromScratch.sql",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000826|",
-              "WhenOpened": "2025-11-04T13:23:16.73Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 60,
-              "Title": "SQL_DebugMigration.sql ",
-              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_DebugMigration.sql",
-              "RelativeDocumentMoniker": "ShopWave\\Docs\\SQL_DebugMigration.sql",
-              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_DebugMigration.sql",
-              "RelativeToolTip": "ShopWave\\Docs\\SQL_DebugMigration.sql",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000826|",
-              "WhenOpened": "2025-11-04T13:23:17.05Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 12,
-              "Title": "SQL_FinalVerification.sql ",
-              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_FinalVerification.sql",
-              "RelativeDocumentMoniker": "ShopWave\\Docs\\SQL_FinalVerification.sql",
-              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_FinalVerification.sql",
-              "RelativeToolTip": "ShopWave\\Docs\\SQL_FinalVerification.sql",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000826|",
-              "WhenOpened": "2025-11-04T12:50:36.161Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:5:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 56,
-              "Title": "HOW_TO_REFRESH_DATABASE.md",
-              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\HOW_TO_REFRESH_DATABASE.md",
-              "RelativeDocumentMoniker": "ShopWave\\Docs\\HOW_TO_REFRESH_DATABASE.md",
-              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\HOW_TO_REFRESH_DATABASE.md",
-              "RelativeToolTip": "ShopWave\\Docs\\HOW_TO_REFRESH_DATABASE.md",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAL8AAAAAAAAAAAAAAA==",
+              "DocumentIndex": 73,
+              "Title": "SUMMARY_ProgressiveDiscountFix.md",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SUMMARY_ProgressiveDiscountFix.md",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\SUMMARY_ProgressiveDiscountFix.md",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SUMMARY_ProgressiveDiscountFix.md",
+              "RelativeToolTip": "ShopWave\\Docs\\SUMMARY_ProgressiveDiscountFix.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAKkAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
-              "WhenOpened": "2025-11-04T12:33:32.217Z",
+              "WhenOpened": "2025-11-07T00:46:03.701Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 54,
-              "Title": "QUICK_FIX_CART_MIGRATION.md",
-              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\QUICK_FIX_CART_MIGRATION.md",
-              "RelativeDocumentMoniker": "ShopWave\\Docs\\QUICK_FIX_CART_MIGRATION.md",
-              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\QUICK_FIX_CART_MIGRATION.md",
-              "RelativeToolTip": "ShopWave\\Docs\\QUICK_FIX_CART_MIGRATION.md",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAFkAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
-              "WhenOpened": "2025-11-04T12:27:06.27Z",
+              "DocumentIndex": 71,
+              "Title": "OrdersController.cs",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Controllers\\OrdersController.cs",
+              "RelativeDocumentMoniker": "ShopWave\\Controllers\\OrdersController.cs",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Controllers\\OrdersController.cs",
+              "RelativeToolTip": "ShopWave\\Controllers\\OrdersController.cs",
+              "ViewState": "AgIAAGYBAAAAAAAAAIBXwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-06T15:53:10.074Z",
               "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 69,
+              "Title": "PROGRESSIVE_DISCOUNT_SUMMARY.md",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\PROGRESSIVE_DISCOUNT_SUMMARY.md",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\PROGRESSIVE_DISCOUNT_SUMMARY.md",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\PROGRESSIVE_DISCOUNT_SUMMARY.md",
+              "RelativeToolTip": "ShopWave\\Docs\\PROGRESSIVE_DISCOUNT_SUMMARY.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAMUAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-11-05T20:00:37.238Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "VoucherDtos.cs",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\DTOs\\Admin\\VoucherDtos.cs",
+              "RelativeDocumentMoniker": "ShopWave\\DTOs\\Admin\\VoucherDtos.cs",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\DTOs\\Admin\\VoucherDtos.cs",
+              "RelativeToolTip": "ShopWave\\DTOs\\Admin\\VoucherDtos.cs",
+              "ViewState": "AgIAABIAAAAAAAAAAAAIwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-05T19:42:18.192Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 70,
+              "Title": "AvailableVoucherDto.cs",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\DTOs\\Cart\\AvailableVoucherDto.cs",
+              "RelativeDocumentMoniker": "ShopWave\\DTOs\\Cart\\AvailableVoucherDto.cs",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\DTOs\\Cart\\AvailableVoucherDto.cs",
+              "RelativeToolTip": "ShopWave\\DTOs\\Cart\\AvailableVoucherDto.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-06T04:01:53.635Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 10,
-              "Title": "SQL_PrepareForCartMigration.sql ",
-              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_PrepareForCartMigration.sql",
-              "RelativeDocumentMoniker": "ShopWave\\Docs\\SQL_PrepareForCartMigration.sql",
-              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_PrepareForCartMigration.sql",
-              "RelativeToolTip": "ShopWave\\Docs\\SQL_PrepareForCartMigration.sql",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000826|",
-              "WhenOpened": "2025-11-04T12:26:42.009Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 11,
-              "Title": "SQL_VerifyCartTables.sql ",
-              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_VerifyCartTables.sql",
-              "RelativeDocumentMoniker": "ShopWave\\Docs\\SQL_VerifyCartTables.sql",
-              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_VerifyCartTables.sql",
-              "RelativeToolTip": "ShopWave\\Docs\\SQL_VerifyCartTables.sql",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000826|",
-              "WhenOpened": "2025-11-04T12:32:52.193Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 52,
-              "Title": "CART_MIGRATION_FIX.md",
-              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\CART_MIGRATION_FIX.md",
-              "RelativeDocumentMoniker": "ShopWave\\Docs\\CART_MIGRATION_FIX.md",
-              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\CART_MIGRATION_FIX.md",
-              "RelativeToolTip": "ShopWave\\Docs\\CART_MIGRATION_FIX.md",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAJYAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
-              "WhenOpened": "2025-11-04T12:25:46.339Z",
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Program.cs",
+              "RelativeDocumentMoniker": "ShopWave\\Program.cs",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Program.cs",
+              "RelativeToolTip": "ShopWave\\Program.cs",
+              "ViewState": "AgIAAJ8AAAAAAAAAAAAwwMUAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-19T13:38:42.201Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 13,
-              "Title": "MIGRATION_GUIDE.md",
-              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\MIGRATION_GUIDE.md",
-              "RelativeDocumentMoniker": "ShopWave\\Docs\\MIGRATION_GUIDE.md",
-              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\MIGRATION_GUIDE.md",
-              "RelativeToolTip": "ShopWave\\Docs\\MIGRATION_GUIDE.md",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAE0AAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
-              "WhenOpened": "2025-11-02T20:54:53.641Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 47,
-              "Title": "Cart.cs",
-              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\Cart.cs",
-              "RelativeDocumentMoniker": "ShopWave\\Models\\Cart.cs",
-              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\Cart.cs",
-              "RelativeToolTip": "ShopWave\\Models\\Cart.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABwAAAAAAAAAAAAAAA==",
+              "Title": "VouchersAdminController.cs",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Controllers\\Admin\\VouchersAdminController.cs",
+              "RelativeDocumentMoniker": "ShopWave\\Controllers\\Admin\\VouchersAdminController.cs",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Controllers\\Admin\\VouchersAdminController.cs",
+              "RelativeToolTip": "ShopWave\\Controllers\\Admin\\VouchersAdminController.cs",
+              "ViewState": "AgIAALwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-04T12:15:32.888Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-05T19:43:00.56Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 49,
+              "DocumentIndex": 12,
               "Title": "AppliedDiscount.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\AppliedDiscount.cs",
               "RelativeDocumentMoniker": "ShopWave\\Models\\AppliedDiscount.cs",
@@ -614,12 +934,244 @@
               "RelativeToolTip": "ShopWave\\Models\\AppliedDiscount.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAB4AAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-04T12:15:49.75Z",
+              "WhenOpened": "2025-11-04T12:15:49.75Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "yl52ujur.cs",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\AppData\\Local\\Temp\\yl52ujur.cs",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\AppData\\Local\\Temp\\yl52ujur.cs",
+              "ToolTip": "C:\\Users\\HasHisShuU\\AppData\\Local\\Temp\\yl52ujur.cs",
+              "RelativeToolTip": "..\\..\\..\\..\\AppData\\Local\\Temp\\yl52ujur.cs",
+              "ViewState": "AgIAAIYAAAAAAAAAAAAqwBoAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-06T12:55:17.955Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "SQL_ProgressiveDiscountSetup.sql",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_ProgressiveDiscountSetup.sql",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\SQL_ProgressiveDiscountSetup.sql",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_ProgressiveDiscountSetup.sql",
+              "RelativeToolTip": "ShopWave\\Docs\\SQL_ProgressiveDiscountSetup.sql",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000826|",
+              "WhenOpened": "2025-11-05T19:59:56.659Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 68,
+              "Title": "PROGRESSIVE_DISCOUNT_IMPLEMENTATION.md",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\PROGRESSIVE_DISCOUNT_IMPLEMENTATION.md",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\PROGRESSIVE_DISCOUNT_IMPLEMENTATION.md",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\PROGRESSIVE_DISCOUNT_IMPLEMENTATION.md",
+              "RelativeToolTip": "ShopWave\\Docs\\PROGRESSIVE_DISCOUNT_IMPLEMENTATION.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAADsBAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-11-05T19:59:29.054Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "ResponseModels.cs",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\Responses\\ResponseModels.cs",
+              "RelativeDocumentMoniker": "ShopWave\\Models\\Responses\\ResponseModels.cs",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\Responses\\ResponseModels.cs",
+              "RelativeToolTip": "ShopWave\\Models\\Responses\\ResponseModels.cs",
+              "ViewState": "AgIAAGYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-05T19:55:37.921Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "RequestModels.cs",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\Requests\\RequestModels.cs",
+              "RelativeDocumentMoniker": "ShopWave\\Models\\Requests\\RequestModels.cs",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\Requests\\RequestModels.cs",
+              "RelativeToolTip": "ShopWave\\Models\\Requests\\RequestModels.cs",
+              "ViewState": "AgIAAJsAAAAAAAAAAAA2wLIAAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-19T06:56:17.342Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "ProductsController.cs",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Controllers\\ProductsController.cs",
+              "RelativeDocumentMoniker": "ShopWave\\Controllers\\ProductsController.cs",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Controllers\\ProductsController.cs",
+              "RelativeToolTip": "ShopWave\\Controllers\\ProductsController.cs",
+              "ViewState": "AgIAAFYBAAAAAAAAAAAuwP4CAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-02T07:36:45.421Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "ProductVariant.cs",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\ProductVariant.cs",
+              "RelativeDocumentMoniker": "ShopWave\\Models\\ProductVariant.cs",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\ProductVariant.cs",
+              "RelativeToolTip": "ShopWave\\Models\\ProductVariant.cs",
+              "ViewState": "AgIAABYAAAAAAAAAAAAuwCAAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-21T11:39:37.721Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "SQL_CheckVariantValues.sql",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_CheckVariantValues.sql",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\SQL_CheckVariantValues.sql",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_CheckVariantValues.sql",
+              "RelativeToolTip": "ShopWave\\Docs\\SQL_CheckVariantValues.sql",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000826|",
+              "WhenOpened": "2025-11-04T15:11:28.745Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "CartItem.cs",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\CartItem.cs",
+              "RelativeDocumentMoniker": "ShopWave\\Models\\CartItem.cs",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\CartItem.cs",
+              "RelativeToolTip": "ShopWave\\Models\\CartItem.cs",
+              "ViewState": "AgIAACEAAAAAAAAAAIBYwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-04T12:16:04.228Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 48,
+              "DocumentIndex": 67,
+              "Title": "SQL_QuickCheck.sql",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_QuickCheck.sql",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\SQL_QuickCheck.sql",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_QuickCheck.sql",
+              "RelativeToolTip": "ShopWave\\Docs\\SQL_QuickCheck.sql",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000826|",
+              "WhenOpened": "2025-11-04T13:23:17.369Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 65,
+              "Title": "SQL_RecreateDatabaseFromScratch.sql",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_RecreateDatabaseFromScratch.sql",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\SQL_RecreateDatabaseFromScratch.sql",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_RecreateDatabaseFromScratch.sql",
+              "RelativeToolTip": "ShopWave\\Docs\\SQL_RecreateDatabaseFromScratch.sql",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000826|",
+              "WhenOpened": "2025-11-04T13:23:16.73Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 66,
+              "Title": "SQL_DebugMigration.sql",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_DebugMigration.sql",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\SQL_DebugMigration.sql",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_DebugMigration.sql",
+              "RelativeToolTip": "ShopWave\\Docs\\SQL_DebugMigration.sql",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000826|",
+              "WhenOpened": "2025-11-04T13:23:17.05Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 24,
+              "Title": "SQL_FinalVerification.sql",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_FinalVerification.sql",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\SQL_FinalVerification.sql",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_FinalVerification.sql",
+              "RelativeToolTip": "ShopWave\\Docs\\SQL_FinalVerification.sql",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000826|",
+              "WhenOpened": "2025-11-04T12:50:36.161Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 64,
+              "Title": "HOW_TO_REFRESH_DATABASE.md",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\HOW_TO_REFRESH_DATABASE.md",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\HOW_TO_REFRESH_DATABASE.md",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\HOW_TO_REFRESH_DATABASE.md",
+              "RelativeToolTip": "ShopWave\\Docs\\HOW_TO_REFRESH_DATABASE.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAL8AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-11-04T12:33:32.217Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 63,
+              "Title": "QUICK_FIX_CART_MIGRATION.md",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\QUICK_FIX_CART_MIGRATION.md",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\QUICK_FIX_CART_MIGRATION.md",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\QUICK_FIX_CART_MIGRATION.md",
+              "RelativeToolTip": "ShopWave\\Docs\\QUICK_FIX_CART_MIGRATION.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAFkAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-11-04T12:27:06.27Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "SQL_PrepareForCartMigration.sql",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_PrepareForCartMigration.sql",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\SQL_PrepareForCartMigration.sql",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_PrepareForCartMigration.sql",
+              "RelativeToolTip": "ShopWave\\Docs\\SQL_PrepareForCartMigration.sql",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000826|",
+              "WhenOpened": "2025-11-04T12:26:42.009Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 23,
+              "Title": "SQL_VerifyCartTables.sql",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_VerifyCartTables.sql",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\SQL_VerifyCartTables.sql",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SQL_VerifyCartTables.sql",
+              "RelativeToolTip": "ShopWave\\Docs\\SQL_VerifyCartTables.sql",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000826|",
+              "WhenOpened": "2025-11-04T12:32:52.193Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 62,
+              "Title": "CART_MIGRATION_FIX.md",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\CART_MIGRATION_FIX.md",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\CART_MIGRATION_FIX.md",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\CART_MIGRATION_FIX.md",
+              "RelativeToolTip": "ShopWave\\Docs\\CART_MIGRATION_FIX.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAJYAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-11-04T12:25:46.339Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 25,
+              "Title": "MIGRATION_GUIDE.md",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\MIGRATION_GUIDE.md",
+              "RelativeDocumentMoniker": "ShopWave\\Docs\\MIGRATION_GUIDE.md",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\MIGRATION_GUIDE.md",
+              "RelativeToolTip": "ShopWave\\Docs\\MIGRATION_GUIDE.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAE0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2025-11-02T20:54:53.641Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 58,
+              "Title": "Cart.cs",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\Cart.cs",
+              "RelativeDocumentMoniker": "ShopWave\\Models\\Cart.cs",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\Cart.cs",
+              "RelativeToolTip": "ShopWave\\Models\\Cart.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABwAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-04T12:15:32.888Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 59,
               "Title": "Discount.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\Discount.cs",
               "RelativeDocumentMoniker": "ShopWave\\Models\\Discount.cs",
@@ -627,12 +1179,11 @@
               "RelativeToolTip": "ShopWave\\Models\\Discount.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAADMAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-04T12:15:41.974Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-04T12:15:41.974Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 50,
+              "DocumentIndex": 60,
               "Title": "DiscountTier.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\DiscountTier.cs",
               "RelativeDocumentMoniker": "ShopWave\\Models\\DiscountTier.cs",
@@ -640,12 +1191,11 @@
               "RelativeToolTip": "ShopWave\\Models\\DiscountTier.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABwAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-04T12:15:55.756Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-04T12:15:55.756Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 51,
+              "DocumentIndex": 61,
               "Title": "CART_DISCOUNT_GUIDE.md",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\CART_DISCOUNT_GUIDE.md",
               "RelativeDocumentMoniker": "ShopWave\\Docs\\CART_DISCOUNT_GUIDE.md",
@@ -653,12 +1203,11 @@
               "RelativeToolTip": "ShopWave\\Docs\\CART_DISCOUNT_GUIDE.md",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAALMCAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
-              "WhenOpened": "2025-11-04T12:20:25.952Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-04T12:20:25.952Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 46,
+              "DocumentIndex": 57,
               "Title": "POST_Product_API_NewStructure.md",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\POST_Product_API_NewStructure.md",
               "RelativeDocumentMoniker": "ShopWave\\Docs\\POST_Product_API_NewStructure.md",
@@ -670,7 +1219,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 42,
+              "DocumentIndex": 53,
               "Title": "sample-product-request.json",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\sample-product-request.json",
               "RelativeDocumentMoniker": "ShopWave\\Docs\\sample-product-request.json",
@@ -682,7 +1231,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 43,
+              "DocumentIndex": 54,
               "Title": "SUMMARY_PostProductChanges.md",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\SUMMARY_PostProductChanges.md",
               "RelativeDocumentMoniker": "ShopWave\\Docs\\SUMMARY_PostProductChanges.md",
@@ -694,7 +1243,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 44,
+              "DocumentIndex": 55,
               "Title": "TESTING_CHECKLIST.md",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\TESTING_CHECKLIST.md",
               "RelativeDocumentMoniker": "ShopWave\\Docs\\TESTING_CHECKLIST.md",
@@ -706,32 +1255,33 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 45,
+              "DocumentIndex": 56,
               "Title": "README.md",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\README.md",
               "RelativeDocumentMoniker": "ShopWave\\Docs\\README.md",
               "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Docs\\README.md",
               "RelativeToolTip": "ShopWave\\Docs\\README.md",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAOoAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAOsAAAAAAAAAAIBJwO0AAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
-              "WhenOpened": "2025-11-02T20:50:08.697Z"
+              "WhenOpened": "2025-11-02T20:50:08.697Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 16,
+              "DocumentIndex": 28,
               "Title": "ShopWaveDbContext.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\ShopWaveDbContext.cs",
               "RelativeDocumentMoniker": "ShopWave\\Models\\ShopWaveDbContext.cs",
               "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\ShopWaveDbContext.cs",
               "RelativeToolTip": "ShopWave\\Models\\ShopWaveDbContext.cs",
-              "ViewState": "AgIAAAYBAAAAAAAAAEBVwAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAkBAAAAAAAAAABRwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-10-19T12:34:28.991Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 15,
+              "DocumentIndex": 27,
               "Title": "DatabaseExtensions.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Extensions\\DatabaseExtensions.cs",
               "RelativeDocumentMoniker": "ShopWave\\Extensions\\DatabaseExtensions.cs",
@@ -743,7 +1293,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 14,
+              "DocumentIndex": 26,
               "Title": "ProductCreateRequest.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\Requests\\ProductCreateRequest.cs",
               "RelativeDocumentMoniker": "ShopWave\\Models\\Requests\\ProductCreateRequest.cs",
@@ -755,7 +1305,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 17,
+              "DocumentIndex": 29,
               "Title": "OptionValue.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\OptionValue.cs",
               "RelativeDocumentMoniker": "ShopWave\\Models\\OptionValue.cs",
@@ -767,19 +1317,20 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 18,
+              "DocumentIndex": 30,
               "Title": "Product.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\Product.cs",
               "RelativeDocumentMoniker": "ShopWave\\Models\\Product.cs",
               "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\Product.cs",
               "RelativeToolTip": "ShopWave\\Models\\Product.cs",
-              "ViewState": "AgIAABEAAAAAAAAAAAAgwDMAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAC4AAAAAAAAAAIBXwDEAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-19T09:59:04.194Z"
+              "WhenOpened": "2025-10-19T09:59:04.194Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 19,
+              "DocumentIndex": 31,
               "Title": "CategoriesController.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Controllers\\CategoriesController.cs",
               "RelativeDocumentMoniker": "ShopWave\\Controllers\\CategoriesController.cs",
@@ -791,7 +1342,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 20,
+              "DocumentIndex": 32,
               "Title": "VariantValue.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\VariantValue.cs",
               "RelativeDocumentMoniker": "ShopWave\\Models\\VariantValue.cs",
@@ -803,7 +1354,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 21,
+              "DocumentIndex": 33,
               "Title": "ProductOption.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\ProductOption.cs",
               "RelativeDocumentMoniker": "ShopWave\\Models\\ProductOption.cs",
@@ -815,19 +1366,20 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 22,
+              "DocumentIndex": 34,
               "Title": "User.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\User.cs",
               "RelativeDocumentMoniker": "ShopWave\\Models\\User.cs",
               "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\User.cs",
               "RelativeToolTip": "ShopWave\\Models\\User.cs",
-              "ViewState": "AgIAACwAAAAAAAAAAAAAABgAAAAqAAAAAAAAAA==",
+              "ViewState": "AgIAACgAAAAAAAAAAIBXwBgAAAAqAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-19T09:59:16.622Z"
+              "WhenOpened": "2025-10-19T09:59:16.622Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 23,
+              "DocumentIndex": 35,
               "Title": "ProductMedia.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\ProductMedia.cs",
               "RelativeDocumentMoniker": "ShopWave\\Models\\ProductMedia.cs",
@@ -839,7 +1391,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 40,
+              "DocumentIndex": 51,
               "Title": "ProductOptionsController.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Controllers\\ProductOptionsController.cs",
               "RelativeDocumentMoniker": "ShopWave\\Controllers\\ProductOptionsController.cs",
@@ -851,7 +1403,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 41,
+              "DocumentIndex": 52,
               "Title": "VariantLookupController.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Controllers\\VariantLookupController.cs",
               "RelativeDocumentMoniker": "ShopWave\\Controllers\\VariantLookupController.cs",
@@ -863,7 +1415,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 24,
+              "DocumentIndex": 36,
               "Title": "DesignTimeShopWaveDbContextFactory.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\DesignTimeShopWaveDbContextFactory.cs",
               "RelativeDocumentMoniker": "ShopWave\\Models\\DesignTimeShopWaveDbContextFactory.cs",
@@ -875,19 +1427,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 25,
-              "Title": "Program.cs",
-              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Program.cs",
-              "RelativeDocumentMoniker": "ShopWave\\Program.cs",
-              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Program.cs",
-              "RelativeToolTip": "ShopWave\\Program.cs",
-              "ViewState": "AgIAALwAAAAAAAAAAIBZwJ0AAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-19T13:38:42.201Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 27,
+              "DocumentIndex": 38,
               "Title": "precomputed_recs.json",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\data\\precomputed_recs.json",
               "RelativeDocumentMoniker": "data\\precomputed_recs.json",
@@ -899,7 +1439,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 26,
+              "DocumentIndex": 37,
               "Title": "RecommendationServiceTests.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave.Tests\\RecommendationServiceTests.cs",
               "RelativeDocumentMoniker": "ShopWave.Tests\\RecommendationServiceTests.cs",
@@ -911,19 +1451,20 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 39,
+              "DocumentIndex": 50,
               "Title": "OrderItem.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\OrderItem.cs",
               "RelativeDocumentMoniker": "ShopWave\\Models\\OrderItem.cs",
               "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\OrderItem.cs",
               "RelativeToolTip": "ShopWave\\Models\\OrderItem.cs",
-              "ViewState": "AgIAAC8AAAAAAAAAAAAAwAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAACYAAAAAAAAAAIBYwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-28T17:05:30.173Z"
+              "WhenOpened": "2025-10-28T17:05:30.173Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 29,
+              "DocumentIndex": 40,
               "Title": "Category.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\Category.cs",
               "RelativeDocumentMoniker": "ShopWave\\Models\\Category.cs",
@@ -935,7 +1476,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 28,
+              "DocumentIndex": 39,
               "Title": "IMediaService.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Services\\IMediaService.cs",
               "RelativeDocumentMoniker": "ShopWave\\Services\\IMediaService.cs",
@@ -947,7 +1488,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 38,
+              "DocumentIndex": 49,
               "Title": "AuthController.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Controllers\\AuthController.cs",
               "RelativeDocumentMoniker": "ShopWave\\Controllers\\AuthController.cs",
@@ -959,7 +1500,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 30,
+              "DocumentIndex": 41,
               "Title": "FileService.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Services\\FileService.cs",
               "RelativeDocumentMoniker": "ShopWave\\Services\\FileService.cs",
@@ -971,7 +1512,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 31,
+              "DocumentIndex": 42,
               "Title": "MediaController.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Controllers\\MediaController.cs",
               "RelativeDocumentMoniker": "ShopWave\\Controllers\\MediaController.cs",
@@ -983,7 +1524,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 32,
+              "DocumentIndex": 43,
               "Title": "MediaUploadDto.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\DTOs\\MediaUploadDto.cs",
               "RelativeDocumentMoniker": "ShopWave\\DTOs\\MediaUploadDto.cs",
@@ -995,7 +1536,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 33,
+              "DocumentIndex": 44,
               "Title": "JwtTokenService.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Services\\JwtTokenService.cs",
               "RelativeDocumentMoniker": "ShopWave\\Services\\JwtTokenService.cs",
@@ -1007,7 +1548,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 34,
+              "DocumentIndex": 45,
               "Title": "UserMedia.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\UserMedia.cs",
               "RelativeDocumentMoniker": "ShopWave\\Models\\UserMedia.cs",
@@ -1019,7 +1560,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 36,
+              "DocumentIndex": 47,
               "Title": "UsersController.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Controllers\\UsersController.cs",
               "RelativeDocumentMoniker": "ShopWave\\Controllers\\UsersController.cs",
@@ -1031,7 +1572,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 35,
+              "DocumentIndex": 46,
               "Title": "Media.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Models\\Media.cs",
               "RelativeDocumentMoniker": "ShopWave\\Models\\Media.cs",
@@ -1043,7 +1584,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 37,
+              "DocumentIndex": 48,
               "Title": "HomeController.cs",
               "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Controllers\\HomeController.cs",
               "RelativeDocumentMoniker": "ShopWave\\Controllers\\HomeController.cs",
@@ -1055,14 +1596,35 @@
             },
             {
               "$type": "Bookmark",
+              "Name": "ST:5:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
+            },
+            {
+              "$type": "Bookmark",
               "Name": "ST:1:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
             }
           ]
         },
         {
-          "DockedHeight": 153,
-          "SelectedChildIndex": -1,
+          "DockedHeight": 173,
+          "SelectedChildIndex": 0,
           "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "PaymentWebhookController.cs",
+              "DocumentMoniker": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Controllers\\PaymentWebhookController.cs",
+              "RelativeDocumentMoniker": "ShopWave\\Controllers\\PaymentWebhookController.cs",
+              "ToolTip": "C:\\Users\\HasHisShuU\\source\\repos\\ShopWave\\ShopWave-api\\ShopWave\\Controllers\\PaymentWebhookController.cs",
+              "RelativeToolTip": "ShopWave\\Controllers\\PaymentWebhookController.cs",
+              "ViewState": "AgIAAAgAAAAAAAAAAAAUwOMAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-07T09:59:02.286Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:3:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
+            },
             {
               "$type": "Bookmark",
               "Name": "ST:2:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
@@ -1074,10 +1636,6 @@
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{d78612c7-9962-4b83-95d9-268046dad23a}"
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:3:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
             }
           ]
         }

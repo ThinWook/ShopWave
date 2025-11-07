@@ -35,7 +35,6 @@ namespace ShopWave.Models
         public string Role { get; set; } = "Customer";
 
         // Navigation properties
-        public virtual ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
         public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
         public virtual ICollection<UserSetting> UserSettings { get; set; } = new List<UserSetting>();
