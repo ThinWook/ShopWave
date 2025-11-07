@@ -1,5 +1,5 @@
 is_global = true
-build_property.DesignTimeBuild = true
+build_property.DesignTimeBuild = 
 build_property.MSBuildProjectFullPath = C:\Users\HasHisShuU\source\repos\ShopWave\ShopWave-api\ShopWave\ShopWave-api.csproj
 build_property.DebugSponsorLink = 
 build_property.TargetFramework = net8.0

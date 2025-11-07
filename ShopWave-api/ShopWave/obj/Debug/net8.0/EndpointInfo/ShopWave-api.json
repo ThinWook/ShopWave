@@ -684,6 +684,83 @@
         }
       }
     },
+    "/api/v1/provinces": {
+      "get": {
+        "tags": [
+          "Location"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/districts": {
+      "get": {
+        "tags": [
+          "Location"
+        ],
+        "parameters": [
+          {
+            "name": "provinceId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/wards": {
+      "get": {
+        "tags": [
+          "Location"
+        ],
+        "parameters": [
+          {
+            "name": "districtId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/shipping-fee": {
+      "get": {
+        "tags": [
+          "Location"
+        ],
+        "parameters": [
+          {
+            "name": "province",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/Media/upload": {
       "post": {
         "tags": [
@@ -1691,6 +1768,70 @@
         }
       }
     },
+    "/api/v1/admin/shipping-rates": {
+      "get": {
+        "tags": [
+          "ShippingRatesAdmin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ShippingRatesAdmin"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShippingRateRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShippingRateRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShippingRateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/shipping-rates/{id}": {
+      "delete": {
+        "tags": [
+          "ShippingRatesAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "tags": [
@@ -1702,7 +1843,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StringStringStringDateTimeString<>f__AnonymousType61"
+                  "$ref": "#/components/schemas/StringStringStringDateTimeString<>f__AnonymousType62"
                 }
               }
             }
@@ -1721,7 +1862,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StringDateTime<>f__AnonymousType62"
+                  "$ref": "#/components/schemas/StringDateTime<>f__AnonymousType63"
                 }
               }
             }
@@ -3048,7 +3189,21 @@
         },
         "additionalProperties": false
       },
-      "StringDateTime<>f__AnonymousType62": {
+      "ShippingRateRequest": {
+        "type": "object",
+        "properties": {
+          "province": {
+            "type": "string",
+            "nullable": true
+          },
+          "fee": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "StringDateTime<>f__AnonymousType63": {
         "type": "object",
         "properties": {
           "status": {
@@ -3062,7 +3217,7 @@
         },
         "additionalProperties": false
       },
-      "StringStringStringDateTimeString<>f__AnonymousType61": {
+      "StringStringStringDateTimeString<>f__AnonymousType62": {
         "type": "object",
         "properties": {
           "status": {

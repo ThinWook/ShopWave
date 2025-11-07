@@ -35,6 +35,12 @@ namespace ShopWave.Models
         
         // Payment Transactions
         public DbSet<Transaction> Transactions { get; set; }
+        
+        // Location and Shipping
+        public DbSet<Province> Provinces { get; set; }
+        public DbSet<District> Districts { get; set; }
+        public DbSet<Ward> Wards { get; set; }
+        public DbSet<ShippingRate> ShippingRates { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -264,6 +270,37 @@ namespace ShopWave.Models
 
             modelBuilder.Entity<Transaction>()
                 .HasIndex(t => new { t.OrderId, t.Status });
+                
+            // Location relationships
+            modelBuilder.Entity<Province>()
+                .HasIndex(p => p.Name);
+
+            modelBuilder.Entity<District>()
+                .HasOne(d => d.Province)
+                .WithMany(p => p.Districts)
+                .HasForeignKey(d => d.ProvinceId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<District>()
+                .HasIndex(d => d.ProvinceId);
+
+            modelBuilder.Entity<Ward>()
+                .HasOne(w => w.District)
+                .WithMany(d => d.Wards)
+                .HasForeignKey(w => w.DistrictId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Ward>()
+                .HasIndex(w => w.DistrictId);
+
+            // ShippingRate configuration
+            modelBuilder.Entity<ShippingRate>()
+                .HasIndex(sr => sr.Province)
+                .IsUnique();
+
+            modelBuilder.Entity<ShippingRate>()
+                .Property(sr => sr.Fee)
+                .HasColumnType("decimal(18,2)");
         }
     }
 }
