@@ -42,6 +42,26 @@ export function AppProviders({ children }: { children: ReactNode }) {
     }
     setEnableGoogle(true);
   }, [googleClientId]);
+
+  // Input modality: when the user uses mouse, suppress focus-visible rings on text inputs
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const root = document.documentElement;
+    const handleMouseDown = () => root.classList.add('using-mouse');
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // On Tab or arrow keys, consider keyboard navigation
+      const keys = ['Tab', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+      if (keys.includes(e.key)) {
+        root.classList.remove('using-mouse');
+      }
+    };
+    window.addEventListener('mousedown', handleMouseDown, { passive: true });
+    window.addEventListener('keydown', handleKeyDown, { passive: true });
+    return () => {
+      window.removeEventListener('mousedown', handleMouseDown as any);
+      window.removeEventListener('keydown', handleKeyDown as any);
+    };
+  }, []);
   const isAuthRoute = !!pathname && (/^\/(signin|signup|login)(\/|$)/.test(pathname));
   const content = (
     <ProductProvider>

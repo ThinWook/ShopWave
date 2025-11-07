@@ -4,13 +4,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ShoppingCart } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Product } from '@/lib/types';
-import { useCart } from '@/contexts/CartContext';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from "@/hooks/use-toast";
 import { resolveMediaUrl } from '@/lib/media';
 import { formatPrice } from '@/lib/format';
 import { api } from '@/lib/api';
@@ -21,29 +17,6 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const router = useRouter();
-  const { addItem: addToCart } = useCart();
-  const { toast } = useToast();
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent link navigation if card is wrapped in Link
-    e.stopPropagation();
-    // If this product exposes variants, redirect to product detail so user can
-    // pick variant/option. Sending a top-level product id to the backend as
-    // `variantId` often results in a NOT_FOUND error if the backend expects a
-    // real variant id. Avoid auto-adding when variants exist.
-    const maybeVariants = (product as any).variants;
-    if (Array.isArray(maybeVariants) && maybeVariants.length > 0) {
-      // Navigate to product page for variant selection
-      router.push(`/product/${product.id}`);
-      return;
-    }
-
-    // No variants — safe to add the product id as variantId for simple products
-    addToCart(product);
-    toast({
-      title: "Added to Cart",
-      description: `${product.name} has been added to your cart.`,
-    });
-  };
 
 
   return (
@@ -71,18 +44,7 @@ export function ProductCard({ product }: ProductCardProps) {
           <p className="text-lg font-semibold text-primary leading-snug" aria-label={`Giá ${formatPrice(product.price)}`}>{formatPrice(product.price)}</p>
         </div>
       </CardContent>
-      <CardFooter className="p-4 pt-0 flex items-center justify-between gap-2">
-        <Button 
-          onClick={handleAddToCart} 
-          variant="default" 
-          size="sm" 
-          className="flex-grow transition-transform transform hover:scale-105"
-          aria-label={`Add ${product.name} to cart`}
-        >
-          <ShoppingCart className="mr-2 h-4 w-4" /> Add to Cart
-        </Button>
-        {/* Wishlist action removed */}
-      </CardFooter>
+      {/* Action buttons removed as requested */}
     </Card>
   );
 }
@@ -102,10 +64,6 @@ export function ProductCardSkeleton() {
           <Skeleton className="h-5 w-1/3" />
         </div>
       </CardContent>
-      <CardFooter className="p-4 pt-0 flex items-center justify-between gap-2">
-        <Skeleton className="h-10 flex-grow" />
-        <Skeleton className="h-10 w-10 rounded-md" />
-      </CardFooter>
     </Card>
   );
 }

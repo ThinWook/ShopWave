@@ -100,15 +100,15 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       const res = await api.cart.get();
       // Ignore if a newer operation has started since this one began
       if (opId !== latestOpIdRef.current) return;
-      // Totals might come nested in res.data from backend
-      const totals = res && (res as any).data ? (res as any).data : undefined;
+      // Extract totals from either res.data or res itself
+      const dataObj = res.data && typeof res.data === 'object' ? res.data : res;
       const extras = extractExtras(res);
-      dispatch({ type: 'SET_CART', items: res.items, totals: totals ? {
-        totalItems: totals.totalItems,
-        subTotal: totals.subTotal,
-        shippingFee: totals.shippingFee,
-        total: totals.total,
-      } : undefined, extras });
+      dispatch({ type: 'SET_CART', items: res.items, totals: {
+        totalItems: dataObj.totalItems ?? dataObj.total_items,
+        subTotal: dataObj.subTotal ?? dataObj.sub_total,
+        shippingFee: dataObj.shippingFee ?? dataObj.shipping_fee ?? 0,
+        total: dataObj.total,
+      }, extras });
       localStorage.setItem('shopwave-cart', JSON.stringify(res.items));
     } catch (e: any) {
       if (opId !== latestOpIdRef.current) return;
@@ -153,14 +153,15 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       const result: any = await fn();
       if (result?.items) {
         if (opId === latestOpIdRef.current) {
-          const totals = result && (result as any).data ? (result as any).data : undefined;
+          // Extract totals from either result.data or result itself
+          const dataObj = result.data && typeof result.data === 'object' ? result.data : result;
           const extras = extractExtras(result);
-          dispatch({ type: 'SET_CART', items: result.items, totals: totals ? {
-            totalItems: totals.totalItems,
-            subTotal: totals.subTotal,
-            shippingFee: totals.shippingFee,
-            total: totals.total,
-          } : undefined, extras });
+          dispatch({ type: 'SET_CART', items: result.items, totals: {
+            totalItems: dataObj.totalItems ?? dataObj.total_items,
+            subTotal: dataObj.subTotal ?? dataObj.sub_total,
+            shippingFee: dataObj.shippingFee ?? dataObj.shipping_fee ?? 0,
+            total: dataObj.total,
+          }, extras });
           localStorage.setItem('shopwave-cart', JSON.stringify(result.items));
         }
       }
@@ -203,7 +204,19 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const applyVoucher = async (code: string) => {
-    await syncWrapper(() => api.cart.applyVoucher(code));
+    // Log and show a short toast on apply to help ensure correct code is being sent/applied
+    try {
+      // keep a local copy of code to avoid any closure/stale issues
+      const voucherCode = String(code ?? '');
+      // debug console to help trace issues in dev
+      try { console.debug('[Cart] applying voucher', voucherCode); } catch {}
+      const res = await syncWrapper(() => api.cart.applyVoucher(voucherCode));
+      try { if (res) { toast({ title: 'Đã áp dụng voucher', description: voucherCode }); } } catch {}
+      return res;
+    } catch (e) {
+      // rethrow to allow callers to handle errors/toasts
+      throw e;
+    }
   };
   const removeVoucher = async () => {
     await syncWrapper(() => api.cart.removeVoucher());
@@ -235,9 +248,12 @@ function extractExtras(payload: any): Partial<Pick<CartState, 'progressiveDiscou
   const av = root?.applied_voucher ?? root?.appliedVoucher ?? null;
   const list = root?.available_vouchers ?? root?.availableVouchers ?? null;
   const progressiveDiscount: ProgressiveDiscount | null = pd ? {
-    nextThresholdRemaining: Number(pd.next_threshold_remaining ?? pd.nextThresholdRemaining ?? 0),
-    nextDiscountValue: Number(pd.next_discount_value ?? pd.nextDiscountValue ?? 0),
-    currentDiscountValue: Number(pd.current_discount_value ?? pd.currentDiscountValue ?? 0),
+    currentDiscountValue: Number(pd.currentDiscountValue ?? pd.current_discount_value ?? 0),
+    nextDiscountThreshold: pd.nextDiscountThreshold ?? pd.next_discount_threshold ?? null,
+    nextDiscountValue: pd.nextDiscountValue ?? pd.next_discount_value ?? null,
+    amountToNext: pd.amountToNext ?? pd.amount_to_next ?? null,
+    // Legacy fields for backward compatibility
+    nextThresholdRemaining: Number(pd.next_threshold_remaining ?? pd.nextThresholdRemaining ?? pd.amountToNext ?? pd.amount_to_next ?? 0),
     progressPercent: Number(pd.progress_percent ?? pd.progressPercent ?? 0),
   } : null;
   const appliedVoucher: AppliedVoucher | null = av ? {

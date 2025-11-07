@@ -5,14 +5,17 @@ export type SortOption = "price_asc" | "price_desc" | "popularity";
 
 // Cart discount-related types used across UI/Context
 export interface ProgressiveDiscount {
-	// How much more to spend to reach next tier (in VND)
-	nextThresholdRemaining: number;
-	// Discount amount at next tier (in VND)
-	nextDiscountValue: number;
 	// Discount currently applied (in VND)
 	currentDiscountValue: number;
-	// 0-100 visual progress toward next tier
-	progressPercent: number;
+	// Next discount threshold (in VND) - null if max tier reached
+	nextDiscountThreshold: number | null;
+	// Discount amount at next tier (in VND) - null if max tier reached
+	nextDiscountValue: number | null;
+	// Amount to spend to reach next tier (in VND) - null if max tier reached
+	amountToNext: number | null;
+	// Legacy fields (deprecated but kept for backward compatibility)
+	nextThresholdRemaining?: number;
+	progressPercent?: number;
 }
 
 export interface AppliedVoucher {

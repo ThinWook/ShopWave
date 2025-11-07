@@ -38,7 +38,7 @@ export function ProductSearch({ className }: ProductSearchProps) {
         placeholder="Tìm sản phẩm..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-        className="pl-10 pr-10 py-2 h-10 shadow-sm focus:ring-primary focus:border-primary"
+        className="pl-10 pr-10 py-2 h-10 shadow-sm focus-visible:ring-primary focus-visible:border-primary"
         aria-label="Tìm sản phẩm"
       />
       {searchTerm && (

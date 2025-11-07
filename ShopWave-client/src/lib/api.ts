@@ -552,11 +552,14 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       if (env.data && typeof env.data === 'object' && Array.isArray((env.data as any).items)) {
         const d = env.data as any;
         const hasPaging = ('currentPage' in d) || ('totalPages' in d) || ('pageSize' in d) || ('totalRecords' in d);
+        // Cart responses have items + totals (total, subTotal, etc.) - don't unwrap
+        const hasCartFields = ('total' in d) || ('subTotal' in d) || ('totalItems' in d);
         if (hasPaging) {
           // ensure consumers expecting PagedResponse.data find the array
           if (!Array.isArray(d.data)) d.data = d.items;
-        } else {
+        } else if (!hasCartFields) {
           // consumers expecting plain arrays (e.g. featured/related) should receive the items array
+          // BUT skip this for cart responses that have total/subTotal fields
           const etag = res.headers.get('ETag');
           if (etag && !options.disableCache) {
             etagCache.set(cacheKey, { etag, data: d.items, meta: env.meta, timestamp: Date.now() });
@@ -717,6 +720,10 @@ function normalizeCartResponse(resp: any): { items: CartItem[]; [k: string]: any
     const itemsDto = extractItems(resp);
     if (itemsDto) {
       const mapped = itemsDto.map(mapCartItem);
+      // If response is an envelope with data object, spread data fields to top level
+      if (resp.data && typeof resp.data === 'object') {
+        return { ...resp.data, ...resp, items: mapped };
+      }
       return { ...resp, items: mapped };
     }
   } catch {
@@ -1232,7 +1239,7 @@ export const api = {
       const sid = session.ensureSessionId();
       const data = await request<CartResponseDto>('/api/v1/cart/voucher', {
         method: 'POST',
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ voucherCode: code }),
         headers: { 'X-Session-Id': sid },
         credentials: 'include'
       });
@@ -1250,6 +1257,14 @@ export const api = {
       const normalized = normalizeCartResponse(data);
       if (normalized) return normalized;
       return await api.cart.get();
+    },
+    getAvailableVouchers: async () => {
+      const sid = session.ensureSessionId();
+      const data = await request<Array<{ code: string; description?: string | null; minOrderAmount?: number; discountValue?: number; discountType?: string }>>('/api/v1/cart/available-vouchers', {
+        headers: { 'X-Session-Id': sid },
+        credentials: 'include'
+      });
+      return data;
     }
   }
 };

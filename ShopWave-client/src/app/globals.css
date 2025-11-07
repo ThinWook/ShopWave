@@ -110,6 +110,26 @@ body {
   }
 }
 
+/* Remove focus outline for mouse interactions but preserve it for keyboard users */
+input:focus:not(:focus-visible),
+textarea:focus:not(:focus-visible),
+select:focus:not(:focus-visible),
+button:focus:not(:focus-visible) {
+  outline: none !important;
+  box-shadow: none !important; /* neutralize Tailwind ring if any generic focus class used */
+}
+
+/* When user is using mouse, hide focus ring even if the browser marks inputs as :focus-visible */
+.using-mouse input:focus,
+.using-mouse textarea:focus,
+.using-mouse select:focus,
+.using-mouse button:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+}
+
 
 /* Auth pages styles */
 :root {
