@@ -134,9 +134,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   // Avoid loading cart on product detail pages to reduce unnecessary calls
   const pathname = usePathname();
   useEffect(() => {
-    if (!pathname?.startsWith('/product/')) {
-      loadRemote();
-    }
+    // Whitelist routes where we should load the remote cart.
+    // Loading cart on every route is expensive; prefer explicit routes where cart data is needed.
+    const CART_WHITELIST = ['/cart', '/checkout', '/profile', '/orders'];
+    if (pathname && CART_WHITELIST.some(p => pathname.startsWith(p))) {
+        loadRemote();
+      }
   }, [pathname, loadRemote]);
 
   useEffect(() => {

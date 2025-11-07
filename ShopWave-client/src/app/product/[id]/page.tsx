@@ -41,10 +41,20 @@ export default function ProductDetailPage(props: { params: any }) {
         const p = typeof props.params?.then === 'function' ? await props.params : props.params;
         // First try existing context product to avoid extra network if already loaded
         let existing = getProductById(p.id);
-        if (!existing) {
-          // attempt fetch directly
-            existing = await api.products.get(p.id);
-            // do not trigger global catalog reload from detail page
+        // If the context-provided product exists but lacks detailed fields
+        // (e.g. variants, gallery images), fetch full product details from API.
+        const needsDetailFetch = !existing || !existing.variants || existing.variants.length === 0 || !existing.mainImage;
+        if (needsDetailFetch) {
+          try {
+            // attempt fetch directly for full product details
+            const detailed = await api.products.get(p.id);
+            // Prefer the detailed payload when available; otherwise fall back to existing
+            existing = detailed ?? existing;
+          } catch (err) {
+            // If detail fetch fails, keep whatever we have (could be undefined)
+            existing = existing ?? undefined;
+          }
+          // do not trigger global catalog reload from detail page
         }
   if (cancelled) return;
   setProduct(existing ?? null);
