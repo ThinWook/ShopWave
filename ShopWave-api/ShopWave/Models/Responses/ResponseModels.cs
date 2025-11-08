@@ -1,4 +1,5 @@
 using ShopWave.Models.DTOs;
+using ShopWave.DTOs.Cart;
 
 namespace ShopWave.Models.Responses
 {
@@ -63,13 +64,31 @@ namespace ShopWave.Models.Responses
         /// This is calculated automatically by the backend
         /// </summary>
         public ProgressiveDiscountDto? ProgressiveDiscount { get; set; }
+
+        /// <summary>
+        /// Applied voucher information if a voucher has been applied to the cart
+        /// </summary>
+        public AppliedVoucherDto? AppliedVoucher { get; set; }
     }
 
     public class OrderResponse
     {
         public Guid OrderId { get; set; }
         public string OrderNumber { get; set; } = string.Empty;
+        
+        // === PRICE BREAKDOWN ===
+        public decimal SubTotal { get; set; }
+        public decimal ShippingFee { get; set; }
+        
+        // Detailed discount breakdown
+        public decimal ProgressiveDiscountAmount { get; set; }
+        public decimal VoucherDiscountAmount { get; set; }
+        public string? VoucherCode { get; set; }
+        
+        public decimal DiscountAmount { get; set; } // Total for backward compatibility
         public decimal TotalAmount { get; set; }
+        // =======================
+        
         public string Status { get; set; } = string.Empty;
         public DateTime OrderDate { get; set; }
         public List<OrderItemDto> OrderItems { get; set; } = new List<OrderItemDto>();

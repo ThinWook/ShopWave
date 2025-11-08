@@ -33,17 +33,18 @@ namespace ShopWave.Services
             var vnp_TmnCode = vnpayConfig["TmnCode"] ?? "";
             var vnp_HashSecret = vnpayConfig["HashSecret"] ?? "";
             var vnp_Url = vnpayConfig["Url"] ?? "";
-            var vnp_Returnurl = returnUrl + "?gateway=vnpay";
+            // Use configured return URL directly (points to frontend)
+            var vnp_Returnurl = vnpayConfig["PaymentBackReturnUrl"] ?? returnUrl;
 
             var vnp_Params = new Dictionary<string, string>
             {
                 { "vnp_Version", "2.1.0" },
                 { "vnp_Command", "pay" },
                 { "vnp_TmnCode", vnp_TmnCode },
-                { "vnp_Amount", ((long)(order.TotalAmount * 100)).ToString() }, // VNPay yêu c?u nhân 100
+                { "vnp_Amount", ((long)(order.TotalAmount * 100)).ToString() },
                 { "vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss") },
                 { "vnp_CurrCode", "VND" },
-                { "vnp_IpAddr", "127.0.0.1" }, // TODO: L?y IP th?c t?
+                { "vnp_IpAddr", "127.0.0.1" },
                 { "vnp_Locale", "vn" },
                 { "vnp_OrderInfo", $"Thanh toan don hang {order.OrderNumber}" },
                 { "vnp_OrderType", "other" },
@@ -51,15 +52,21 @@ namespace ShopWave.Services
                 { "vnp_TxnRef", transactionId.ToString() }
             };
 
-            // S?p x?p theo key
-            var sortedParams = vnp_Params.OrderBy(x => x.Key);
-            var queryString = string.Join("&", sortedParams.Select(x => $"{x.Key}={Uri.EscapeDataString(x.Value)}"));
-            var signData = string.Join("&", sortedParams.Select(x => $"{x.Key}={x.Value}"));
+            // Remove empty or null values (VNPay best practice)
+            var validParams = vnp_Params
+                .Where(x => !string.IsNullOrEmpty(x.Value))
+                .OrderBy(x => x.Key)
+                .ToList();
+
+            // Create signature from RAW values (NO URL encoding)
+            var signData = string.Join("&", validParams.Select(x => $"{x.Key}={x.Value}"));
             var vnp_SecureHash = HmacSHA512(vnp_HashSecret, signData);
 
+            // Create query string WITH URL encoding
+            var queryString = string.Join("&", validParams.Select(x => $"{x.Key}={Uri.EscapeDataString(x.Value)}"));
             var paymentUrl = $"{vnp_Url}?{queryString}&vnp_SecureHash={vnp_SecureHash}";
 
-            _logger.LogInformation("VNPay payment URL created for transaction {TransactionId}", transactionId);
+            _logger.LogInformation("VNPay payment URL created. TransactionId: {TransactionId}, ReturnUrl: {ReturnUrl}", transactionId, vnp_Returnurl);
             return await Task.FromResult(paymentUrl);
         }
 
@@ -118,17 +125,37 @@ namespace ShopWave.Services
 
         public bool ValidateVnpaySignature(Dictionary<string, string> queryParams)
         {
-            var vnp_HashSecret = _configuration.GetSection("VNPay")["HashSecret"] ?? "";
-            var vnp_SecureHash = queryParams.GetValueOrDefault("vnp_SecureHash", "");
+            try
+            {
+                var vnp_HashSecret = _configuration.GetSection("VNPay")["HashSecret"] ?? "";
+                var vnp_SecureHash = queryParams.GetValueOrDefault("vnp_SecureHash", "");
 
-            var filteredParams = queryParams
-                .Where(x => x.Key != "vnp_SecureHash" && x.Key != "vnp_SecureHashType")
-                .OrderBy(x => x.Key);
+                if (string.IsNullOrEmpty(vnp_SecureHash))
+                {
+                    _logger.LogWarning("VNPay signature validation failed: vnp_SecureHash is missing");
+                    return false;
+                }
 
-            var signData = string.Join("&", filteredParams.Select(x => $"{x.Key}={x.Value}"));
-            var computedHash = HmacSHA512(vnp_HashSecret, signData);
+                // Filter out signature params and empty values (same as when creating)
+                var filteredParams = queryParams
+                    .Where(x => x.Key != "vnp_SecureHash" && x.Key != "vnp_SecureHashType" && !string.IsNullOrEmpty(x.Value))
+                    .OrderBy(x => x.Key)
+                    .ToList();
 
-            return computedHash.Equals(vnp_SecureHash, StringComparison.InvariantCultureIgnoreCase);
+                // Create sign data from RAW values (NO URL decoding needed - already decoded by ASP.NET)
+                var signData = string.Join("&", filteredParams.Select(x => $"{x.Key}={x.Value}"));
+                var computedHash = HmacSHA512(vnp_HashSecret, signData);
+
+                _logger.LogInformation("VNPay signature validation: Expected={Expected}, Received={Received}, SignData={SignData}", 
+                    computedHash, vnp_SecureHash, signData);
+
+                return computedHash.Equals(vnp_SecureHash, StringComparison.InvariantCultureIgnoreCase);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validating VNPay signature");
+                return false;
+            }
         }
 
         public bool ValidateMomoSignature(object payload)

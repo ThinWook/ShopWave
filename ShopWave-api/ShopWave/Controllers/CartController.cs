@@ -110,6 +110,28 @@ namespace ShopWave.Controllers
             return dto;
         }
 
+        /// <summary>
+        /// Get applied voucher information for a cart
+        /// </summary>
+        private async Task<AppliedVoucherDto?> GetAppliedVoucherAsync(Guid cartId)
+        {
+            var appliedDiscount = await _context.AppliedDiscounts
+                .Include(ad => ad.Discount)
+                .FirstOrDefaultAsync(ad => ad.CartId == cartId);
+
+            if (appliedDiscount == null)
+            {
+                return null;
+            }
+
+            return new AppliedVoucherDto
+            {
+                Code = appliedDiscount.Discount.Code,
+                DiscountAmount = appliedDiscount.DiscountAmountApplied,
+                Description = appliedDiscount.Discount.Description
+            };
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetCart()
         {
@@ -183,10 +205,14 @@ namespace ShopWave.Controllers
                 // Calculate progressive discount based on subtotal
                 var progressiveDiscount = await CalculateProgressiveDiscountAsync(subTotal);
                 
+                // Get applied voucher information
+                var appliedVoucher = await GetAppliedVoucherAsync(cart.Id);
+                
                 var shipping = CalculateShippingFee(subTotal);
                 
-                // Apply progressive discount to total
-                var total = subTotal - progressiveDiscount.CurrentDiscountValue + shipping;
+                // Apply both progressive discount and voucher discount to total
+                var voucherDiscount = appliedVoucher?.DiscountAmount ?? 0;
+                var total = subTotal - progressiveDiscount.CurrentDiscountValue - voucherDiscount + shipping;
                 
                 var resp = new CartResponse
                 {
@@ -195,7 +221,8 @@ namespace ShopWave.Controllers
                     SubTotal = subTotal,
                     ShippingFee = shipping,
                     Total = total,
-                    ProgressiveDiscount = progressiveDiscount
+                    ProgressiveDiscount = progressiveDiscount,
+                    AppliedVoucher = appliedVoucher
                 };
                 return Ok(EnvelopeBuilder.Ok(HttpContext, "CART_RETRIEVED", resp));
             }
@@ -491,16 +518,19 @@ namespace ShopWave.Controllers
                     };
                 }).ToList();
 
-                var discountTotal = await _context.AppliedDiscounts.Where(ad => ad.CartId == cart.Id).SumAsync(ad => ad.DiscountAmountApplied);
                 var newSubTotal = items.Sum(i => i.TotalPrice);
                 
                 // Calculate progressive discount
                 var progressiveDiscount = await CalculateProgressiveDiscountAsync(newSubTotal);
                 
+                // Get applied voucher information
+                var appliedVoucher = await GetAppliedVoucherAsync(cart.Id);
+                
                 var shipping = CalculateShippingFee(newSubTotal);
                 
                 // Apply both progressive discount and voucher discount to total
-                var total = newSubTotal - progressiveDiscount.CurrentDiscountValue + shipping - discountTotal;
+                var voucherDiscount = appliedVoucher?.DiscountAmount ?? 0;
+                var total = newSubTotal - progressiveDiscount.CurrentDiscountValue - voucherDiscount + shipping;
                 
                 var response = new CartResponse
                 {
@@ -509,7 +539,8 @@ namespace ShopWave.Controllers
                     SubTotal = newSubTotal,
                     ShippingFee = shipping,
                     Total = total,
-                    ProgressiveDiscount = progressiveDiscount
+                    ProgressiveDiscount = progressiveDiscount,
+                    AppliedVoucher = appliedVoucher
                 };
 
                 return Ok(EnvelopeBuilder.Ok(HttpContext, "VOUCHER_APPLIED", response));
@@ -600,6 +631,9 @@ namespace ShopWave.Controllers
                 // Calculate progressive discount
                 var progressiveDiscount = await CalculateProgressiveDiscountAsync(newSubTotal);
                 
+                // Get applied voucher (should be null after removal)
+                var appliedVoucher = await GetAppliedVoucherAsync(cart.Id);
+                
                 var shipping = CalculateShippingFee(newSubTotal);
                 
                 // Apply progressive discount to total (no voucher discount after removal)
@@ -612,7 +646,8 @@ namespace ShopWave.Controllers
                     SubTotal = newSubTotal,
                     ShippingFee = shipping,
                     Total = total,
-                    ProgressiveDiscount = progressiveDiscount
+                    ProgressiveDiscount = progressiveDiscount,
+                    AppliedVoucher = appliedVoucher
                 };
 
                 return Ok(EnvelopeBuilder.Ok(HttpContext, "VOUCHER_REMOVED", response));
@@ -624,7 +659,6 @@ namespace ShopWave.Controllers
             }
         }
 
-        // === ENDPOINT M?I: L?Y CÁC VOUCHER H?P L? ===
         [HttpGet("available-vouchers")]
         public async Task<IActionResult> GetAvailableVouchers()
         {

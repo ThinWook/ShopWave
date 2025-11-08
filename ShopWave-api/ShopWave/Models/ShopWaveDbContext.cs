@@ -137,7 +137,8 @@ namespace ShopWave.Models
                 .HasOne(o => o.User)
                 .WithMany(u => u.Orders)
                 .HasForeignKey(o => o.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.SetNull) // Changed from Cascade to SetNull
+                .IsRequired(false); // Allow null UserId for guest orders
 
             modelBuilder.Entity<OrderItem>()
                 .HasOne(oi => oi.Order)

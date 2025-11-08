@@ -31,6 +31,20 @@ namespace ShopWave.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalPrice { get; set; }
 
+        // === VARIANT SNAPSHOT FIELDS (Added for historical tracking) ===
+        /// <summary>
+        /// Snapshot of variant image URL at time of order
+        /// </summary>
+        [MaxLength(1000)]
+        public string? VariantImageUrl { get; set; }
+
+        /// <summary>
+        /// Snapshot of selected options as JSON array at time of order
+        /// Example: [{"name":"Kích th??c","value":"XL"},{"name":"Màu","value":"Cam"}]
+        /// </summary>
+        [Column(TypeName = "nvarchar(max)")]
+        public string? SelectedOptions { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // Navigation properties

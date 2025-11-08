@@ -3,6 +3,9 @@ using ShopWave.Models;
 
 namespace ShopWave.Services
 {
+    /// <summary>
+    /// Service ?? test và l?y thông tin database
+    /// </summary>
     public class DatabaseTestService
     {
         private readonly ShopWaveDbContext _context;
@@ -14,179 +17,141 @@ namespace ShopWave.Services
             _logger = logger;
         }
 
+        /// <summary>
+        /// Test database connection
+        /// </summary>
         public async Task<bool> TestConnectionAsync()
         {
             try
             {
-                _logger.LogInformation("Testing database connection...");
-                
-                // Test basic connection
-                var canConnect = await _context.Database.CanConnectAsync();
-                if (!canConnect)
-                {
-                    _logger.LogError("Cannot connect to database");
-                    return false;
-                }
-
-                _logger.LogInformation("Database connection successful");
-
-                // Check if database exists and is accessible
-                var databaseName = _context.Database.GetDbConnection().Database;
-                _logger.LogInformation("Connected to database: {DatabaseName}", databaseName);
-
-                // Check if tables exist
-                var tableCount = await GetTableCountAsync();
-                _logger.LogInformation("Database contains {TableCount} tables", tableCount);
-
-                return true;
+                return await _context.Database.CanConnectAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Database connection test failed: {ErrorMessage}", ex.Message);
+                _logger.LogError(ex, "Database connection test failed");
                 return false;
             }
         }
 
-        public async Task<bool> EnsureDatabaseCreatedAsync()
-        {
-            try
-            {
-                _logger.LogInformation("Ensuring database is created...");
-                
-                var created = await _context.Database.EnsureCreatedAsync();
-                if (created)
-                {
-                    _logger.LogInformation("Database was created");
-                }
-                else
-                {
-                    _logger.LogInformation("Database already exists");
-                }
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to ensure database creation: {ErrorMessage}", ex.Message);
-                return false;
-            }
-        }
-
+        /// <summary>
+        /// Get database information
+        /// </summary>
         public async Task<DatabaseInfo> GetDatabaseInfoAsync()
         {
+            var connectionString = _context.Database.GetConnectionString();
+            var dbName = _context.Database.GetDbConnection().Database;
+            
+            // Get table count
+            var tables = await GetTableNamesAsync();
+            
+            // Get record counts
+            int userCount = 0, productCount = 0, orderCount = 0, categoryCount = 0;
+            
             try
             {
-                var connection = _context.Database.GetDbConnection();
-                var databaseName = connection.Database;
-                var serverName = connection.DataSource;
-
-                var tableCount = await GetTableCountAsync();
-                
-                // Get sample counts from main tables (with safe counts)
-                var userCount = 0;
-                var categoryCount = 0;
-                var productCount = 0;
-
-                try
-                {
-                    userCount = await _context.Users.CountAsync();
-                    categoryCount = await _context.Categories.CountAsync();
-                    productCount = await _context.Products.CountAsync();
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Could not get table counts - tables may not exist yet");
-                }
-
-                return new DatabaseInfo
-                {
-                    ServerName = serverName,
-                    DatabaseName = databaseName,
-                    TableCount = tableCount,
-                    UserCount = userCount,
-                    CategoryCount = categoryCount,
-                    ProductCount = productCount,
-                    ConnectionTime = DateTime.UtcNow
-                };
+                userCount = await _context.Users.CountAsync();
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to get database info: {ErrorMessage}", ex.Message);
-                throw;
-            }
-        }
-
-        private async Task<int> GetTableCountAsync()
-        {
+            catch { /* Table might not exist */ }
+            
             try
             {
-                var sql = @"
-                    SELECT COUNT(*) 
-                    FROM INFORMATION_SCHEMA.TABLES 
-                    WHERE TABLE_TYPE = 'BASE TABLE' 
-                    AND TABLE_SCHEMA = 'dbo'";
-
-                // Use ExecuteSqlRaw with FromSqlRaw for better compatibility
-                using var command = _context.Database.GetDbConnection().CreateCommand();
-                command.CommandText = sql;
-                
-                await _context.Database.OpenConnectionAsync();
-                var result = await command.ExecuteScalarAsync();
-                await _context.Database.CloseConnectionAsync();
-                
-                return Convert.ToInt32(result ?? 0);
+                productCount = await _context.Products.CountAsync();
             }
-            catch (Exception ex)
+            catch { /* Table might not exist */ }
+            
+            try
             {
-                _logger.LogWarning(ex, "Could not get table count");
-                return 0;
+                orderCount = await _context.Orders.CountAsync();
             }
+            catch { /* Table might not exist */ }
+            
+            try
+            {
+                categoryCount = await _context.Categories.CountAsync();
+            }
+            catch { /* Table might not exist */ }
+
+            return new DatabaseInfo
+            {
+                DatabaseName = dbName,
+                ServerName = _context.Database.GetDbConnection().DataSource,
+                TableCount = tables.Count,
+                UserCount = userCount,
+                ProductCount = productCount,
+                OrderCount = orderCount,
+                CategoryCount = categoryCount,
+                ConnectionString = MaskConnectionString(connectionString ?? "")
+            };
         }
 
+        /// <summary>
+        /// Get all table names in database
+        /// </summary>
         public async Task<List<string>> GetTableNamesAsync()
         {
             try
             {
-                var sql = @"
-                    SELECT TABLE_NAME 
-                    FROM INFORMATION_SCHEMA.TABLES 
-                    WHERE TABLE_TYPE = 'BASE TABLE' 
-                    AND TABLE_SCHEMA = 'dbo'
-                    ORDER BY TABLE_NAME";
-
-                var tableNames = new List<string>();
+                var tables = await _context.Database
+                    .SqlQueryRaw<string>("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'")
+                    .ToListAsync();
                 
-                using var command = _context.Database.GetDbConnection().CreateCommand();
-                command.CommandText = sql;
-                
-                await _context.Database.OpenConnectionAsync();
-                using var reader = await command.ExecuteReaderAsync();
-                
-                while (await reader.ReadAsync())
-                {
-                    tableNames.Add(reader.GetString(0));
-                }
-                
-                await _context.Database.CloseConnectionAsync();
-                
-                return tableNames;
+                return tables;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to get table names: {ErrorMessage}", ex.Message);
+                _logger.LogError(ex, "Failed to get table names");
                 return new List<string>();
             }
         }
+
+        /// <summary>
+        /// Ensure database is created
+        /// </summary>
+        public async Task<bool> EnsureDatabaseCreatedAsync()
+        {
+            try
+            {
+                return await _context.Database.EnsureCreatedAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to ensure database created");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Mask sensitive information in connection string
+        /// </summary>
+        private string MaskConnectionString(string connectionString)
+        {
+            if (string.IsNullOrEmpty(connectionString))
+                return "";
+
+            // Mask password
+            var masked = System.Text.RegularExpressions.Regex.Replace(
+                connectionString,
+                @"(Password|Pwd)=([^;]+)",
+                "$1=***",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase
+            );
+
+            return masked;
+        }
     }
 
+    /// <summary>
+    /// Database information model
+    /// </summary>
     public class DatabaseInfo
     {
-        public string ServerName { get; set; } = string.Empty;
         public string DatabaseName { get; set; } = string.Empty;
+        public string ServerName { get; set; } = string.Empty;
         public int TableCount { get; set; }
         public int UserCount { get; set; }
-        public int CategoryCount { get; set; }
         public int ProductCount { get; set; }
-        public DateTime ConnectionTime { get; set; }
+        public int OrderCount { get; set; }
+        public int CategoryCount { get; set; }
+        public string ConnectionString { get; set; } = string.Empty;
     }
 }

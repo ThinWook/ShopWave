@@ -5,7 +5,17 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>96b78656-e571-471b-a591-c3fa417ee7d0</UserSecretsId>
+    <!-- Disable TypeScript compilation -->
+    <TypeScriptCompileBlocked>true</TypeScriptCompileBlocked>
   </PropertyGroup>
+
+  <!-- Exclude ShopWave-client folder from build -->
+  <ItemGroup>
+    <Compile Remove="ShopWave-client\**" />
+    <Content Remove="ShopWave-client\**" />
+    <EmbeddedResource Remove="ShopWave-client\**" />
+    <None Remove="ShopWave-client\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />

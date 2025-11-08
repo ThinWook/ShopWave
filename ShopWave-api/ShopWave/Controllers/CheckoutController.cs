@@ -18,47 +18,89 @@ namespace ShopWave.Controllers
         private readonly ShopWaveDbContext _context;
         private readonly ILogger<CheckoutController> _logger;
         private readonly IPaymentGatewayService _paymentGatewayService;
+        private readonly IVnPayService _vnPayService;
 
         public CheckoutController(
             ShopWaveDbContext context,
             ILogger<CheckoutController> logger,
-            IPaymentGatewayService paymentGatewayService)
+            IPaymentGatewayService paymentGatewayService,
+            IVnPayService vnPayService)
         {
             _context = context;
             _logger = logger;
             _paymentGatewayService = paymentGatewayService;
+            _vnPayService = vnPayService;
         }
 
         /// <summary>
         /// API Chính: T?o ??n hàng (POST /api/v1/checkout)
         /// Client g?i API này khi nh?n nút "Hoàn t?t ??n hàng"
+        /// Support c? logged-in user và guest checkout
         /// </summary>
         [HttpPost]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<IActionResult> CreateCheckout([FromBody] CheckoutRequest request)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // 1. L?Y THÔNG TIN NG??I DÙNG
+                // 1. L?Y THÔNG TIN NG??I DÙNG (ho?c Guest)
+                Guid? userId = null;
                 var uid = User.FindFirstValue("uid") ?? User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-                if (!Guid.TryParse(uid, out var userId))
+                if (!string.IsNullOrEmpty(uid) && Guid.TryParse(uid, out var parsedUserId))
                 {
-                    return Unauthorized(EnvelopeBuilder.Fail<object>(HttpContext, "UNAUTHORIZED", 
-                        new[] { new ErrorItem("auth", "Vui lòng ??ng nh?p", "UNAUTHORIZED") }, 401));
+                    userId = parsedUserId;
                 }
 
-                // 2. L?Y GI? HÀNG
-                var cart = await _context.Carts
-                    .Include(c => c.CartItems)
-                        .ThenInclude(ci => ci.ProductVariant)
-                            .ThenInclude(v => v.Product)
-                    .Include(c => c.AppliedDiscounts)
-                        .ThenInclude(ad => ad.Discount)
-                    .FirstOrDefaultAsync(c => c.UserId == userId);
+                // 2. L?Y GI? HÀNG (t? userId ho?c sessionId)
+                Cart? cart = null;
+                if (userId.HasValue)
+                {
+                    // Logged-in user: get cart by userId
+                    _logger.LogInformation("Getting cart for logged-in user {UserId}", userId);
+                    cart = await _context.Carts
+                        .Include(c => c.CartItems)
+                            .ThenInclude(ci => ci.ProductVariant)
+                                .ThenInclude(v => v.Product)
+                        .Include(c => c.AppliedDiscounts)
+                            .ThenInclude(ad => ad.Discount)
+                        .FirstOrDefaultAsync(c => c.UserId == userId.Value);
+                }
+                else
+                {
+                    // Guest user: get cart by sessionId from header
+                    var sessionId = Request.Headers["X-Session-Id"].FirstOrDefault();
+                    _logger.LogInformation("Getting cart for guest with session ID: {SessionId}", sessionId);
+                    
+                    if (string.IsNullOrEmpty(sessionId))
+                    {
+                        _logger.LogWarning("No session ID provided for guest checkout");
+                        return BadRequest(EnvelopeBuilder.Fail<object>(HttpContext, "SESSION_REQUIRED",
+                            new[] { new ErrorItem("session", "Vui lòng ??ng nh?p ho?c cung c?p session ID", "SESSION_REQUIRED") }, 400));
+                    }
+
+                    cart = await _context.Carts
+                        .Include(c => c.CartItems)
+                            .ThenInclude(ci => ci.ProductVariant)
+                                .ThenInclude(v => v.Product)
+                        .Include(c => c.AppliedDiscounts)
+                            .ThenInclude(ad => ad.Discount)
+                        .FirstOrDefaultAsync(c => c.SessionId == sessionId);
+                    
+                    if (cart == null)
+                    {
+                        _logger.LogWarning("Cart not found for session ID: {SessionId}", sessionId);
+                    }
+                    else
+                    {
+                        _logger.LogInformation("Found cart {CartId} with {ItemCount} items for session {SessionId}", 
+                            cart.Id, cart.CartItems.Count, sessionId);
+                    }
+                }
 
                 if (cart == null || !cart.CartItems.Any())
                 {
+                    _logger.LogWarning("Cart empty or not found for checkout. UserId: {UserId}, Cart: {Cart}", userId, cart?.Id);
                     return BadRequest(EnvelopeBuilder.Fail<object>(HttpContext, "CART_EMPTY",
                         new[] { new ErrorItem("cart", "Gi? hàng tr?ng", "CART_EMPTY") }, 400));
                 }
@@ -76,8 +118,22 @@ namespace ShopWave.Controllers
                 var subTotal = cart.CartItems.Sum(ci => ci.Quantity * ci.UnitPrice);
                 var shippingFee = CalculateShippingFee(subTotal);
                 
-                // Áp d?ng gi?m giá t? voucher n?u có (tính toán t? AppliedDiscounts)
+                // === TÍNH GI?M GIÁ PROGRESSIVE (Theo b?c) ===
+                decimal progressiveDiscount = 0;
+                var tier = await _context.DiscountTiers
+                    .Where(t => t.IsActive && subTotal >= t.ThresholdAmount)
+                    .OrderByDescending(t => t.ThresholdAmount)
+                    .FirstOrDefaultAsync();
+                
+                if (tier != null)
+                {
+                    progressiveDiscount = tier.DiscountValue;
+                }
+                
+                // === TÍNH GI?M GIÁ VOUCHER ===
                 decimal voucherDiscount = 0;
+                string? voucherCode = null;
+                
                 foreach (var appliedDiscount in cart.AppliedDiscounts)
                 {
                     var discount = appliedDiscount.Discount;
@@ -88,18 +144,31 @@ namespace ShopWave.Controllers
                             : discount.DiscountValue;
                         
                         voucherDiscount += discountAmount;
+                        voucherCode = discount.Code; // L?u mã voucher
                     }
                 }
 
-                var totalAmount = subTotal + shippingFee - voucherDiscount;
+                var totalDiscountAmount = progressiveDiscount + voucherDiscount;
+                var totalAmount = subTotal + shippingFee - totalDiscountAmount;
                 var orderNumber = await GenerateOrderNumber();
 
                 // 4. T?O ??N HÀNG (Order) VÀ CÁC M?C (OrderItems)
+                // For guest orders, userId will be null
                 var order = new Order
                 {
-                    UserId = userId,
+                    UserId = userId, // null for guest, Guid for logged-in user
                     OrderNumber = orderNumber,
+                    
+                    // === SNAPSHOT PRICE BREAKDOWN V?I CHI TI?T ===
+                    SubTotal = subTotal,
+                    ShippingFee = shippingFee,
+                    ProgressiveDiscountAmount = progressiveDiscount,
+                    VoucherDiscountAmount = voucherDiscount,
+                    VoucherCode = voucherCode,
+                    DiscountAmount = totalDiscountAmount, // T?ng (cho backward compatibility)
                     TotalAmount = totalAmount,
+                    // ============================================
+                    
                     Status = request.PaymentMethod == "COD" ? "PROCESSING" : "PENDING_PAYMENT",
                     // ??a ch? giao hàng
                     ShippingFullName = request.ShippingAddress.FullName,
@@ -131,6 +200,23 @@ namespace ShopWave.Controllers
                 var orderItems = new List<OrderItem>();
                 foreach (var cartItem in cart.CartItems)
                 {
+                    // Load variant with its option values for snapshotting
+                    var variant = await _context.ProductVariants
+                        .Include(v => v.Image)
+                        .Include(v => v.VariantValues)
+                            .ThenInclude(vv => vv.Value)
+                                .ThenInclude(ov => ov.Option)
+                        .FirstOrDefaultAsync(v => v.Id == cartItem.ProductVariantId);
+
+                    // Build selected options array for snapshot
+                    var selectedOptions = variant?.VariantValues
+                        .Select(vv => new SelectedOptionDto
+                        {
+                            Name = vv.Value.Option.Name,
+                            Value = vv.Value.Value
+                        })
+                        .ToList() ?? new List<SelectedOptionDto>();
+
                     var orderItem = new OrderItem
                     {
                         OrderId = order.Id,
@@ -139,6 +225,12 @@ namespace ShopWave.Controllers
                         Quantity = cartItem.Quantity,
                         UnitPrice = cartItem.UnitPrice,
                         TotalPrice = cartItem.Quantity * cartItem.UnitPrice,
+                        
+                        // === SNAPSHOT VARIANT DETAILS ===
+                        VariantImageUrl = variant?.Image?.Url,
+                        SelectedOptions = System.Text.Json.JsonSerializer.Serialize(selectedOptions),
+                        // ================================
+                        
                         CreatedAt = DateTime.UtcNow
                     };
                     orderItems.Add(orderItem);
@@ -152,16 +244,66 @@ namespace ShopWave.Controllers
                 _context.OrderItems.AddRange(orderItems);
 
                 // 5. T?O GIAO D?CH (Transaction)
-                if (request.PaymentMethod == "VNPAY" || request.PaymentMethod == "MOMO")
+                if (request.PaymentMethod == "VNPAY")
                 {
                     // T?O GIAO D?CH (Transaction)
                     var transaction_record = new Transaction
                     {
                         OrderId = order.Id,
-                        Gateway = request.PaymentMethod,
+                        Gateway = "VNPAY",
                         Amount = order.TotalAmount,
                         Status = "PENDING",
-                        GatewayTransactionId = null,
+                        TransactionType = "PAYMENT",
+                        IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
+                        UserAgent = Request.Headers["User-Agent"].ToString(),
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                    _context.Transactions.Add(transaction_record);
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    // Store order ID in session for guest access
+                    HttpContext.Session.SetString("LastOrderId", order.Id.ToString());
+
+                    // Create payment information model
+                    var paymentModel = new PaymentInformationModel
+                    {
+                        Amount = (double)order.TotalAmount,
+                        Name = request.ShippingAddress.FullName,
+                        OrderDescription = $"Thanh toan don hang {order.OrderNumber}",
+                        OrderType = "other"
+                    };
+
+                    // Generate VNPay payment URL using VnPayService
+                    var paymentUrl = _vnPayService.CreatePaymentUrl(paymentModel, HttpContext, transaction_record.Id);
+
+                    var response = new CheckoutResponse
+                    {
+                        Status = "OK",
+                        PaymentMethod = "VNPAY",
+                        PaymentUrl = paymentUrl,
+                        OrderId = order.Id,
+                        TransactionId = transaction_record.Id
+                    };
+
+                    _logger.LogInformation("VNPay payment URL created for Order {OrderNumber}, Transaction {TransactionId}", 
+                        order.OrderNumber, transaction_record.Id);
+
+                    return Ok(EnvelopeBuilder.Ok(HttpContext, "PAYMENT_URL_GENERATED", response));
+                }
+
+                // === MOMO PAYMENT (Keep existing) ===
+                if (request.PaymentMethod == "MOMO")
+                {
+                    // T?O GIAO D?CH (Transaction)
+                    var transaction_record = new Transaction
+                    {
+                        OrderId = order.Id,
+                        Gateway = "MOMO",
+                        Amount = order.TotalAmount,
+                        Status = "PENDING",
+                        TransactionType = "PAYMENT",
                         IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
                         CreatedAt = DateTime.UtcNow
                     };
@@ -169,10 +311,11 @@ namespace ShopWave.Controllers
                     await _context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
-                    // G?i SDK c?a c?ng thanh toán
-                    var returnUrl = $"{Request.Scheme}://{Request.Host}/checkout/payment-return";
+                    HttpContext.Session.SetString("LastOrderId", order.Id.ToString());
+
+                    var returnUrl = $"{Request.Scheme}://{Request.Host}/api/v1/payments/return";
                     var paymentUrl = await _paymentGatewayService.CreatePaymentUrl(
-                        request.PaymentMethod,
+                        "MOMO",
                         order,
                         transaction_record.Id,
                         returnUrl
@@ -181,14 +324,16 @@ namespace ShopWave.Controllers
                     var response = new CheckoutResponse
                     {
                         Status = "OK",
-                        PaymentMethod = request.PaymentMethod,
-                        PaymentUrl = paymentUrl
+                        PaymentMethod = "MOMO",
+                        PaymentUrl = paymentUrl,
+                        OrderId = order.Id,
+                        TransactionId = transaction_record.Id
                     };
 
                     return Ok(EnvelopeBuilder.Ok(HttpContext, "PAYMENT_URL_GENERATED", response));
                 }
 
-                // === K?CH B?N A: THANH TOÁN KHI NH?N HÀNG (COD) ===
+                // === COD (Keep existing) ===
                 if (request.PaymentMethod == "COD")
                 {
                     // T?O GIAO D?CH (Transaction Log) CHO COD
@@ -212,8 +357,11 @@ namespace ShopWave.Controllers
                     await _context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
-                    // G?I EMAIL/SMS XÁC NH?N (TODO: Implement email service)
-                    _logger.LogInformation("Order {OrderNumber} created successfully for user {UserId}. Email confirmation should be sent.", 
+                    // Store order ID in session for guest access verification
+                    HttpContext.Session.SetString("LastOrderId", order.Id.ToString());
+
+                    // G?i EMAIL/SMS XÁC NH?N (TODO: Implement email service)
+                    _logger.LogInformation("Order {OrderNumber} created successfully" + (userId.HasValue ? " for user {UserId}" : " for guest") + ". Email confirmation should be sent.", 
                         order.OrderNumber, userId);
                     // await _emailService.SendOrderConfirmationAsync(order);
 
@@ -221,11 +369,21 @@ namespace ShopWave.Controllers
                     {
                         Status = "OK",
                         PaymentMethod = "COD",
+                        OrderId = order.Id, // Added for client access
                         Order = new OrderDto
                         {
                             Id = order.Id,
                             OrderNumber = order.OrderNumber,
+                            
+                            // Price breakdown with detailed discounts
+                            SubTotal = order.SubTotal,
+                            ShippingFee = order.ShippingFee,
+                            ProgressiveDiscountAmount = order.ProgressiveDiscountAmount,
+                            VoucherDiscountAmount = order.VoucherDiscountAmount,
+                            VoucherCode = order.VoucherCode,
+                            DiscountAmount = order.DiscountAmount,
                             TotalAmount = order.TotalAmount,
+                            
                             Status = order.Status,
                             PaymentStatus = order.PaymentStatus,
                             OrderDate = order.OrderDate,
@@ -235,7 +393,11 @@ namespace ShopWave.Controllers
                                 ProductName = oi.ProductName,
                                 Quantity = oi.Quantity,
                                 UnitPrice = oi.UnitPrice,
-                                TotalPrice = oi.TotalPrice
+                                TotalPrice = oi.TotalPrice,
+                                VariantImageUrl = oi.VariantImageUrl,
+                                SelectedOptions = string.IsNullOrEmpty(oi.SelectedOptions) 
+                                    ? null 
+                                    : System.Text.Json.JsonSerializer.Deserialize<List<SelectedOptionDto>>(oi.SelectedOptions)
                             }).ToList()
                         }
                     };
@@ -287,7 +449,7 @@ namespace ShopWave.Controllers
     public class CheckoutRequest
     {
         [Required(ErrorMessage = "Ph??ng th?c thanh toán là b?t bu?c")]
-        public string PaymentMethod { get; set; } = string.Empty; // "COD", "VNPAY", "MOMO"
+        public string PaymentMethod { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "??a ch? giao hàng là b?t bu?c")]
         public AddressDto ShippingAddress { get; set; } = null!;
@@ -300,6 +462,8 @@ namespace ShopWave.Controllers
         public string Status { get; set; } = string.Empty;
         public string PaymentMethod { get; set; } = string.Empty;
         public string? PaymentUrl { get; set; }
+        public Guid? OrderId { get; set; }
+        public Guid? TransactionId { get; set; }
         public OrderDto? Order { get; set; }
     }
 }

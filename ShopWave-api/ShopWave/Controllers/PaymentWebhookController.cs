@@ -13,92 +13,134 @@ namespace ShopWave.Controllers
         private readonly ShopWaveDbContext _context;
         private readonly ILogger<PaymentWebhookController> _logger;
         private readonly IPaymentGatewayService _paymentGatewayService;
+        private readonly IVnPayService _vnPayService;
 
         public PaymentWebhookController(
             ShopWaveDbContext context,
             ILogger<PaymentWebhookController> logger,
-            IPaymentGatewayService paymentGatewayService)
+            IPaymentGatewayService paymentGatewayService,
+            IVnPayService vnPayService)
         {
             _context = context;
             _logger = logger;
             _paymentGatewayService = paymentGatewayService;
+            _vnPayService = vnPayService;
         }
 
+        /// <summary>
+        /// VNPay IPN (Instant Payment Notification) - Server-to-Server callback
+        /// This is the critical endpoint that actually processes the payment
+        /// </summary>
         [HttpPost("webhook/vnpay")]
         [HttpGet("webhook/vnpay")]
         public async Task<IActionResult> HandleVnpayWebhook()
         {
             try
             {
-                var queryParams = Request.Query.ToDictionary(x => x.Key, x => x.Value.ToString());
-                _logger.LogInformation("VNPay webhook received: {Params}", JsonSerializer.Serialize(queryParams));
+                _logger.LogInformation("VNPay webhook received: {Query}", Request.QueryString);
 
-                if (!_paymentGatewayService.ValidateVnpaySignature(queryParams))
+                // Parse and validate callback using VnPayService
+                var response = _vnPayService.PaymentExecute(Request.Query);
+
+                // Validate signature
+                if (!response.Success)
                 {
-                    _logger.LogWarning("Invalid VNPay signature");
-                    return BadRequest(new { RspCode = "97", Message = "Invalid Signature" });
+                    _logger.LogWarning("Invalid VNPay signature or failed payment");
+                    return Ok(new { RspCode = "97", Message = "Invalid Signature" });
                 }
 
-                var transactionId = Guid.Parse(queryParams.GetValueOrDefault("vnp_TxnRef", Guid.Empty.ToString()));
-                var vnpResponseCode = queryParams.GetValueOrDefault("vnp_ResponseCode", "");
-                var vnpTransactionNo = queryParams.GetValueOrDefault("vnp_TransactionNo", "");
+                // Parse transaction ID from vnp_TxnRef
+                if (!Guid.TryParse(response.OrderId, out var transactionId))
+                {
+                    _logger.LogWarning("Invalid transaction ID format: {TxnRef}", response.OrderId);
+                    return Ok(new { RspCode = "01", Message = "Invalid transaction reference" });
+                }
 
+                // Find transaction and order
                 var transaction = await _context.Transactions
                     .Include(t => t.Order)
                         .ThenInclude(o => o.OrderItems)
                             .ThenInclude(oi => oi.ProductVariant)
                     .FirstOrDefaultAsync(t => t.Id == transactionId);
 
-                if (transaction == null || transaction.Status != "PENDING")
+                if (transaction == null)
                 {
-                    _logger.LogWarning("Transaction not found or already processed: {TransactionId}", transactionId);
+                    _logger.LogWarning("Transaction not found: {TransactionId}", transactionId);
                     return Ok(new { RspCode = "01", Message = "Order not found" });
                 }
 
-                transaction.GatewayTransactionId = vnpTransactionNo;
-                transaction.GatewayResponse = JsonSerializer.Serialize(queryParams);
+                // Idempotency check - prevent duplicate processing
+                if (transaction.Status != "PENDING")
+                {
+                    _logger.LogInformation("Transaction already processed: {TransactionId}, Status: {Status}", 
+                        transactionId, transaction.Status);
+                    return Ok(new { RspCode = "00", Message = "Already processed" });
+                }
+
+                // Update transaction with gateway response
+                transaction.GatewayTransactionId = response.TransactionId;
+                transaction.GatewayResponse = JsonSerializer.Serialize(new {
+                    vnp_TxnRef = response.OrderId,
+                    vnp_TransactionNo = response.TransactionId,
+                    vnp_ResponseCode = response.VnPayResponseCode,
+                    vnp_OrderInfo = response.OrderDescription
+                });
                 transaction.CompletedAt = DateTime.UtcNow;
                 transaction.UpdatedAt = DateTime.UtcNow;
 
-                if (vnpResponseCode == "00")
+                // Check payment result
+                if (response.VnPayResponseCode == "00")
                 {
+                    // SUCCESS - Process the order
                     transaction.Status = "SUCCESS";
                     transaction.Order.Status = "PROCESSING";
                     transaction.Order.PaymentStatus = "PAID";
                     transaction.Order.UpdatedAt = DateTime.UtcNow;
 
+                    // Reduce stock NOW
                     foreach (var orderItem in transaction.Order.OrderItems)
                     {
                         orderItem.ProductVariant.Stock -= orderItem.Quantity;
+                        _logger.LogInformation("Stock reduced for variant {VariantId}: -{Quantity}", 
+                            orderItem.ProductVariantId, orderItem.Quantity);
                     }
 
-                    var cart = await _context.Carts
-                        .Include(c => c.CartItems)
-                        .Include(c => c.AppliedDiscounts)
-                        .FirstOrDefaultAsync(c => c.UserId == transaction.Order.UserId);
+                    // Delete cart NOW
+                    Cart? cart = null;
+                    if (transaction.Order.UserId.HasValue)
+                    {
+                        cart = await _context.Carts
+                            .Include(c => c.CartItems)
+                            .Include(c => c.AppliedDiscounts)
+                            .FirstOrDefaultAsync(c => c.UserId == transaction.Order.UserId.Value);
+                    }
                     
                     if (cart != null)
                     {
                         _context.CartItems.RemoveRange(cart.CartItems);
                         _context.AppliedDiscounts.RemoveRange(cart.AppliedDiscounts);
+                        _context.Carts.Remove(cart);
+                        _logger.LogInformation("Cart deleted for user {UserId}", transaction.Order.UserId);
                     }
 
                     await _context.SaveChangesAsync();
-                    _logger.LogInformation("Payment successful for Order: {OrderNumber}", transaction.Order.OrderNumber);
+                    _logger.LogInformation("Payment SUCCESS for Order: {OrderNumber}, Transaction: {TransactionId}", 
+                        transaction.Order.OrderNumber, transactionId);
                 }
                 else
                 {
+                    // FAILED - Cancel the order
                     transaction.Status = "FAILED";
-                    transaction.ErrorMessage = queryParams.GetValueOrDefault("vnp_Message", "Payment failed");
+                    transaction.ErrorMessage = $"VNPay error code: {response.VnPayResponseCode}";
                     transaction.Order.Status = "CANCELLED";
                     transaction.Order.UpdatedAt = DateTime.UtcNow;
 
                     await _context.SaveChangesAsync();
-                    _logger.LogWarning("Payment failed for Order: {OrderNumber}, Code: {ResponseCode}", 
-                        transaction.Order.OrderNumber, vnpResponseCode);
+                    _logger.LogWarning("Payment FAILED for Order: {OrderNumber}, Code: {ResponseCode}", 
+                        transaction.Order.OrderNumber, response.VnPayResponseCode);
                 }
 
-                await _context.SaveChangesAsync();
+                // Return success response to VNPay
                 return Ok(new { RspCode = "00", Message = "Confirm Success" });
             }
             catch (Exception ex)
@@ -108,6 +150,9 @@ namespace ShopWave.Controllers
             }
         }
 
+        /// <summary>
+        /// MoMo IPN (Instant Payment Notification) - Server-to-Server callback
+        /// </summary>
         [HttpPost("webhook/momo")]
         public async Task<IActionResult> HandleMomoWebhook([FromBody] MomoWebhookPayload payload)
         {
@@ -118,7 +163,7 @@ namespace ShopWave.Controllers
                 if (!_paymentGatewayService.ValidateMomoSignature(payload))
                 {
                     _logger.LogWarning("Invalid MoMo signature");
-                    return BadRequest(new { resultCode = 97, message = "Invalid Signature" });
+                    return Ok(new { resultCode = 97, message = "Invalid Signature" });
                 }
 
                 var transactionId = Guid.Parse(payload.OrderId);
@@ -160,6 +205,7 @@ namespace ShopWave.Controllers
                     {
                         _context.CartItems.RemoveRange(cart.CartItems);
                         _context.AppliedDiscounts.RemoveRange(cart.AppliedDiscounts);
+                        _context.Carts.Remove(cart);
                     }
 
                     _logger.LogInformation("MoMo payment successful for Order: {OrderNumber}", transaction.Order.OrderNumber);
@@ -185,32 +231,30 @@ namespace ShopWave.Controllers
             }
         }
 
+        /// <summary>
+        /// Payment return URL - DEPRECATED (VNPay now redirects directly to frontend)
+        /// This endpoint is kept for backward compatibility and logging purposes
+        /// </summary>
         [HttpGet("return")]
-        public IActionResult PaymentReturn([FromQuery] string gateway, [FromQuery] string? vnp_ResponseCode, [FromQuery] int? resultCode)
+        public IActionResult PaymentReturn([FromQuery] string? gateway, [FromQuery] string? vnp_ResponseCode, 
+            [FromQuery] int? resultCode, [FromQuery] string? vnp_TxnRef)
         {
             try
             {
-                var isSuccess = false;
+                _logger.LogWarning("Payment return endpoint called - VNPay should redirect to frontend directly. " +
+                    "Gateway={Gateway}, ResponseCode={ResponseCode}, TxnRef={TxnRef}", 
+                    gateway, vnp_ResponseCode ?? resultCode?.ToString(), vnp_TxnRef);
 
-                if (gateway?.ToUpper() == "VNPAY")
-                {
-                    isSuccess = vnp_ResponseCode == "00";
-                }
-                else if (gateway?.ToUpper() == "MOMO")
-                {
-                    isSuccess = resultCode == 0;
-                }
-
-                var redirectUrl = isSuccess 
-                    ? $"{Request.Scheme}://{Request.Host}/checkout/success"
-                    : $"{Request.Scheme}://{Request.Host}/checkout/failed";
-
-                return Redirect(redirectUrl);
+                // Redirect to frontend anyway
+                var frontendUrl = "http://localhost:3000/checkout/result";
+                var queryParams = Request.QueryString.Value;
+                
+                return Redirect($"{frontendUrl}{queryParams}");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in payment return");
-                return Redirect($"{Request.Scheme}://{Request.Host}/checkout/failed");
+                return Redirect("http://localhost:3000/checkout/failed");
             }
         }
     }

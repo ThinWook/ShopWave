@@ -8,13 +8,60 @@ namespace ShopWave.Models
         [Key]
         public Guid Id { get; set; } = Guid.NewGuid();
 
-        [Required]
-        public Guid UserId { get; set; }
+        // Allow null for guest orders
+        public Guid? UserId { get; set; }
 
         [Required]
         [MaxLength(50)]
         public string OrderNumber { get; set; } = string.Empty;
 
+        // === PRICE BREAKDOWN FIELDS (Added for historical tracking) ===
+        /// <summary>
+        /// Subtotal before discounts and shipping (sum of all item prices)
+        /// </summary>
+        [Required]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal SubTotal { get; set; }
+
+        /// <summary>
+        /// Shipping fee at the time of order
+        /// </summary>
+        [Required]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal ShippingFee { get; set; }
+
+        /// <summary>
+        /// Total discount amount applied (progressive + voucher)
+        /// Kept for backward compatibility and quick reference
+        /// </summary>
+        [Required]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal DiscountAmount { get; set; }
+
+        // === DETAILED DISCOUNT BREAKDOWN ===
+        /// <summary>
+        /// Progressive discount amount based on order subtotal tiers
+        /// </summary>
+        [Required]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal ProgressiveDiscountAmount { get; set; }
+
+        /// <summary>
+        /// Voucher discount amount if a voucher code was applied
+        /// </summary>
+        [Required]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal VoucherDiscountAmount { get; set; }
+
+        /// <summary>
+        /// Voucher code applied to this order (if any)
+        /// </summary>
+        [MaxLength(50)]
+        public string? VoucherCode { get; set; }
+
+        /// <summary>
+        /// Final total = SubTotal + ShippingFee - DiscountAmount
+        /// </summary>
         [Required]
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalAmount { get; set; }
@@ -90,7 +137,7 @@ namespace ShopWave.Models
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
         [ForeignKey("UserId")]
-        public virtual User User { get; set; } = null!;
+        public virtual User? User { get; set; }
 
         public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
         

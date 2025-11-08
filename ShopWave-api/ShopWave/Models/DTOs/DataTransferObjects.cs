@@ -63,6 +63,9 @@ namespace ShopWave.Models.DTOs
         [Required]
         public string Phone { get; set; } = string.Empty;
         
+        [EmailAddress]
+        public string? Email { get; set; }
+        
         [Required]
         public string Address { get; set; } = string.Empty;
         
@@ -82,7 +85,20 @@ namespace ShopWave.Models.DTOs
     {
         public Guid Id { get; set; }
         public string OrderNumber { get; set; } = string.Empty;
+        
+        // === PRICE BREAKDOWN ===
+        public decimal SubTotal { get; set; }
+        public decimal ShippingFee { get; set; }
+        
+        // Detailed discount breakdown
+        public decimal ProgressiveDiscountAmount { get; set; }
+        public decimal VoucherDiscountAmount { get; set; }
+        public string? VoucherCode { get; set; }
+        
+        public decimal DiscountAmount { get; set; } // Total for backward compatibility
         public decimal TotalAmount { get; set; }
+        // =======================
+        
         public string Status { get; set; } = string.Empty;
         public string PaymentStatus { get; set; } = string.Empty;
         public DateTime OrderDate { get; set; }
@@ -96,6 +112,9 @@ namespace ShopWave.Models.DTOs
         public string? PaymentMethod { get; set; }
         public AddressDto ShippingAddress { get; set; } = null!;
         public AddressDto? BillingAddress { get; set; }
+        
+        // === TRANSACTION HISTORY ===
+        public List<TransactionDto> Transactions { get; set; } = new List<TransactionDto>();
     }
 
     public class OrderItemDto
@@ -105,6 +124,19 @@ namespace ShopWave.Models.DTOs
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal TotalPrice { get; set; }
+        
+        // === VARIANT SNAPSHOT ===
+        public string? VariantImageUrl { get; set; }
+        public List<SelectedOptionDto>? SelectedOptions { get; set; }
+    }
+
+    /// <summary>
+    /// DTO for selected option snapshot (e.g., {"name":"Kích th??c","value":"XL"})
+    /// </summary>
+    public class SelectedOptionDto
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
     }
 
     public class CartItemDto

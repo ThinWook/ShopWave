@@ -49,22 +49,43 @@ namespace ShopWave.Controllers
         }
 
         /// <summary>
-        /// GET /api/v1/districts?provinceId=...
-        /// L?y danh sách qu?n/huy?n theo t?nh
+        /// GET /api/v1/districts?provinceId=1 OR /api/v1/districts?province=B?c K?n
+        /// L?y danh sách qu?n/huy?n theo t?nh (support both ID and name)
         /// </summary>
         [HttpGet("districts")]
-        public async Task<IActionResult> GetDistricts([FromQuery] int provinceId)
+        public async Task<IActionResult> GetDistricts([FromQuery] int? provinceId, [FromQuery] string? province)
         {
             try
             {
-                if (provinceId <= 0)
+                // Support both provinceId (int) and province (string name)
+                int? resolvedProvinceId = null;
+
+                if (provinceId.HasValue && provinceId.Value > 0)
+                {
+                    resolvedProvinceId = provinceId.Value;
+                }
+                else if (!string.IsNullOrWhiteSpace(province))
+                {
+                    // Find province by name
+                    var prov = await _context.Provinces
+                        .FirstOrDefaultAsync(p => p.Name == province.Trim());
+                    
+                    if (prov == null)
+                    {
+                        return BadRequest(EnvelopeBuilder.Fail<object>(HttpContext, "PROVINCE_NOT_FOUND",
+                            new[] { new ErrorItem("province", "Không tìm th?y t?nh/thành", "PROVINCE_NOT_FOUND") }, 400));
+                    }
+                    
+                    resolvedProvinceId = prov.Id;
+                }
+                else
                 {
                     return BadRequest(EnvelopeBuilder.Fail<object>(HttpContext, "INVALID_PROVINCE_ID",
                         new[] { new ErrorItem("provinceId", "Province ID không h?p l?", "INVALID_PROVINCE_ID") }, 400));
                 }
 
                 var districts = await _context.Districts
-                    .Where(d => d.ProvinceId == provinceId)
+                    .Where(d => d.ProvinceId == resolvedProvinceId.Value)
                     .OrderBy(d => d.Name)
                     .Select(d => new LocationDto
                     {
@@ -77,29 +98,50 @@ namespace ShopWave.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving districts for provinceId {ProvinceId}", provinceId);
+                _logger.LogError(ex, "Error retrieving districts for province {Province}/{ProvinceId}", province, provinceId);
                 return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR",
                     new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500));
             }
         }
 
         /// <summary>
-        /// GET /api/v1/wards?districtId=...
-        /// L?y danh sách ph??ng/xã theo qu?n/huy?n
+        /// GET /api/v1/wards?districtId=1 OR /api/v1/wards?district=Qu?n Ba ?ình
+        /// L?y danh sách ph??ng/xã theo qu?n/huy?n (support both ID and name)
         /// </summary>
         [HttpGet("wards")]
-        public async Task<IActionResult> GetWards([FromQuery] int districtId)
+        public async Task<IActionResult> GetWards([FromQuery] int? districtId, [FromQuery] string? district)
         {
             try
             {
-                if (districtId <= 0)
+                // Support both districtId (int) and district (string name)
+                int? resolvedDistrictId = null;
+
+                if (districtId.HasValue && districtId.Value > 0)
+                {
+                    resolvedDistrictId = districtId.Value;
+                }
+                else if (!string.IsNullOrWhiteSpace(district))
+                {
+                    // Find district by name
+                    var dist = await _context.Districts
+                        .FirstOrDefaultAsync(d => d.Name == district.Trim());
+                    
+                    if (dist == null)
+                    {
+                        return BadRequest(EnvelopeBuilder.Fail<object>(HttpContext, "DISTRICT_NOT_FOUND",
+                            new[] { new ErrorItem("district", "Không tìm th?y qu?n/huy?n", "DISTRICT_NOT_FOUND") }, 400));
+                    }
+                    
+                    resolvedDistrictId = dist.Id;
+                }
+                else
                 {
                     return BadRequest(EnvelopeBuilder.Fail<object>(HttpContext, "INVALID_DISTRICT_ID",
                         new[] { new ErrorItem("districtId", "District ID không h?p l?", "INVALID_DISTRICT_ID") }, 400));
                 }
 
                 var wards = await _context.Wards
-                    .Where(w => w.DistrictId == districtId)
+                    .Where(w => w.DistrictId == resolvedDistrictId.Value)
                     .OrderBy(w => w.Name)
                     .Select(w => new LocationDto
                     {
@@ -112,28 +154,44 @@ namespace ShopWave.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving wards for districtId {DistrictId}", districtId);
+                _logger.LogError(ex, "Error retrieving wards for district {District}/{DistrictId}", district, districtId);
                 return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR",
                     new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500));
             }
         }
 
         /// <summary>
-        /// GET /api/v1/shipping-fee?province=...
-        /// L?y phí v?n chuy?n theo tên t?nh/thành ph?
+        /// GET /api/v1/shipping-fee?province=... OR /api/v1/shipping-fee?provinceId=1
+        /// L?y phí v?n chuy?n theo tên t?nh/thành ph? ho?c ID
         /// </summary>
         [HttpGet("shipping-fee")]
-        public async Task<IActionResult> GetShippingFee([FromQuery] string province)
+        public async Task<IActionResult> GetShippingFee([FromQuery] string? province, [FromQuery] int? provinceId)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(province))
+                string? provinceName = null;
+
+                // Support both province name (string) and provinceId (int)
+                if (!string.IsNullOrWhiteSpace(province))
+                {
+                    provinceName = province.Trim();
+                }
+                else if (provinceId.HasValue && provinceId.Value > 0)
+                {
+                    // Find province name by ID
+                    var prov = await _context.Provinces.FindAsync(provinceId.Value);
+                    if (prov == null)
+                    {
+                        return BadRequest(EnvelopeBuilder.Fail<object>(HttpContext, "PROVINCE_NOT_FOUND",
+                            new[] { new ErrorItem("provinceId", "Không tìm th?y t?nh/thành", "PROVINCE_NOT_FOUND") }, 400));
+                    }
+                    provinceName = prov.Name;
+                }
+                else
                 {
                     return BadRequest(EnvelopeBuilder.Fail<object>(HttpContext, "PROVINCE_REQUIRED",
                         new[] { new ErrorItem("province", "Tên T?nh/Thành là b?t bu?c", "PROVINCE_REQUIRED") }, 400));
                 }
-
-                var provinceName = province.Trim();
 
                 // Tìm m?c phí cho t?nh c? th?
                 var rate = await _context.ShippingRates
@@ -164,7 +222,7 @@ namespace ShopWave.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving shipping fee for province {Province}", province);
+                _logger.LogError(ex, "Error retrieving shipping fee for province {Province}/{ProvinceId}", province, provinceId);
                 return StatusCode(500, EnvelopeBuilder.Fail<object>(HttpContext, "INTERNAL_ERROR",
                     new[] { new ErrorItem("server", "Unexpected error", "INTERNAL_ERROR") }, 500));
             }

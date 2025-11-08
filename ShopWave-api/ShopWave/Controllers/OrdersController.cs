@@ -72,7 +72,16 @@ namespace ShopWave.Controllers
                 {
                     UserId = userId,
                     OrderNumber = orderNumber,
+                    
+                    // Price breakdown (no discounts in this legacy flow)
+                    SubTotal = subTotal,
+                    ShippingFee = shippingFee,
+                    ProgressiveDiscountAmount = 0,
+                    VoucherDiscountAmount = 0,
+                    VoucherCode = null,
+                    DiscountAmount = 0, // No discounts in this flow
                     TotalAmount = totalAmount,
+                    
                     Status = "Pending",
                     // Structured Shipping Address
                     ShippingFullName = request.ShippingAddress.FullName,
@@ -103,6 +112,23 @@ namespace ShopWave.Controllers
                 var orderItems = new List<OrderItem>();
                 foreach (var cartItem in cartItems)
                 {
+                    // Load variant with its option values for snapshotting
+                    var variant = await _context.ProductVariants
+                        .Include(v => v.Image)
+                        .Include(v => v.VariantValues)
+                            .ThenInclude(vv => vv.Value)
+                                .ThenInclude(ov => ov.Option)
+                        .FirstOrDefaultAsync(v => v.Id == cartItem.ProductVariantId);
+
+                    // Build selected options array for snapshot
+                    var selectedOptions = variant?.VariantValues
+                        .Select(vv => new SelectedOptionDto
+                        {
+                            Name = vv.Value.Option.Name,
+                            Value = vv.Value.Value
+                        })
+                        .ToList() ?? new List<SelectedOptionDto>();
+
                     var orderItem = new OrderItem
                     {
                         OrderId = order.Id,
@@ -111,6 +137,11 @@ namespace ShopWave.Controllers
                         Quantity = cartItem.Quantity,
                         UnitPrice = cartItem.UnitPrice,
                         TotalPrice = cartItem.Quantity * cartItem.UnitPrice,
+                        
+                        // Snapshot variant details
+                        VariantImageUrl = variant?.Image?.Url,
+                        SelectedOptions = System.Text.Json.JsonSerializer.Serialize(selectedOptions),
+                        
                         CreatedAt = DateTime.UtcNow
                     };
                     orderItems.Add(orderItem);
@@ -128,7 +159,16 @@ namespace ShopWave.Controllers
                 {
                     OrderId = order.Id,
                     OrderNumber = order.OrderNumber,
+                    
+                    // Price breakdown
+                    SubTotal = order.SubTotal,
+                    ShippingFee = order.ShippingFee,
+                    ProgressiveDiscountAmount = order.ProgressiveDiscountAmount,
+                    VoucherDiscountAmount = order.VoucherDiscountAmount,
+                    VoucherCode = order.VoucherCode,
+                    DiscountAmount = order.DiscountAmount,
                     TotalAmount = order.TotalAmount,
+                    
                     Status = order.Status,
                     OrderDate = order.OrderDate,
                     OrderItems = orderItems.Select(oi => new OrderItemDto
@@ -137,7 +177,11 @@ namespace ShopWave.Controllers
                         ProductName = oi.ProductName,
                         Quantity = oi.Quantity,
                         UnitPrice = oi.UnitPrice,
-                        TotalPrice = oi.TotalPrice
+                        TotalPrice = oi.TotalPrice,
+                        VariantImageUrl = oi.VariantImageUrl,
+                        SelectedOptions = string.IsNullOrEmpty(oi.SelectedOptions) 
+                            ? null 
+                            : System.Text.Json.JsonSerializer.Deserialize<List<SelectedOptionDto>>(oi.SelectedOptions)
                     }).ToList()
                 };
 
@@ -175,29 +219,68 @@ namespace ShopWave.Controllers
                     .OrderByDescending(o => o.CreatedAt)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(o => new OrderDto
+                    .Select(o => new
                     {
-                        Id = o.Id,
-                        OrderNumber = o.OrderNumber,
-                        TotalAmount = o.TotalAmount,
-                        Status = o.Status,
-                        PaymentStatus = o.PaymentStatus,
-                        OrderDate = o.OrderDate,
-                        ShippedDate = o.ShippedDate,
-                        DeliveredDate = o.DeliveredDate,
-                        OrderItems = o.OrderItems.Select(oi => new OrderItemDto
+                        o.Id,
+                        o.OrderNumber,
+                        o.SubTotal,
+                        o.ShippingFee,
+                        o.ProgressiveDiscountAmount,
+                        o.VoucherDiscountAmount,
+                        o.VoucherCode,
+                        o.DiscountAmount,
+                        o.TotalAmount,
+                        o.Status,
+                        o.PaymentStatus,
+                        o.OrderDate,
+                        o.ShippedDate,
+                        o.DeliveredDate,
+                        OrderItems = o.OrderItems.Select(oi => new
                         {
-                            Id = oi.Id,
-                            ProductName = oi.ProductName,
-                            Quantity = oi.Quantity,
-                            UnitPrice = oi.UnitPrice,
-                            TotalPrice = oi.TotalPrice
+                            oi.Id,
+                            oi.ProductName,
+                            oi.Quantity,
+                            oi.UnitPrice,
+                            oi.TotalPrice,
+                            oi.VariantImageUrl,
+                            oi.SelectedOptions
                         }).ToList()
                     })
                     .ToListAsync();
 
+                // Map to DTOs after query execution to avoid expression tree issues
+                var orderDtos = orders.Select(o => new OrderDto
+                {
+                    Id = o.Id,
+                    OrderNumber = o.OrderNumber,
+                    SubTotal = o.SubTotal,
+                    ShippingFee = o.ShippingFee,
+                    ProgressiveDiscountAmount = o.ProgressiveDiscountAmount,
+                    VoucherDiscountAmount = o.VoucherDiscountAmount,
+                    VoucherCode = o.VoucherCode,
+                    DiscountAmount = o.DiscountAmount,
+                    TotalAmount = o.TotalAmount,
+                    Status = o.Status,
+                    PaymentStatus = o.PaymentStatus,
+                    OrderDate = o.OrderDate,
+                    ShippedDate = o.ShippedDate,
+                    DeliveredDate = o.DeliveredDate,
+                    OrderItems = o.OrderItems.Select(oi => new OrderItemDto
+                    {
+                        Id = oi.Id,
+                        ProductName = oi.ProductName,
+                        Quantity = oi.Quantity,
+                        UnitPrice = oi.UnitPrice,
+                        TotalPrice = oi.TotalPrice,
+                        VariantImageUrl = oi.VariantImageUrl,
+                        SelectedOptions = string.IsNullOrEmpty(oi.SelectedOptions) 
+                            ? null 
+                            : System.Text.Json.JsonSerializer.Deserialize<List<SelectedOptionDto>>(oi.SelectedOptions)
+                    }).ToList()
+                }).ToList();
+
                 var paged = new PagedResult<OrderDto>(
-                    Data: orders,
+                    Data: orderDtos,
                     CurrentPage: page,
                     TotalPages: totalPages,
                     PageSize: pageSize,
@@ -217,38 +300,80 @@ namespace ShopWave.Controllers
         }
 
         [HttpGet("{id}")]
+        [AllowAnonymous] // Allow guests to view their own orders
         public async Task<IActionResult> GetOrderById(Guid id)
         {
             try
             {
+                // Try to get userId from token (for logged-in users)
+                Guid? userId = null;
                 var uid = User.FindFirstValue("uid") ?? User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-                if (!Guid.TryParse(uid, out var userId))
+                if (!string.IsNullOrEmpty(uid) && Guid.TryParse(uid, out var parsedUserId))
                 {
-                    return Unauthorized(EnvelopeBuilder.Fail<object>(HttpContext, "UNAUTHORIZED", new[] { new ErrorItem("auth", "Unauthorized", "UNAUTHORIZED") }, 401));
+                    userId = parsedUserId;
                 }
 
-                var user = await _context.Users.FindAsync(userId);
-                var order = await _context.Orders.Include(o => o.OrderItems).FirstOrDefaultAsync(o => o.Id == id);
+                // === LOAD ORDER WITH ALL RELATED DATA ===
+                var order = await _context.Orders
+                    .Include(o => o.OrderItems)
+                    .Include(o => o.Transactions) // Include transactions
+                    .AsNoTracking() // Performance optimization for read-only query
+                    .FirstOrDefaultAsync(o => o.Id == id);
+                
                 if (order == null)
                 {
                     return NotFound(EnvelopeBuilder.Fail<object>(HttpContext, "NOT_FOUND", new[] { new ErrorItem("id", "Order not found", "NOT_FOUND") }, 404));
                 }
-                if (order.UserId != userId && user?.Role != "Admin")
+
+                // Authorization check
+                if (userId.HasValue)
                 {
-                    return StatusCode(403, EnvelopeBuilder.Fail<object>(HttpContext, "FORBIDDEN", new[] { new ErrorItem("auth", "Forbidden", "FORBIDDEN") }, 403));
+                    // Logged-in user: check if order belongs to user
+                    var user = await _context.Users.FindAsync(userId.Value);
+                    if (order.UserId != userId && user?.Role != "Admin")
+                    {
+                        return StatusCode(403, EnvelopeBuilder.Fail<object>(HttpContext, "FORBIDDEN", new[] { new ErrorItem("auth", "Forbidden", "FORBIDDEN") }, 403));
+                    }
+                }
+                else
+                {
+                    // Guest user: verify order ownership through session
+                    var sessionId = Request.Headers["X-Session-Id"].FirstOrDefault();
+                    var lastOrderId = HttpContext.Session.GetString("LastOrderId");
+                    
+                    // Allow access if:
+                    // 1. Order was just created in this session (LastOrderId matches)
+                    // 2. Order has no userId (guest order) - temporary for migration
+                    if (order.Id.ToString() != lastOrderId && order.UserId.HasValue)
+                    {
+                        _logger.LogWarning("Guest attempted to access order {OrderId} without proper session. SessionId: {SessionId}, LastOrderId: {LastOrderId}", 
+                            id, sessionId, lastOrderId);
+                        return StatusCode(403, EnvelopeBuilder.Fail<object>(HttpContext, "FORBIDDEN", new[] { new ErrorItem("auth", "Forbidden", "FORBIDDEN") }, 403));
+                    }
                 }
 
+                // === MAP TO DETAILED DTO WITH ALL ENHANCEMENTS ===
                 var detail = new OrderDetailDto
                 {
                     Id = order.Id,
                     OrderNumber = order.OrderNumber,
+                    
+                    // Price breakdown with detailed discounts (from snapshot)
+                    SubTotal = order.SubTotal,
+                    ShippingFee = order.ShippingFee,
+                    ProgressiveDiscountAmount = order.ProgressiveDiscountAmount,
+                    VoucherDiscountAmount = order.VoucherDiscountAmount,
+                    VoucherCode = order.VoucherCode,
+                    DiscountAmount = order.DiscountAmount,
                     TotalAmount = order.TotalAmount,
+                    
                     Status = order.Status,
                     PaymentMethod = order.PaymentMethod,
                     PaymentStatus = order.PaymentStatus,
                     OrderDate = order.OrderDate,
                     ShippedDate = order.ShippedDate,
                     DeliveredDate = order.DeliveredDate,
+                    
                     ShippingAddress = new AddressDto
                     {
                         FullName = order.ShippingFullName,
@@ -259,6 +384,7 @@ namespace ShopWave.Controllers
                         City = order.ShippingProvince,
                         Notes = order.ShippingNotes
                     },
+                    
                     BillingAddress = !string.IsNullOrEmpty(order.BillingFullName) ? new AddressDto
                     {
                         FullName = order.BillingFullName,
@@ -269,13 +395,31 @@ namespace ShopWave.Controllers
                         City = order.BillingProvince ?? "",
                         Notes = order.BillingNotes
                     } : null,
+                    
+                    // OrderItems with variant snapshot
                     OrderItems = order.OrderItems.Select(oi => new OrderItemDto
                     {
                         Id = oi.Id,
                         ProductName = oi.ProductName,
                         Quantity = oi.Quantity,
                         UnitPrice = oi.UnitPrice,
-                        TotalPrice = oi.TotalPrice
+                        TotalPrice = oi.TotalPrice,
+                        VariantImageUrl = oi.VariantImageUrl,
+                        SelectedOptions = string.IsNullOrEmpty(oi.SelectedOptions) 
+                            ? null 
+                            : System.Text.Json.JsonSerializer.Deserialize<List<SelectedOptionDto>>(oi.SelectedOptions)
+                    }).ToList(),
+                    
+                    // Transaction history
+                    Transactions = order.Transactions.Select(tx => new TransactionDto
+                    {
+                        Id = tx.Id,
+                        Gateway = tx.Gateway,
+                        Amount = tx.Amount,
+                        Status = tx.Status,
+                        GatewayTransactionId = tx.GatewayTransactionId,
+                        CreatedAt = tx.CreatedAt,
+                        CompletedAt = tx.CompletedAt
                     }).ToList()
                 };
 

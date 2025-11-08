@@ -709,6 +709,13 @@
               "type": "integer",
               "format": "int32"
             }
+          },
+          {
+            "name": "province",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -731,6 +738,13 @@
               "type": "integer",
               "format": "int32"
             }
+          },
+          {
+            "name": "district",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -751,6 +765,14 @@
             "in": "query",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "provinceId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
             }
           }
         ],
@@ -1215,6 +1237,13 @@
             "schema": {
               "type": "integer",
               "format": "int32"
+            }
+          },
+          {
+            "name": "vnp_TxnRef",
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -1768,6 +1797,52 @@
         }
       }
     },
+    "/api/admin/seed/locations": {
+      "post": {
+        "tags": [
+          "Seed"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Seed"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/seed/locations/stats": {
+      "get": {
+        "tags": [
+          "Seed"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/admin/seed/locations/reseed": {
+      "post": {
+        "tags": [
+          "Seed"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/v1/admin/shipping-rates": {
       "get": {
         "tags": [
@@ -1843,7 +1918,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StringStringStringDateTimeString<>f__AnonymousType62"
+                  "$ref": "#/components/schemas/StringStringStringDateTimeString<>f__AnonymousType75"
                 }
               }
             }
@@ -1862,7 +1937,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StringDateTime<>f__AnonymousType63"
+                  "$ref": "#/components/schemas/StringDateTime<>f__AnonymousType76"
                 }
               }
             }
@@ -2485,6 +2560,11 @@
           "phone": {
             "minLength": 1,
             "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "nullable": true
           },
           "address": {
             "minLength": 1,
@@ -3203,7 +3283,7 @@
         },
         "additionalProperties": false
       },
-      "StringDateTime<>f__AnonymousType63": {
+      "StringDateTime<>f__AnonymousType76": {
         "type": "object",
         "properties": {
           "status": {
@@ -3217,7 +3297,7 @@
         },
         "additionalProperties": false
       },
-      "StringStringStringDateTimeString<>f__AnonymousType62": {
+      "StringStringStringDateTimeString<>f__AnonymousType75": {
         "type": "object",
         "properties": {
           "status": {

@@ -28,10 +28,22 @@ builder.Services.AddScoped<DatabaseTestService>();
 builder.Services.AddSingleton<JwtTokenService>();
 builder.Services.AddSingleton<GoogleTokenValidator>();
 builder.Services.AddScoped<IPaymentGatewayService, PaymentGatewayService>();
+builder.Services.AddScoped<IVnPayService, VnPayService>();
 
 // Media services
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IMediaService, FileService>();
+
+// Configure session support for guest checkout
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.SameSite = SameSiteMode.None; // Allow cross-site for localhost:3000 -> localhost:5001
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+});
 
 // Configure API behavior
 builder.Services.Configure<ApiBehaviorOptions>(options =>
@@ -143,6 +155,19 @@ catch (Exception ex)
 try
 {
     app.SeedDatabase();
+    
+    // Seed location data (Provinces, Districts, Wards)
+    using var scope = app.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<ShopWaveDbContext>();
+    var environment = scope.ServiceProvider.GetRequiredService<IWebHostEnvironment>();
+    var loggerFactory = scope.ServiceProvider.GetRequiredService<ILoggerFactory>();
+    var dbSeederLogger = loggerFactory.CreateLogger<ShopWave_api.Data.DbSeeder>();
+    
+    var dbSeeder = new ShopWave_api.Data.DbSeeder(context, environment, dbSeederLogger);
+    await dbSeeder.SeedAsync();
+    
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    logger.LogInformation("✅ Location data seeding process completed");
 }
 catch (Exception ex)
 {
@@ -168,6 +193,9 @@ app.UseStaticFiles();
 
 // Enable CORS
 app.UseCors("AllowNextJS");
+// Enable session before authentication (required for guest checkout)
+app.UseSession();
+
 app.UseApiMeta();
 
 app.UseAuthentication();
