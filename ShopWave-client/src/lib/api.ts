@@ -425,7 +425,32 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     }
   }
 
-  const res = await fetch(url, { ...options, headers, credentials: options.credentials });
+  // Always include credentials by default so cookies (SessionId) are sent.
+  // Caller can override by explicitly passing credentials in options.
+  const finalCredentials = options.credentials ?? 'include';
+  
+  // Remove credentials from options to avoid being overwritten when spreading
+  const { credentials: _, ...restOptions } = options;
+  
+  // Temporary debug log to verify credentials are set correctly
+  if (typeof window !== 'undefined' && path.includes('checkout')) {
+    console.log('[api.request] Checkout request credentials:', finalCredentials, 'url:', url);
+    console.log('[api.request] options.credentials was:', options.credentials);
+    console.log('[api.request] restOptions has credentials?', 'credentials' in restOptions);
+  }
+  
+  const fetchOptions = { 
+    ...restOptions, 
+    headers, 
+    credentials: finalCredentials
+  };
+  
+  // Log final fetch options for checkout to debug
+  if (typeof window !== 'undefined' && path.includes('checkout')) {
+    console.log('[api.request] Final fetch options.credentials:', fetchOptions.credentials);
+  }
+  
+  const res = await fetch(url, fetchOptions);
   let json: any = null;
   // Always attempt to parse JSON body when present. Some servers include a JSON
   // payload even on 304 responses; earlier we skipped parsing for 304 which
@@ -491,7 +516,12 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       }
       // retry original request once with new token
       const retryHeaders = { ...headers, Authorization: `Bearer ${newToken}` };
-      const retryRes = await fetch(url, { ...options, headers: retryHeaders, credentials: options.credentials });
+      const { credentials: _retryCredentials, ...retryOptions } = options;
+      const retryRes = await fetch(url, { 
+        ...retryOptions, 
+        headers: retryHeaders, 
+        credentials: options.credentials ?? 'include' 
+      });
       let retryJson: any = null;
       if (retryRes.status !== 304) { try { retryJson = await retryRes.json(); } catch { /* ignore */ } }
       if (!retryRes.ok || !retryJson) throw new ApiError(retryJson?.message || `Request failed (${retryRes.status})`, { status: retryRes.status });
@@ -513,7 +543,12 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
         try {
           const retryHeaders = { ...headers };
           delete retryHeaders['If-None-Match'];
-          const retryRes = await fetch(url, { ...options, headers: retryHeaders, credentials: options.credentials });
+          const { credentials: _retryCredentials2, ...retryOptions2 } = options;
+          const retryRes = await fetch(url, { 
+            ...retryOptions2, 
+            headers: retryHeaders, 
+            credentials: options.credentials ?? 'include' 
+          });
           let retryJson: any = null;
           if (retryRes.status !== 304) {
             try { retryJson = await retryRes.json(); } catch { /* ignore */ }
@@ -1265,6 +1300,105 @@ export const api = {
         credentials: 'include'
       });
       return data;
+    }
+  }
+  ,
+  checkout: {
+    /**
+     * Create a checkout / place an order. Uses request() so it benefits from
+     * centralized error handling, ETag cache logic and auth token refresh.
+     * We include credentials so cookies (session id) are sent, and also send
+     * X-Session-Id header like cart API does.
+     */
+    create: async (payload: any) => {
+      const sid = session.ensureSessionId();
+      const data = await request<{ paymentUrl?: string; orderId?: string; [k: string]: any }>(
+        '/api/v1/checkout',
+        { 
+          method: 'POST', 
+          body: JSON.stringify(payload), 
+          headers: { 'X-Session-Id': sid },
+          credentials: 'include' 
+        }
+      );
+      return data;
+    }
+  }
+  ,
+  orders: {
+    /**
+     * Fetch detailed order by id. Normalizes several possible backend envelope shapes
+     * into a flat object with extracted shipping fields when shippingAddress is a JSON string.
+     */
+    getById: async (id: string, init?: RequestInit) => {
+      const raw = await request<any>(`/api/v1/orders/${id}`, { ...(init || {}), credentials: 'include' });
+      let data: any = raw;
+      if (raw && typeof raw === 'object') {
+        if ((raw as any).success && (raw as any).data) data = (raw as any).data;
+        else if ((raw as any).status === 'OK' && (raw as any).data) data = (raw as any).data;
+      }
+      // Some APIs return { order: {...} }
+      if (data && typeof data === 'object' && data.order && typeof data.order === 'object') data = data.order;
+
+      if (!data || !data.id) throw new ApiError('Order not found', { status: 404 });
+
+      // ---- Normalize shipping fields ----
+      const extractShipping = (src: any) => {
+        if (!src) return {} as Record<string, any>;
+        try {
+          // src can be an object or a JSON string
+          const obj = typeof src === 'string' ? JSON.parse(src) : src;
+          return {
+            shippingFullName: data.shippingFullName || obj.fullName || obj.name || obj.receiverName,
+            shippingPhone: data.shippingPhone || obj.phone || obj.tel || obj.receiverPhone,
+            shippingStreet: data.shippingStreet || obj.street || obj.addressLine1 || obj.address || obj.line1,
+            shippingWard: data.shippingWard || obj.ward || obj.subDistrict || obj.wardName,
+            shippingDistrict: data.shippingDistrict || obj.district || obj.cityDistrict || obj.districtName,
+            // Many APIs use `city` to represent the top-level city/province (e.g., Ho Chi Minh City)
+            shippingProvince: data.shippingProvince || obj.province || obj.state || obj.region || obj.provinceName || obj.city || obj.cityName,
+          };
+        } catch { return {}; }
+      };
+      const shippingCandidate = data.shippingAddress || data.shipping || data.shippingInfo || data.address || null;
+      const shippingPatch = extractShipping(shippingCandidate);
+      data = { ...data, ...shippingPatch };
+
+      // ---- Normalize order items (imageUrl, selectedOptions) ----
+      const items: any[] = Array.isArray(data.orderItems) ? data.orderItems : (Array.isArray(data.items) ? data.items : []);
+      const mapOptions = (opt: any): Array<{ name: string; value: string }> | undefined => {
+        if (!opt) return undefined;
+        try {
+          if (Array.isArray(opt)) return opt.map((o: any) => ({ name: o.name ?? o.optionName ?? '', value: o.value ?? o.optionValue ?? '' })).filter(o => o.name || o.value);
+          if (typeof opt === 'string') {
+            const parsed = JSON.parse(opt);
+            if (Array.isArray(parsed)) return parsed.map((o: any) => ({ name: o.name ?? o.optionName ?? '', value: o.value ?? o.optionValue ?? '' })).filter(o => o.name || o.value);
+          }
+          if (opt && typeof opt === 'object' && Array.isArray(opt.items)) return opt.items.map((o: any) => ({ name: o.name ?? o.optionName ?? '', value: o.value ?? o.optionValue ?? '' }));
+        } catch { /* ignore parse errors */ }
+        return undefined;
+      };
+      const mapImage = (it: any): string | null | undefined => {
+        return it.imageUrl || it.variantImageUrl || it.productImageUrl || it.image?.url || it.variant?.image?.url || it.product?.imageUrl || null;
+      };
+      const normalizedItems = items.map((it: any) => ({
+        ...it,
+        imageUrl: mapImage(it),
+        selectedOptions: it.selectedOptions || mapOptions(it.options) || mapOptions(it.optionsSnapshot) || mapOptions(it.selectedOptionsSnapshot) || mapOptions(it.variantOptions) || undefined,
+      }));
+      if (Array.isArray(data.orderItems)) data.orderItems = normalizedItems;
+      else data.orderItems = normalizedItems; // ensure thank-you page can rely on orderItems
+
+      // Derive subTotal if missing
+      if (typeof data.subTotal !== 'number') {
+        try { data.subTotal = normalizedItems.reduce((s: number, x: any) => s + (Number(x.totalPrice) || 0), 0); } catch { /* ignore */ }
+      }
+      if (typeof data.shippingFee !== 'number') data.shippingFee = Number(data.shippingFee ?? 0) || 0;
+      if (typeof data.totalAmount !== 'number') data.totalAmount = Number(data.totalAmount ?? (Number(data.subTotal || 0) + Number(data.shippingFee || 0)));
+
+      return data as OrderDto & {
+        shippingFullName?: string; shippingPhone?: string; shippingStreet?: string; shippingWard?: string; shippingDistrict?: string; shippingProvince?: string;
+        orderItems: Array<OrderItemDto & { imageUrl?: string | null; selectedOptions?: Array<{ name: string; value: string }> }>;
+      };
     }
   }
 };

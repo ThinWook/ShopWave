@@ -59,6 +59,21 @@ const CartContext = createContext<{
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
     case 'SET_CART':
+      {
+        // We need to distinguish between "not provided" (undefined) and an explicit null.
+        // Using the nullish coalescing operator (??) would incorrectly keep the previous value
+        // when the backend deliberately clears a discount (returns appliedVoucher: null).
+      }
+      const extras = action.extras || {};
+      const nextProgressive = Object.prototype.hasOwnProperty.call(extras, 'progressiveDiscount')
+        ? extras.progressiveDiscount || null
+        : state.progressiveDiscount;
+      const nextAppliedVoucher = Object.prototype.hasOwnProperty.call(extras, 'appliedVoucher')
+        ? extras.appliedVoucher || null
+        : state.appliedVoucher;
+      const nextAvailableVouchers = Object.prototype.hasOwnProperty.call(extras, 'availableVouchers')
+        ? extras.availableVouchers || null
+        : state.availableVouchers;
       return {
         ...state,
         items: action.items,
@@ -66,9 +81,9 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         subTotal: action.totals?.subTotal ?? action.items.reduce((s, it) => s + it.price * it.quantity, 0),
         shippingFee: action.totals?.shippingFee ?? state.shippingFee,
         total: action.totals?.total ?? ((action.totals?.subTotal ?? action.items.reduce((s, it) => s + it.price * it.quantity, 0)) + (action.totals?.shippingFee ?? state.shippingFee)),
-        progressiveDiscount: action.extras?.progressiveDiscount ?? state.progressiveDiscount ?? null,
-        appliedVoucher: action.extras?.appliedVoucher ?? state.appliedVoucher ?? null,
-        availableVouchers: action.extras?.availableVouchers ?? state.availableVouchers ?? null,
+        progressiveDiscount: nextProgressive,
+        appliedVoucher: nextAppliedVoucher,
+        availableVouchers: nextAvailableVouchers,
       };
     case 'SET_SYNCING':
       return { ...state, isSyncing: action.value };
@@ -222,7 +237,22 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   const removeVoucher = async () => {
-    await syncWrapper(() => api.cart.removeVoucher());
+    const removedCode = state.appliedVoucher?.code;
+    const res: any = await syncWrapper(() => api.cart.removeVoucher());
+    try { if (removedCode) toast({ title: 'Đã gỡ voucher', description: removedCode }); else toast({ title: 'Đã gỡ voucher' }); } catch {}
+    // In some responses, backend may omit applied_voucher field entirely; proactively clear local state.
+    try {
+      const root = res?.data && typeof res.data === 'object' ? res.data : res;
+      const hasAppliedVoucherKey = root && (Object.prototype.hasOwnProperty.call(root, 'applied_voucher') || Object.prototype.hasOwnProperty.call(root, 'appliedVoucher'));
+      if (!hasAppliedVoucherKey) {
+        dispatch({ type: 'SET_CART', items: (root?.items ?? state.items) as any, totals: {
+          totalItems: root?.totalItems ?? root?.total_items,
+          subTotal: root?.subTotal ?? root?.sub_total,
+          shippingFee: root?.shippingFee ?? root?.shipping_fee ?? state.shippingFee,
+          total: root?.total,
+        }, extras: { appliedVoucher: null } });
+      }
+    } catch {}
   };
 
   const getCartTotal = () => state.subTotal;

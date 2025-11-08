@@ -121,11 +121,6 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
     const PRODUCT_WHITELIST = ['/', '/products'];
     if (!pathname) return;
     const shouldPreload = PRODUCT_WHITELIST.some(p => (p === '/' ? pathname === '/' : pathname.startsWith(p)));
-    // Debug: log pathname and decision to help trace unexpected preloads on detail pages
-    try {
-      // Use console.log to ensure visibility in DevTools (console.debug can be filtered out)
-      console.log('[ProductProvider] pathname=', pathname, 'shouldPreload=', shouldPreload, 'whitelist=', PRODUCT_WHITELIST);
-    } catch {}
     if (shouldPreload) {
       loadProducts();
     }

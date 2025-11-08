@@ -6,11 +6,13 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { useCart } from '@/contexts/CartContext';
 import { ShoppingCart } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import session from '@/lib/session';
 import { Input } from '@/components/ui/input';
 import { formatPrice } from '@/lib/format';
 
 export function CartSummary() {
+  const router = useRouter();
   const { getCartTotal, getItemCount, state, applyVoucher, removeVoucher } = useCart();
   const [voucherCode, setVoucherCode] = useState('');
   // showVoucherList removed — always display available vouchers
@@ -22,12 +24,16 @@ export function CartSummary() {
   const appliedVoucher = state.appliedVoucher;
   const available = state.availableVouchers || [];
   
-  // Backend already calculated discount - compute voucher discount but prefer appliedVoucher value when present
-  const voucherDiscount = subTotal + shipping - grandTotal;
-  // The actual voucher-applied amount should be taken from state.appliedVoucher.discountAmount when available
-  const voucherAppliedAmount = appliedVoucher && typeof appliedVoucher.discountAmount === 'number'
-    ? Number(appliedVoucher.discountAmount)
-    : (voucherDiscount > 0 ? voucherDiscount : 0);
+  // Compute discounts: totalDiscount = (subTotal + shipping) - grandTotal
+  // Split totalDiscount into progressive + voucher portions so that when voucher is removed,
+  // the voucher line does NOT display the progressive amount.
+  const totalDiscount = Math.max(0, (subTotal + shipping) - grandTotal);
+  const progressiveAmount = Math.max(0, progressive?.currentDiscountValue || 0);
+  const impliedVoucherDiscount = Math.max(0, totalDiscount - progressiveAmount);
+  // Prefer backend's appliedVoucher amount if present; otherwise use the implied voucher discount
+  const voucherAppliedAmount = (appliedVoucher && typeof appliedVoucher.discountAmount === 'number')
+    ? Math.max(0, Number(appliedVoucher.discountAmount))
+    : impliedVoucherDiscount;
   const [remoteVouchers, setRemoteVouchers] = useState<any[] | null>(null);
   const [vouchersLoading, setVouchersLoading] = useState(false);
   const [vouchersError, setVouchersError] = useState<string | null>(null);
@@ -176,7 +182,15 @@ export function CartSummary() {
         </div>
       </CardContent>
       <CardFooter>
-        <Button size="lg" className="w-full transition-transform transform hover:scale-105" disabled={grandTotal === 0}>
+        <Button
+          size="lg"
+          className="w-full transition-transform transform hover:scale-105"
+          disabled={grandTotal === 0}
+          onClick={() => {
+            if (grandTotal === 0) return;
+            router.push('/checkout');
+          }}
+        >
           Tiến hành thanh toán
         </Button>
       </CardFooter>
