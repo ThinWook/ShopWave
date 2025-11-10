@@ -71,7 +71,7 @@ export default function SingleTransaction() {
         
         <div className="space-y-6">
           {/* Transaction Header */}
-          <div className="flex flex-col justify-between gap-6 rounded-2xl border border-gray-200 bg-white px-6 py-5 sm:flex-row sm:items-center dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="flex flex-col justify-between gap-6 rounded-2xl border border-gray-200 bg-white px-6 py-5 sm:flex-row sm:items-center dark:border-white/[0.03] dark:bg-gray-900">
             <div className="flex flex-col gap-2.5 divide-gray-300 sm:flex-row sm:divide-x dark:divide-gray-700">
               <div className="flex items-center gap-2 sm:pr-3">
                 <span className="text-base font-medium text-gray-700 dark:text-gray-400">
@@ -98,7 +98,7 @@ export default function SingleTransaction() {
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
             {/* Order Details */}
             <div className="lg:col-span-8 2xl:col-span-9">
-              <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+              <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-white/[0.03] dark:bg-gray-900">
                 <h2 className="mb-5 text-lg font-semibold text-gray-800 dark:text-white/90">
                   Order Details
                 </h2>
@@ -128,7 +128,7 @@ export default function SingleTransaction() {
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-white/[0.03]">
+                      <tbody className="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-900">
                         {mockOrderItems.length === 0 ? (
                           <tr>
                             <td className="px-5 py-6 text-sm text-gray-500 dark:text-gray-400" colSpan={6}>No items</td>

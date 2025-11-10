@@ -10,7 +10,7 @@ export default function Chats() {
       <div className="h-[calc(100vh-150px)] overflow-hidden sm:h-[calc(100vh-174px)]">
         <div className="flex flex-col h-full gap-6 xl:flex-row xl:gap-5">
           {/* Left sidebar */}
-          <div className="flex-col rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] xl:flex xl:w-1/4">
+          <div className="flex-col rounded-2xl border border-gray-200 bg-white dark:border-white/[0.03] dark:bg-gray-900 xl:flex xl:w-1/4">
             <div className="sticky px-4 pt-4 pb-4 sm:px-5 sm:pt-5 xl:pb-0">
               <div className="flex items-start justify-between">
                 <div>
@@ -59,7 +59,7 @@ export default function Chats() {
           </div>
 
           {/* Right chat panel */}
-          <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] xl:w-3/4">
+          <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-white/[0.03] dark:bg-gray-900 xl:w-3/4">
             <div className="sticky flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-800 xl:px-6">
               <div className="flex items-center gap-3">
                 <div className="relative h-12 w-full max-w-[48px] rounded-full bg-gray-200 dark:bg-gray-700" />

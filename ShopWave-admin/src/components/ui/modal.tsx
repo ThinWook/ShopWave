@@ -20,12 +20,17 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, className = "", c
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="fixed inset-0 z-40 flex items-center justify-center"
       aria-modal="true"
       role="dialog"
     >
-  <div className="fixed inset-0 bg-black/40" onClick={onClose} />
-  <div className={"relative z-10 m-4 w-full max-w-[90vw] md:max-w-7xl rounded-3xl bg-white p-6 shadow-xl dark:bg-gray-900 " + className}>
+      <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
+      <div
+        className={
+          "relative z-50 m-4 w-full max-w-[90vw] md:max-w-7xl rounded-3xl bg-white p-6 shadow-xl dark:bg-gray-900 " +
+          className
+        }
+      >
         <button
           aria-label="Đóng"
           onClick={onClose}

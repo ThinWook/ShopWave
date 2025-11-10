@@ -13,7 +13,7 @@ export default function AddProduct() {
       <PageMeta title={`Thêm sản phẩm | Admin`} description="Tạo sản phẩm mới" />
       <div className="p-4 mx-auto max-w-[--breakpoint-2xl] md:p-6">
         <PageBreadcrumb pageTitle="Thêm sản phẩm" />
-        <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+  <div className="rounded-2xl border border-gray-200 bg-white dark:border-white/[0.03] dark:bg-gray-900">
           <div className="border-b border-gray-200 px-6 py-4 dark:border-gray-800">
             <h2 className="text-lg font-medium text-gray-800 dark:text-white">Thông tin chính</h2>
           </div>

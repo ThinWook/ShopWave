@@ -25,14 +25,14 @@ function CategoryNode({ node, level = 0, childrenMap, onEdit, onDelete }: NodePr
 
   return (
     <>
-      <tr className="border-t">
+            <tr className="border-t border-gray-200 dark:border-white/[0.03]">
         <td className="px-4 py-3">
           <div className="flex items-center gap-3">
             {children.length > 0 ? (
               <button
                 onClick={() => setOpen(!open)}
                 aria-expanded={open}
-                className="text-sm text-gray-500 px-2 py-1 border rounded"
+                className="text-sm text-gray-500 px-2 py-1 border border-gray-300 rounded dark:border-gray-700 dark:text-gray-300"
               >
                 {open ? '−' : '+'}
               </button>
@@ -40,30 +40,30 @@ function CategoryNode({ node, level = 0, childrenMap, onEdit, onDelete }: NodePr
               <span className="inline-block w-8" />
             )}
 
-            <div className="text-sm font-medium text-gray-800" style={{ marginLeft: level * 12 }}>
+              <div className="text-sm font-medium text-gray-800 dark:text-white" style={{ marginLeft: level * 12 }}>
               {node.name}
             </div>
           </div>
         </td>
 
         <td className="px-4 py-3 text-center">
-          {(node.isActive ?? true) ? <span className="text-green-600">Hoạt động</span> : <span className="text-gray-500">Ẩn</span>}
+          {(node.isActive ?? true) ? <span className="text-green-600 dark:text-green-300">Hoạt động</span> : <span className="text-gray-500 dark:text-gray-400">Ẩn</span>}
         </td>
 
-        <td className="px-4 py-3 text-sm text-gray-600 text-center">{(node as any).createdAt ? new Date((node as any).createdAt).toLocaleString() : '-'}</td>
-        <td className="px-4 py-3 text-sm text-gray-600 text-center">{(node as any).updatedAt ? new Date((node as any).updatedAt).toLocaleString() : '-'}</td>
+  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 text-center">{(node as any).createdAt ? new Date((node as any).createdAt).toLocaleString() : '-'}</td>
+  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 text-center">{(node as any).updatedAt ? new Date((node as any).updatedAt).toLocaleString() : '-'}</td>
 
         <td className="px-4 py-3 text-center">
           <div className="flex items-center justify-center gap-2">
-            <button onClick={() => onEdit(node)} title="Sửa" className="p-2 rounded border hover:bg-gray-50">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <button onClick={() => onEdit(node)} title="Sửa" className="p-2 rounded border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-white/[0.02]">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-700 dark:text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 20h9" />
                 <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
               </svg>
             </button>
 
-            <button onClick={() => onDelete(node.id)} title="Xóa" className="p-2 rounded border hover:bg-gray-50">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <button onClick={() => onDelete(node.id)} title="Xóa" className="p-2 rounded border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-white/[0.02]">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-red-600 dark:text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="3 6 5 6 21 6" />
                 <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
                 <path d="M10 11v6" />
@@ -158,18 +158,18 @@ export default function Categories() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-4">
+  <div className="overflow-hidden rounded-xl border border-gray-200 bg-white p-4 dark:border-white/[0.03] dark:bg-gray-900">
         {loading && <div>Đang tải...</div>}
         {error && <div className="text-red-600">{error}</div>}
 
         <table className="w-full">
           <thead>
             <tr>
-              <th className="px-4 py-2 text-left">Tên</th>
-              <th className="px-4 py-2">Trạng thái</th>
-              <th className="px-4 py-2 text-center">Tạo lúc</th>
-              <th className="px-4 py-2 text-center">Cập nhật lúc</th>
-              <th className="px-4 py-2 text-center">Hành động</th>
+              <th className="px-4 py-2 text-left text-gray-800 dark:text-white">Tên</th>
+              <th className="px-4 py-2 text-gray-800 dark:text-white">Trạng thái</th>
+              <th className="px-4 py-2 text-center text-gray-800 dark:text-white">Tạo lúc</th>
+              <th className="px-4 py-2 text-center text-gray-800 dark:text-white">Cập nhật lúc</th>
+              <th className="px-4 py-2 text-center text-gray-800 dark:text-white">Hành động</th>
             </tr>
           </thead>
           <tbody>

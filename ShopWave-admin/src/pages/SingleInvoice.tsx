@@ -77,7 +77,7 @@ const SingleInvoice: React.FC = () => {
         </div>
 
         {/* Invoice Container */}
-        <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] w-full">
+  <div className="rounded-2xl border border-gray-200 bg-white dark:border-white/[0.03] dark:bg-gray-900 w-full">
           {/* Invoice Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
             <h3 className="font-medium text-gray-800 text-xl dark:text-white/90">Hóa đơn</h3>

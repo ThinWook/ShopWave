@@ -22,6 +22,11 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   {
+    icon: <DollarLineIcon />,
+    name: "Bảng điều khiển",
+    path: "/dashboard",
+  },
+  {
     icon: <DocsIcon />,
   name: "Sản phẩm",
     path: "/products",
@@ -33,13 +38,18 @@ const navItems: NavItem[] = [
   },
   {
     icon: <DollarLineIcon />,
+    name: "Khuyến mãi",
+    path: "/vouchers",
+  },
+  {
+    icon: <DollarLineIcon />,
   name: "Giao dịch",
     path: "/transactions",
   },
   {
     icon: <DocsIcon />,
-  name: "Hóa đơn",
-    path: "/invoices",
+    name: "Đơn hàng",
+    path: "/orders",
   },
   {
     icon: <ChatIcon />,
@@ -227,7 +237,7 @@ const AppSidebar: React.FC = () => {
 
   return (
     <aside
-      className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-50 border-r border-gray-200 
+      className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-30 border-r border-gray-200 
         ${
           isExpanded || isMobileOpen
             ? "w-[290px]"

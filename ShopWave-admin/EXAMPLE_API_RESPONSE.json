@@ -1,0 +1,37 @@
+{
+  "success": true,
+  "data": {
+    "stats": {
+      "newOrdersCount": 18,
+      "readyToShipCount": 12,
+      "todaysRevenue": 0.0,
+      "pendingPaymentCount": 6
+    },
+    "orders": [
+      {
+        "id": "1",
+        "orderNumber": "ORD-2025-001",
+        "shippingFullName": "Nguyễn Văn A",
+        "orderDate": "2025-11-08T10:30:00Z",
+        "totalAmount": 1500000,
+        "paymentStatus": "PAID",
+        "status": "PROCESSING"
+      },
+      {
+        "id": "2",
+        "orderNumber": "ORD-2025-002",
+        "shippingFullName": "Trần Thị B",
+        "orderDate": "2025-11-08T11:15:00Z",
+        "totalAmount": 2300000,
+        "paymentStatus": "UNPAID",
+        "status": "PENDING_PAYMENT"
+      }
+    ],
+    "pagination": {
+      "currentPage": 1,
+      "pageSize": 10,
+      "totalRecords": 18,
+      "totalPages": 2
+    }
+  }
+}

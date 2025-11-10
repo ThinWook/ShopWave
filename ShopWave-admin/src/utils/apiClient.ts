@@ -119,14 +119,18 @@ export const api = {
 
 async function buildError(res: Response) {
   let message = res.statusText;
+  let data: any = null;
   try {
-    const data = await res.json();
+    data = await res.json();
     message = (data?.message as string) || message;
   } catch {
-    // ignore parsing error; default to status text
+    // ignore parsing error; keep statusText
   }
   const err = new Error(message);
+  // attach status and full parsed body so callers can inspect validation errors
   // @ts-expect-error add extra fields
   err.status = res.status;
+  // @ts-expect-error add extra fields
+  err.body = data;
   return err;
 }

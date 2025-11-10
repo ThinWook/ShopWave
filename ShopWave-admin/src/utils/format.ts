@@ -2,16 +2,20 @@
 
 export const formatCurrencyVi = (
   value: number,
-  currency: string = "USD",
+  currency: string = "VND",
   options: Intl.NumberFormatOptions = {}
 ) => {
   if (isNaN(value)) return "";
-  return new Intl.NumberFormat("vi-VN", {
+  const formatted = new Intl.NumberFormat("vi-VN", {
     style: "currency",
     currency,
     minimumFractionDigits: 0,
     ...options,
   }).format(value);
+  // Remove any non-breaking spaces between number and currency symbol and
+  // collapse regular spaces so the currency symbol appears immediately after
+  // the number: e.g. "40.000₫" instead of "40.000 ₫".
+  return formatted.replace(/\u00A0/g, '').replace(/\s+/g, '');
 };
 
 export const parseAmountString = (raw: string): number => {
@@ -52,4 +56,19 @@ export const formatDateVi = (dateStr: string) => {
   }
   if (isNaN(date.getTime())) return dateStr;
   return date.toLocaleDateString("vi-VN");
+};
+
+export const formatDateRange = (start?: string | Date | null, end?: string | Date | null): string => {
+  if (!start) return 'Không xác định';
+
+  const startDate = new Date(start);
+  const endDate = end ? new Date(end) : null;
+
+  const formatDate = (date: Date) => date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+  if (endDate) {
+    return `${formatDate(startDate)} - ${formatDate(endDate)}`;
+  }
+  
+  return `Từ ${formatDate(startDate)}`;
 };

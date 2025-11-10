@@ -1,124 +1,134 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
-import { formatCurrencyVi, parseAmountString, formatDateVi } from "../utils/format";
+import { formatCurrencyVi, formatDateVi } from "../utils/format";
+import { getTransactions } from "../services/transactionService";
+import type { Transaction, TransactionGateway, TransactionStatus, TransactionStats } from "../types/transaction";
+import { useModal } from "../hooks/useModal";
+import TransactionDetailModal from "../components/ecommerce/TransactionDetailModal";
 
-interface Transaction {
-  id: string;
-  customer: string;
-  email: string;
-  amount: string;
-  dueDate: string;
-  status: "Completed" | "Pending" | "Failed";
-}
-
-const mockTransactions: Transaction[] = [];
+// Map backend status to badge styling & label
+const statusConfig: Record<TransactionStatus, { label: string; className: string }> = {
+  SUCCESS: { label: "Thành công", className: "bg-success-50 text-success-700 dark:bg-success-500/15 dark:text-success-400" },
+  FAILED: { label: "Thất bại", className: "bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-400" },
+  PENDING: { label: "Đang chờ", className: "bg-warning-50 text-warning-700 dark:bg-warning-500/15 dark:text-warning-400" },
+};
 
 export default function Transactions() {
-  const [selectedTransactions, setSelectedTransactions] = useState<string[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [timeFilter, setTimeFilter] = useState("7 ngày gần đây");
-  const [sortField, setSortField] = useState<keyof Transaction | null>(null);
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-  const [currentPage, setCurrentPage] = useState(1);
+  // Selection
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
+  
+  // Modal for transaction detail
+  const { isOpen, openModal, closeModal } = useModal();
+  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
 
-  const itemsPerPage = 10;
+  // Filters
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<"ALL" | TransactionStatus>("ALL");
+  const [gateway, setGateway] = useState<"ALL" | TransactionGateway>("ALL");
+  const [timeFilter, setTimeFilter] = useState("Tất cả"); // Default to show all transactions
 
-  // Filter and sort transactions
-  const filteredTransactions = mockTransactions.filter((transaction) =>
-    transaction.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    transaction.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    transaction.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
 
-  const sortedTransactions = [...filteredTransactions].sort((a, b) => {
-    if (!sortField) return 0;
-    const aValue = a[sortField];
-    const bValue = b[sortField];
-    if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
-    if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
-    return 0;
-  });
+  // Sorting (optional; currently not exposed in UI)
 
-  const totalPages = Math.max(1, Math.ceil(sortedTransactions.length / itemsPerPage));
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedTransactions = sortedTransactions.slice(startIndex, startIndex + itemsPerPage);
+  // Data
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Stats
+  const [stats, setStats] = useState<TransactionStats | null>(null);
+
+  // ✅ CHỈ 1 useEffect DUY NHẤT - Gọi API 1 lần, nhận TẤT CẢ (stats + transactions + pagination)
+  useEffect(() => {
+    let ignore = false;
+    async function load() {
+      setLoading(true); setError(null);
+      try {
+        // Map simple time filter to date range (optional backend support)
+        let dateFrom: string | undefined;
+        let dateTo: string | undefined;
+        
+        // Only apply date filter if NOT "Tất cả"
+        if (timeFilter !== "Tất cả") {
+          const match = timeFilter.match(/(\d+)/);
+          if (match) {
+            const days = Math.max(1, parseInt(match[1], 10));
+            const to = new Date();
+            const from = new Date();
+            from.setDate(to.getDate() - (days - 1));
+            dateFrom = from.toISOString();
+            dateTo = to.toISOString();
+          }
+        }
+        
+        const response = await getTransactions({ page, pageSize, status, gateway, search: search.trim() || undefined, dateFrom, dateTo });
+        if (ignore) return;
+        
+        // 1️⃣ Set Stats cho các thẻ tổng quan
+        setStats(response.stats);
+        
+        // 2️⃣ Set Transactions cho bảng
+        setTransactions(response.transactions);
+        
+        // 3️⃣ Set Pagination (ƯU TIÊN dùng totalPages từ backend)
+        setTotal(response.pagination.totalRecords);
+        setTotalPages(response.pagination.totalPages);
+      } catch (e) {
+        if (!ignore) setError((e as Error).message || 'Lỗi tải dữ liệu');
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    }
+    load();
+    return () => { ignore = true; };
+  }, [page, pageSize, status, gateway, search, timeFilter]);
+
+  // totalPages đã được set từ backend response, không cần tính lại
+  const sortedTransactions = transactions;
+
+  const paginatedTransactions = sortedTransactions; // Already server paginated; keep variable for clarity
 
   const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedTransactions(paginatedTransactions.map(t => t.id));
-    } else {
-      setSelectedTransactions([]);
-    }
+    if (checked) setSelectedIds(paginatedTransactions.map(t => t.id)); else setSelectedIds([]);
   };
-
   const handleSelectTransaction = (id: string, checked: boolean) => {
-    if (checked) {
-      setSelectedTransactions([...selectedTransactions, id]);
-    } else {
-      setSelectedTransactions(selectedTransactions.filter(t => t !== id));
-    }
+    setSelectedIds(prev => checked ? [...prev, id] : prev.filter(x => x !== id));
   };
 
-  const handleSort = (field: keyof Transaction) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDirection("asc");
-    }
+  const getStatusBadge = (status: TransactionStatus) => {
+    const cfg = statusConfig[status];
+    return `text-theme-xs rounded-full px-2 py-0.5 font-medium ${cfg.className}`;
   };
-
-  const getStatusBadge = (status: Transaction["status"]) => {
-    const baseClasses = "text-theme-xs rounded-full px-2 py-0.5 font-medium";
-    switch (status) {
-      case "Completed":
-        return `${baseClasses} bg-success-50 text-success-700 dark:bg-success-500/15 dark:text-success-500`;
-      case "Pending":
-        return `${baseClasses} bg-warning-50 text-warning-700 dark:bg-warning-500/15 dark:text-warning-500`;
-      case "Failed":
-        return `${baseClasses} bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-500`;
-      default:
-        return baseClasses;
-    }
-  };
-
-  const getSortIcon = (field: keyof Transaction) => {
-    if (sortField !== field) {
-      return (
-        <span className="flex flex-col gap-0.5">
-          <svg className="text-gray-300" width="8" height="5" viewBox="0 0 8 5" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M4.40962 0.585167C4.21057 0.300808 3.78943 0.300807 3.59038 0.585166L1.05071 4.21327C0.81874 4.54466 1.05582 5 1.46033 5H6.53967C6.94418 5 7.18126 4.54466 6.94929 4.21327L4.40962 0.585167Z" fill="currentColor"/>
-          </svg>
-          <svg className="text-gray-300" width="8" height="5" viewBox="0 0 8 5" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M4.40962 4.41483C4.21057 4.69919 3.78943 4.69919 3.59038 4.41483L1.05071 0.786732C0.81874 0.455343 1.05582 0 1.46033 0H6.53967C6.94418 0 7.18126 0.455342 6.94929 0.786731L4.40962 4.41483Z" fill="currentColor"/>
-          </svg>
-        </span>
-      );
-    }
-
-    return (
-      <span className="flex flex-col gap-0.5">
-        <svg className={sortDirection === "asc" ? "text-gray-800 dark:text-gray-400" : "text-gray-300"} width="8" height="5" viewBox="0 0 8 5" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M4.40962 0.585167C4.21057 0.300808 3.78943 0.300807 3.59038 0.585166L1.05071 4.21327C0.81874 4.54466 1.05582 5 1.46033 5H6.53967C6.94418 5 7.18126 4.54466 6.94929 4.21327L4.40962 0.585167Z" fill="currentColor"/>
-        </svg>
-        <svg className={sortDirection === "desc" ? "text-gray-800 dark:text-gray-400" : "text-gray-300"} width="8" height="5" viewBox="0 0 8 5" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M4.40962 4.41483C4.21057 4.69919 3.78943 4.69919 3.59038 4.41483L1.05071 0.786732C0.81874 0.455343 1.05582 0 1.46033 0H6.53967C6.94418 0 7.18126 0.455342 6.94929 0.786731L4.40962 4.41483Z" fill="currentColor"/>
-        </svg>
-      </span>
-    );
+  
+  const handleViewDetail = (transactionId: string) => {
+    setSelectedTransactionId(transactionId);
+    openModal();
+    setDropdownOpen(null); // Close dropdown
   };
 
   return (
     <div>
       <PageMeta title={`Giao dịch | Admin`} description={"Danh sách giao dịch gần đây"} />
       
-      <div className="p-4 mx-auto max-w-[--breakpoint-2xl] md:p-6">
-  <PageBreadcrumb pageTitle={"Giao dịch"} hideTitle />
-        
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+      <div className="p-4 mx-auto max-w-[--breakpoint-2xl] md:p-6 space-y-6">
+        <PageBreadcrumb pageTitle={"Giao dịch"} hideTitle />
+
+        {/* Overview Stats */}
+        <div className="grid gap-4 sm:grid-cols-3">
+          <StatCard title="Doanh thu (Hôm nay)" value={formatCurrencyVi(stats?.todaysRevenue ?? 0, 'VND')} subtitle="Tổng amount SUCCESS" />
+          <StatCard title="Giao dịch Thành công (Hôm nay)" value={String(stats?.successfulTodayCount ?? 0)} subtitle="Số giao dịch thành công" />
+          <StatCard title="Giao dịch Thất bại (Hôm nay)" value={String(stats?.failedTodayCount ?? 0)} subtitle="Số giao dịch thất bại" />
+        </div>
+
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.03] dark:bg-gray-900">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-800">
             <div>
@@ -148,21 +158,50 @@ export default function Transactions() {
                     </svg>
                   </span>
                   <input
-                    placeholder={"Tìm kiếm..."}
+                    placeholder="Mã đơn hoặc Mã giao dịch"
                     className="shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2.5 pr-4 pl-11 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden xl:w-[300px] dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
                     type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    value={search}
+                    onChange={(e) => { setPage(1); setSearch(e.target.value); }}
                   />
                 </div>
+
+                {/* Status Filter */}
+                <div>
+                  <select
+                    className="shadow-theme-xs bg-none appearance-none focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                    value={status}
+                    onChange={(e) => { setPage(1); setStatus(e.target.value as any); }}
+                  >
+                    <option value="ALL">Tất cả trạng thái</option>
+                    <option value="SUCCESS">Thành công</option>
+                    <option value="FAILED">Thất bại</option>
+                    <option value="PENDING">Đang chờ</option>
+                  </select>
+                </div>
+
+                {/* Gateway Filter */}
+                <div>
+                  <select
+                    className="shadow-theme-xs bg-none appearance-none focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                    value={gateway}
+                    onChange={(e) => { setPage(1); setGateway(e.target.value as any); }}
+                  >
+                    <option value="ALL">Tất cả cổng TT</option>
+                    <option value="COD">COD</option>
+                    <option value="VNPAY">VNPay</option>
+                    <option value="MOMO">MoMo</option>
+                  </select>
+                </div>
                 
-                {/* Time Filter */}
+                {/* Time Filter (placeholder for date range) */}
                 <div className="hidden lg:block relative">
                   <select
                     className="shadow-theme-xs bg-none appearance-none focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 pr-11 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
                     value={timeFilter}
-                    onChange={(e) => setTimeFilter(e.target.value)}
+                    onChange={(e) => { setTimeFilter(e.target.value); setPage(1); }}
                   >
+                    <option>Tất cả</option>
                     <option>7 ngày gần đây</option>
                     <option>10 ngày gần đây</option>
                     <option>15 ngày gần đây</option>
@@ -188,7 +227,7 @@ export default function Transactions() {
                 
                 {/* Export Button */}
                 <div>
-                  <button className="shadow-theme-xs flex h-11 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 hover:bg-gray-100 hover:text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white">
+                  <button onClick={() => exportCsv(paginatedTransactions)} className="shadow-theme-xs flex h-11 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 hover:bg-gray-100 hover:text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="20"
@@ -223,11 +262,11 @@ export default function Transactions() {
                           <input
                             className="sr-only"
                             type="checkbox"
-                            checked={selectedTransactions.length === paginatedTransactions.length && paginatedTransactions.length > 0}
+                            checked={selectedIds.length === paginatedTransactions.length && paginatedTransactions.length > 0}
                             onChange={(e) => handleSelectAll(e.target.checked)}
                           />
                           <span className="flex h-4 w-4 items-center justify-center rounded-sm border-[1.25px] bg-transparent border-gray-300 dark:border-gray-700">
-                            <span className={selectedTransactions.length === paginatedTransactions.length && paginatedTransactions.length > 0 ? "opacity-100" : "opacity-0"}>
+                            <span className={selectedIds.length === paginatedTransactions.length && paginatedTransactions.length > 0 ? "opacity-100" : "opacity-0"}>
                               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M10 3L4.5 8.5L2 6" stroke="white" strokeWidth="1.6666" strokeLinecap="round" strokeLinejoin="round"/>
                               </svg>
@@ -235,28 +274,13 @@ export default function Transactions() {
                           </span>
                         </span>
                       </label>
-                      <p className="text-theme-xs font-medium text-gray-500 dark:text-gray-400">Mã đơn</p>
+                      <p className="text-theme-xs font-medium text-gray-500 dark:text-gray-400">Mã đơn hàng</p>
                     </div>
                   </th>
-                  <th className="p-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                    <div className="flex cursor-pointer items-center gap-3" onClick={() => handleSort("customer")}>
-                      <p className="text-theme-xs font-medium text-gray-500 dark:text-gray-400">Khách hàng</p>
-                      {getSortIcon("customer")}
-                    </div>
-                  </th>
-                  <th className="p-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                    <div className="flex cursor-pointer items-center gap-3" onClick={() => handleSort("email")}>
-                      <p className="text-theme-xs font-medium text-gray-500 dark:text-gray-400">Email</p>
-                      {getSortIcon("email")}
-                    </div>
-                  </th>
-                  <th className="p-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                    <div className="flex cursor-pointer items-center gap-3" onClick={() => handleSort("amount")}>
-                      <p className="text-theme-xs font-medium text-gray-500 dark:text-gray-400">Tổng tiền</p>
-                      {getSortIcon("amount")}
-                    </div>
-                  </th>
-                  <th className="p-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Hạn thanh toán</th>
+                  <th className="p-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Mã giao dịch (Gateway)</th>
+                  <th className="p-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Ngày tạo</th>
+                  <th className="p-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Cổng TT</th>
+                  <th className="p-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Số tiền</th>
                   <th className="p-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Trạng thái</th>
                   <th className="p-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
                     <div className="relative">
@@ -266,8 +290,17 @@ export default function Transactions() {
                 </tr>
               </thead>
               <tbody className="divide-x divide-y divide-gray-200 dark:divide-gray-800">
-                {paginatedTransactions.map((transaction) => (
-                  <tr key={transaction.id} className="transition hover:bg-gray-50 dark:hover:bg-gray-900">
+                {loading && (
+                  <tr><td colSpan={8} className="p-6 text-center text-sm text-gray-500 dark:text-gray-400">Đang tải dữ liệu...</td></tr>
+                )}
+                {error && !loading && (
+                  <tr><td colSpan={8} className="p-6 text-center text-sm text-red-600 dark:text-red-400">{error}</td></tr>
+                )}
+                {!loading && !error && paginatedTransactions.length === 0 && (
+                  <tr><td colSpan={8} className="p-6 text-center text-sm text-gray-500 dark:text-gray-400">Không có giao dịch</td></tr>
+                )}
+                {!loading && !error && paginatedTransactions.map((t) => (
+                  <tr key={t.id} className={`transition hover:bg-gray-50 dark:hover:bg-gray-900 ${t.status === 'FAILED' ? 'bg-red-50/30 dark:bg-red-500/5' : ''}`}>            
                     <td className="p-4 whitespace-nowrap">
                       <div className="group flex items-center gap-3">
                         <label className="flex cursor-pointer items-center text-sm font-medium text-gray-700 select-none dark:text-gray-400">
@@ -275,11 +308,11 @@ export default function Transactions() {
                             <input
                               className="sr-only"
                               type="checkbox"
-                              checked={selectedTransactions.includes(transaction.id)}
-                              onChange={(e) => handleSelectTransaction(transaction.id, e.target.checked)}
+                              checked={selectedIds.includes(t.id)}
+                              onChange={(e) => handleSelectTransaction(t.id, e.target.checked)}
                             />
                             <span className="flex h-4 w-4 items-center justify-center rounded-sm border-[1.25px] bg-transparent border-gray-300 dark:border-gray-700">
-                              <span className={selectedTransactions.includes(transaction.id) ? "opacity-100" : "opacity-0"}>
+                              <span className={selectedIds.includes(t.id) ? "opacity-100" : "opacity-0"}>
                                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                                   <path d="M10 3L4.5 8.5L2 6" stroke="white" strokeWidth="1.6666" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
@@ -287,41 +320,22 @@ export default function Transactions() {
                             </span>
                           </span>
                         </label>
-                        <Link
-                          className="text-theme-xs font-medium text-gray-700 group-hover:underline dark:text-gray-400"
-                          to={`/transaction/${transaction.id.substring(1)}`}
-                        >
-                          {transaction.id}
-                        </Link>
+                        <Link className="text-theme-xs font-medium text-gray-700 group-hover:underline dark:text-gray-400" to={`/orders/${encodeURIComponent(t.orderId)}`}>{t.orderNumber}</Link>
                       </div>
                     </td>
+                    <td className="p-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-400">{t.gatewayTransactionId || 'N/A'}</td>
+                    <td className="p-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-400">{formatDateVi(t.createdAt)}</td>
+                    <td className="p-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-400">[{t.gateway}]</td>
+                    <td className="p-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-400">{formatCurrencyVi(t.amount, 'VND')}</td>
                     <td className="p-4 whitespace-nowrap">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-400">
-                        {transaction.customer}
-                      </span>
-                    </td>
-                    <td className="p-4 whitespace-nowrap">
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{transaction.email}</p>
-                    </td>
-                    <td className="p-4 whitespace-nowrap">
-                      <p className="text-sm text-gray-700 dark:text-gray-400">
-                        {formatCurrencyVi(parseAmountString(transaction.amount), "USD")}
-                      </p>
-                    </td>
-                    <td className="p-4 whitespace-nowrap">
-                      <p className="text-sm text-gray-700 dark:text-gray-400">{formatDateVi(transaction.dueDate)}</p>
-                    </td>
-                    <td className="p-4 whitespace-nowrap">
-                      <span className={getStatusBadge(transaction.status)}>
-                        {transaction.status === "Completed" ? "Hoàn tất" : transaction.status === "Pending" ? "Đang chờ" : transaction.status === "Failed" ? "Thất bại" : transaction.status}
-                      </span>
+                      <span className={getStatusBadge(t.status)}>{statusConfig[t.status].label}</span>
                     </td>
                     <td className="p-4 whitespace-nowrap">
                       <div className="relative inline-block">
                         <div>
                           <button
                             className="text-gray-500 dark:text-gray-400"
-                            onClick={() => setDropdownOpen(dropdownOpen === transaction.id ? null : transaction.id)}
+                            onClick={() => setDropdownOpen(dropdownOpen === t.id ? null : t.id)}
                           >
                             <svg
                               className="fill-current"
@@ -339,15 +353,15 @@ export default function Transactions() {
                               />
                             </svg>
                           </button>
-                          {dropdownOpen === transaction.id && (
+                          {dropdownOpen === t.id && (
                             <div className="absolute right-0 top-8 z-10">
                               <div className="p-2 bg-white border border-gray-200 rounded-2xl shadow-lg dark:border-gray-800 dark:bg-gray-900 w-40">
                                 <div className="space-y-1" role="menu" aria-orientation="vertical">
-                                  <button className="text-xs flex w-full rounded-lg px-3 py-2 text-left font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300">
+                                  <button 
+                                    onClick={() => handleViewDetail(t.id)}
+                                    className="text-xs flex w-full rounded-lg px-3 py-2 text-left font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
+                                  >
                                     {"Xem chi tiết"}
-                                  </button>
-                                  <button className="text-xs flex w-full rounded-lg px-3 py-2 text-left font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300">
-                                    {"Xóa"}
                                   </button>
                                 </div>
                               </div>
@@ -365,29 +379,27 @@ export default function Transactions() {
           {/* Pagination */}
           <div className="border-t border-gray-200 px-5 py-4 dark:border-gray-800">
             <div className="flex justify-center pb-4 sm:hidden">
-              <span className="block text-sm font-medium text-gray-500 dark:text-gray-400">
-                Hiển thị {" "}
-                <span className="text-gray-800 dark:text-white/90">{sortedTransactions.length === 0 ? 0 : startIndex + 1}</span> đến {" "}
-                <span className="text-gray-800 dark:text-white/90">{Math.min(startIndex + itemsPerPage, sortedTransactions.length)}</span> {" "}
-                trong <span className="text-gray-800 dark:text-white/90">{sortedTransactions.length}</span>
-              </span>
+              {(() => {
+                const start = total > 0 ? (page - 1) * pageSize + 1 : 0;
+                const end = total > 0 ? Math.min(total, (page - 1) * pageSize + paginatedTransactions.length) : 0;
+                return (
+                  <span className="block text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Hiển thị <span className="text-gray-800 dark:text-white/90">{start}</span> đến {" "}
+                    <span className="text-gray-800 dark:text-white/90">{end}</span> trong {" "}
+                    <span className="text-gray-800 dark:text-white/90">{total}</span>
+                  </span>
+                );
+              })()}
             </div>
             <div className="flex items-center justify-between">
               <div className="hidden sm:block">
-                <span className="block text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Hiển thị {" "}
-                  <span className="text-gray-800 dark:text-white/90">{sortedTransactions.length === 0 ? 0 : startIndex + 1}</span> đến {" "}
-                  <span className="text-gray-800 dark:text-white/90">{Math.min(startIndex + itemsPerPage, sortedTransactions.length)}</span> {" "}
-                  trong <span className="text-gray-800 dark:text-white/90">{sortedTransactions.length}</span>
-                </span>
+                <span className="block text-sm font-medium text-gray-500 dark:text-gray-400">Tổng: <span className="text-gray-800 dark:text-white/90">{total}</span></span>
               </div>
               <div className="flex w-full items-center justify-between gap-2 rounded-lg bg-gray-50 p-4 sm:w-auto sm:justify-normal sm:rounded-none sm:bg-transparent sm:p-0 dark:bg-gray-900 dark:sm:bg-transparent">
                 <button
-                  className={`shadow-theme-xs flex items-center gap-2 rounded-lg border border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-50 hover:text-gray-800 sm:p-2.5 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 ${
-                    currentPage === 1 ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(currentPage - 1)}
+                  className={`shadow-theme-xs flex items-center gap-2 rounded-lg border border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-50 hover:text-gray-800 sm:p-2.5 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 ${page === 1 ? "opacity-50 cursor-not-allowed" : ""}`}
+                  disabled={page === 1}
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
                 >
                   <svg
                     className="fill-current"
@@ -405,31 +417,64 @@ export default function Transactions() {
                     />
                   </svg>
                 </button>
-                <span className="block text-sm font-medium text-gray-700 sm:hidden dark:text-gray-400">
-                  Trang {currentPage} trong {totalPages}
-                </span>
+                <span className="block text-sm font-medium text-gray-700 sm:hidden dark:text-gray-400">Trang {page} trong {totalPages}</span>
                 <ul className="hidden items-center gap-0.5 sm:flex">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <li key={page}>
-                      <button
-                        className={`flex h-10 w-10 items-center justify-center rounded-lg text-sm font-medium ${
-                          currentPage === page
-                            ? "bg-brand-500 text-white"
-                            : "text-gray-700 hover:bg-brand-500 hover:text-white dark:text-gray-400 dark:hover:text-white"
-                        }`}
-                        onClick={() => setCurrentPage(page)}
-                      >
-                        {page}
-                      </button>
-                    </li>
-                  ))}
+                  {(() => {
+                    const pages: (number | string)[] = [];
+                    const showEllipsisStart = page > 3;
+                    const showEllipsisEnd = page < totalPages - 2;
+                    
+                    if (totalPages <= 7) {
+                      // Show all pages if 7 or less
+                      for (let i = 1; i <= totalPages; i++) pages.push(i);
+                    } else {
+                      // Always show first page
+                      pages.push(1);
+                      
+                      if (showEllipsisStart) pages.push('...');
+                      
+                      // Show current page and neighbors
+                      const start = Math.max(2, page - 1);
+                      const end = Math.min(totalPages - 1, page + 1);
+                      for (let i = start; i <= end; i++) {
+                        if (i !== 1 && i !== totalPages) pages.push(i);
+                      }
+                      
+                      if (showEllipsisEnd) pages.push('...');
+                      
+                      // Always show last page
+                      if (totalPages > 1) pages.push(totalPages);
+                    }
+                    
+                    return pages.map((p, idx) => {
+                      if (p === '...') {
+                        return (
+                          <li key={`ellipsis-${idx}`} className="flex h-10 w-10 items-center justify-center text-gray-500 dark:text-gray-400">
+                            ...
+                          </li>
+                        );
+                      }
+                      return (
+                        <li key={p}>
+                          <button
+                            className={`flex h-10 w-10 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                              page === p 
+                                ? 'bg-brand-500 text-white' 
+                                : 'text-gray-700 hover:bg-brand-500 hover:text-white dark:text-gray-400 dark:hover:text-white'
+                            }`}
+                            onClick={() => setPage(p as number)}
+                          >
+                            {p}
+                          </button>
+                        </li>
+                      );
+                    });
+                  })()}
                 </ul>
                 <button
-                  className={`shadow-theme-xs flex items-center gap-2 rounded-lg border border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-50 hover:text-gray-800 sm:p-2.5 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 ${
-                    currentPage === totalPages ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(currentPage + 1)}
+                  className={`shadow-theme-xs flex items-center gap-2 rounded-lg border border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-50 hover:text-gray-800 sm:p-2.5 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200 ${page === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  disabled={page === totalPages}
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 >
                   <svg
                     className="fill-current"
@@ -452,6 +497,37 @@ export default function Transactions() {
           </div>
         </div>
       </div>
+      
+      {/* Transaction Detail Modal */}
+      {selectedTransactionId && (
+        <TransactionDetailModal
+          isOpen={isOpen}
+          onClose={closeModal}
+          transactionId={selectedTransactionId}
+        />
+      )}
     </div>
   );
+}
+
+// Small stat card component (local to this page)
+function StatCard({ title, value, subtitle }: { title: string; value: string; subtitle?: string }) {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+      <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{title}</p>
+      <p className="text-lg font-semibold text-gray-800 dark:text-white/90">{value}</p>
+      {subtitle && <p className="mt-0.5 text-[11px] text-gray-400 dark:text-white/40">{subtitle}</p>}
+    </div>
+  );
+}
+
+function exportCsv(rows: Transaction[]) {
+  if (!rows.length) return;
+  const header = ["OrderNumber","GatewayTransactionId","CreatedAt","Gateway","Amount","Status"];
+  const csv = [header.join(","), ...rows.map(r => [r.orderNumber, r.gatewayTransactionId ?? '', r.createdAt, r.gateway, r.amount, r.status].map(field => `"${String(field).replace(/"/g,'""')}"`).join(","))].join("\n");
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `transactions-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
 }

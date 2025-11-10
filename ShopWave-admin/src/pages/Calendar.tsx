@@ -109,7 +109,7 @@ const Calendar: React.FC = () => {
   return (
     <>
       <PageMeta title={`Lịch | Admin`} description="Lịch" />
-      <div className="rounded-2xl border  border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+  <div className="rounded-2xl border  border-gray-200 bg-white dark:border-white/[0.03] dark:bg-gray-900">
         <div className="custom-calendar">
           <FullCalendar
             ref={calendarRef}

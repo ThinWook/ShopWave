@@ -104,7 +104,7 @@ const Invoices: React.FC = () => {
 
         <div className="h-full">
           {/* Overview Section */}
-          <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 dark:border-white/[0.03] dark:bg-gray-900">
             <div className="mb-6 flex items-center justify-between">
               <div>
                 <h2 className="font-semibold text-gray-800 dark:text-white/90">Tổng quan</h2>
@@ -141,7 +141,7 @@ const Invoices: React.FC = () => {
           </div>
 
           {/* Invoices Table */}
-          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/[0.03] dark:bg-gray-900">
             {/* Table Header */}
             <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-800">
               <div>

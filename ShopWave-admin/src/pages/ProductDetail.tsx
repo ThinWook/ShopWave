@@ -22,7 +22,7 @@ export default function ProductDetail() {
         </nav>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+  <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-white/[0.03] dark:bg-gray-900">
         {id ? <EditProductForm productId={id} /> : <p className="text-sm text-gray-600 dark:text-gray-300">Không tìm thấy sản phẩm.</p>}
       </div>
     </div>

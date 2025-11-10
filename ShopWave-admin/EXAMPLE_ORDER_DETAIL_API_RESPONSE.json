@@ -1,0 +1,85 @@
+{
+  "data": {
+    "id": "ORD-001",
+    "orderNumber": "ORD-2025-001",
+    "orderDate": "2025-11-08T10:30:00Z",
+    "status": "PROCESSING",
+    "paymentStatus": "UNPAID",
+    
+    "shippingAddress": {
+      "fullName": "Võ Thiện Quốc",
+      "email": "vothienquoc2912@gmail.com",
+      "phone": "0559464910",
+      "street": "30/3 đường 5",
+      "ward": "Thạnh Mỹ Lợi",
+      "district": "Quận 2",
+      "province": "Hồ Chí Minh",
+      "notes": "Gọi trước khi giao hàng. Nhà màu xanh có cổng sắt"
+    },
+    
+    "billingAddress": null,
+    
+    "subTotal": 1220000,
+    "shippingFee": 0,
+    "progressiveDiscountAmount": 40000,
+    "voucherDiscountAmount": 72000,
+    "voucherCode": "M7OU7PPZ",
+    "totalAmount": 1108000,
+    
+    "orderItems": [
+      {
+        "id": "ITEM-001",
+        "productId": "PROD-001",
+        "productName": "Áo Polo Nam Cao Cấp",
+        "variantId": "VAR-001",
+        "variantSku": "APL-CAM-XL",
+        "variantImageUrl": "https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?w=400",
+        "selectedOptions": [
+          { "name": "Size", "value": "XL" },
+          { "name": "Màu", "value": "Cam" }
+        ],
+        "unitPrice": 360000,
+        "quantity": 2,
+        "totalPrice": 720000
+      },
+      {
+        "id": "ITEM-002",
+        "productId": "PROD-002",
+        "productName": "Quần Jean Nam Slim Fit",
+        "variantId": "VAR-002",
+        "variantSku": "QJ-XAN-32",
+        "variantImageUrl": "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400",
+        "selectedOptions": [
+          { "name": "Size", "value": "32" },
+          { "name": "Màu", "value": "Xanh" }
+        ],
+        "unitPrice": 500000,
+        "quantity": 1,
+        "totalPrice": 500000
+      }
+    ],
+    
+    "transactions": [
+      {
+        "id": "TXN-001",
+        "gateway": "VNPAY",
+        "gatewayTransactionId": "14502816745281",
+        "status": "SUCCESS",
+        "amount": 1108000,
+        "createdAt": "2025-11-08T10:31:00Z",
+        "gatewayResponse": "{\"vnp_Amount\":\"110800000\",\"vnp_BankCode\":\"NCB\",\"vnp_BankTranNo\":\"VNP14502816745\",\"vnp_CardType\":\"ATM\",\"vnp_OrderInfo\":\"Thanh toan don hang ORD-2025-001\",\"vnp_PayDate\":\"20251108103100\",\"vnp_ResponseCode\":\"00\",\"vnp_TmnCode\":\"DEMO123\",\"vnp_TransactionNo\":\"14502816745281\",\"vnp_TransactionStatus\":\"00\",\"vnp_TxnRef\":\"ORD-2025-001\"}",
+        "errorMessage": null
+      },
+      {
+        "id": "TXN-002",
+        "gateway": "MOMO",
+        "gatewayTransactionId": null,
+        "status": "FAILED",
+        "amount": 1108000,
+        "createdAt": "2025-11-08T10:29:30Z",
+        "gatewayResponse": null,
+        "errorMessage": "User cancelled transaction"
+      }
+    ]
+  }
+}

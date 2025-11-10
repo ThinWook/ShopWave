@@ -8,6 +8,10 @@
   body {
     @apply relative text-base font-normal z-1 bg-gray-50 font-outfit;
   }
+    /* Make all text white when dark mode is active by default */
+    .dark body {
+      @apply text-white;
+    }
 }
 
 @layer components {
