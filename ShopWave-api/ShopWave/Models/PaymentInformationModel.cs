@@ -5,6 +5,7 @@ namespace ShopWave.Models
     /// </summary>
     public class PaymentInformationModel
     {
+        public Guid OrderId { get; set; }
         public double Amount { get; set; }
         public string Name { get; set; } = string.Empty;
         public string OrderDescription { get; set; } = string.Empty;

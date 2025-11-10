@@ -266,9 +266,10 @@ namespace ShopWave.Controllers
                     // Store order ID in session for guest access
                     HttpContext.Session.SetString("LastOrderId", order.Id.ToString());
 
-                    // Create payment information model
+                    // Create payment information model with OrderId
                     var paymentModel = new PaymentInformationModel
                     {
+                        OrderId = order.Id, // === FIX: Pass OrderId ===
                         Amount = (double)order.TotalAmount,
                         Name = request.ShippingAddress.FullName,
                         OrderDescription = $"Thanh toan don hang {order.OrderNumber}",

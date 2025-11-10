@@ -27,6 +27,15 @@ namespace ShopWave.Services
                 var timeNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZoneById);
                 var urlCallBack = _configuration["VNPay:PaymentBackReturnUrl"];
 
+                // === FIX: Append OrderId to return URL ===
+                // This allows frontend to redirect to /thank-you?orderId=xxx
+                // Frontend will receive: /checkout/result?orderId=xxx&vnp_ResponseCode=00&vnp_TxnRef=...
+                if (!string.IsNullOrEmpty(urlCallBack))
+                {
+                    urlCallBack += $"?orderId={model.OrderId}";
+                }
+                // =========================================
+
                 var pay = new VnPayLibrary();
 
                 // Add VNPay required parameters
@@ -50,7 +59,8 @@ namespace ShopWave.Services
                     _configuration["VNPay:HashSecret"] ?? ""
                 );
 
-                _logger.LogInformation("VNPay payment URL created for transaction {TransactionId}", transactionId);
+                _logger.LogInformation("VNPay payment URL created for Order {OrderId}, Transaction {TransactionId}", 
+                    model.OrderId, transactionId);
                 return paymentUrl;
             }
             catch (Exception ex)
