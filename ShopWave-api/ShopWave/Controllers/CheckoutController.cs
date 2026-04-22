@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ShopWave.Models;
@@ -7,7 +8,9 @@ using ShopWave.Models.Responses;
 using ShopWave.Services;
 using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Cryptography;
 using System.Security.Claims;
+using System.Text;
 
 namespace ShopWave.Controllers
 {
@@ -19,17 +22,60 @@ namespace ShopWave.Controllers
         private readonly ILogger<CheckoutController> _logger;
         private readonly IPaymentGatewayService _paymentGatewayService;
         private readonly IVnPayService _vnPayService;
+        private readonly IDataProtector _guestCartProtector;
+        private readonly IDataProtector _guestOrderAccessProtector;
+        private const string GuestCartCookieName = "shopwave_guest";
+        private const string GuestCartSessionTokenKey = "GuestCartToken";
+        private const string GuestOrderAccessSessionPrefix = "GuestOrderAccess:";
 
         public CheckoutController(
             ShopWaveDbContext context,
             ILogger<CheckoutController> logger,
             IPaymentGatewayService paymentGatewayService,
-            IVnPayService vnPayService)
+            IVnPayService vnPayService,
+            IDataProtectionProvider dataProtectionProvider)
         {
             _context = context;
             _logger = logger;
             _paymentGatewayService = paymentGatewayService;
             _vnPayService = vnPayService;
+            _guestCartProtector = dataProtectionProvider.CreateProtector("ShopWave.GuestCart.v1");
+            _guestOrderAccessProtector = dataProtectionProvider.CreateProtector("ShopWave.GuestOrderAccess.v1");
+        }
+
+        private string? GetBoundGuestSessionId()
+        {
+            if (!Request.Cookies.TryGetValue(GuestCartCookieName, out var token) || string.IsNullOrWhiteSpace(token))
+                return null;
+
+            var boundToken = HttpContext.Session.GetString(GuestCartSessionTokenKey);
+            if (string.IsNullOrWhiteSpace(boundToken) || !ConstantTimeEquals(boundToken, token))
+                return null;
+
+            try
+            {
+                var payload = _guestCartProtector.Unprotect(token);
+                var parts = payload.Split('|');
+                return parts.Length > 0 ? parts[0] : null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private string CreateGuestOrderAccessToken(Guid orderId, TimeSpan ttl)
+        {
+            var expiresAtUnix = DateTimeOffset.UtcNow.Add(ttl).ToUnixTimeSeconds();
+            var nonce = Guid.NewGuid().ToString("N");
+            return _guestOrderAccessProtector.Protect($"{orderId:N}|{expiresAtUnix}|{nonce}");
+        }
+
+        private static bool ConstantTimeEquals(string a, string b)
+        {
+            var aBytes = Encoding.UTF8.GetBytes(a);
+            var bBytes = Encoding.UTF8.GetBytes(b);
+            return aBytes.Length == bBytes.Length && CryptographicOperations.FixedTimeEquals(aBytes, bBytes);
         }
 
         /// <summary>
@@ -68,8 +114,8 @@ namespace ShopWave.Controllers
                 }
                 else
                 {
-                    // Guest user: get cart by sessionId from header
-                    var sessionId = Request.Headers["X-Session-Id"].FirstOrDefault();
+                    // Guest user: get cart by signed cookie + server-side session binding
+                    var sessionId = GetBoundGuestSessionId();
                     _logger.LogInformation("Getting cart for guest with session ID: {SessionId}", sessionId);
                     
                     if (string.IsNullOrEmpty(sessionId))
@@ -151,6 +197,8 @@ namespace ShopWave.Controllers
                 var totalDiscountAmount = progressiveDiscount + voucherDiscount;
                 var totalAmount = subTotal + shippingFee - totalDiscountAmount;
                 var orderNumber = await GenerateOrderNumber();
+                string? guestOrderAccessToken = null;
+                DateTimeOffset? guestOrderAccessExpiresAt = null;
 
                 // 4. T?O ??N HÀNG (Order) VÀ CÁC M?C (OrderItems)
                 // For guest orders, userId will be null
@@ -195,6 +243,13 @@ namespace ShopWave.Controllers
 
                 _context.Orders.Add(order);
                 await _context.SaveChangesAsync();
+
+                if (!userId.HasValue)
+                {
+                    guestOrderAccessToken = CreateGuestOrderAccessToken(order.Id, TimeSpan.FromMinutes(30));
+                    guestOrderAccessExpiresAt = DateTimeOffset.UtcNow.AddMinutes(30);
+                    HttpContext.Session.SetString($"{GuestOrderAccessSessionPrefix}{order.Id:N}", guestOrderAccessToken);
+                }
 
                 // T?o OrderItems và tr? kho
                 var orderItems = new List<OrderItem>();
@@ -285,7 +340,9 @@ namespace ShopWave.Controllers
                         PaymentMethod = "VNPAY",
                         PaymentUrl = paymentUrl,
                         OrderId = order.Id,
-                        TransactionId = transaction_record.Id
+                        TransactionId = transaction_record.Id,
+                        GuestOrderAccessToken = guestOrderAccessToken,
+                        GuestOrderAccessTokenExpiresAt = guestOrderAccessExpiresAt
                     };
 
                     _logger.LogInformation("VNPay payment URL created for Order {OrderNumber}, Transaction {TransactionId}", 
@@ -328,7 +385,9 @@ namespace ShopWave.Controllers
                         PaymentMethod = "MOMO",
                         PaymentUrl = paymentUrl,
                         OrderId = order.Id,
-                        TransactionId = transaction_record.Id
+                        TransactionId = transaction_record.Id,
+                        GuestOrderAccessToken = guestOrderAccessToken,
+                        GuestOrderAccessTokenExpiresAt = guestOrderAccessExpiresAt
                     };
 
                     return Ok(EnvelopeBuilder.Ok(HttpContext, "PAYMENT_URL_GENERATED", response));
@@ -370,6 +429,8 @@ namespace ShopWave.Controllers
                     {
                         Status = "OK",
                         PaymentMethod = "COD",
+                        GuestOrderAccessToken = guestOrderAccessToken,
+                        GuestOrderAccessTokenExpiresAt = guestOrderAccessExpiresAt,
                         OrderId = order.Id, // Added for client access
                         Order = new OrderDto
                         {
@@ -463,6 +524,8 @@ namespace ShopWave.Controllers
         public string Status { get; set; } = string.Empty;
         public string PaymentMethod { get; set; } = string.Empty;
         public string? PaymentUrl { get; set; }
+        public string? GuestOrderAccessToken { get; set; }
+        public DateTimeOffset? GuestOrderAccessTokenExpiresAt { get; set; }
         public Guid? OrderId { get; set; }
         public Guid? TransactionId { get; set; }
         public OrderDto? Order { get; set; }

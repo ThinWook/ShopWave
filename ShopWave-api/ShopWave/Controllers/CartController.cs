@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ShopWave.Models;
@@ -6,7 +7,9 @@ using ShopWave.Models.DTOs;
 using ShopWave.Models.Requests;
 using ShopWave.Models.Responses;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Cryptography;
 using System.Security.Claims;
+using System.Text;
 using ShopWave.DTOs.Cart;
 
 namespace ShopWave.Controllers
@@ -18,21 +21,75 @@ namespace ShopWave.Controllers
     {
         private readonly ShopWaveDbContext _context;
         private readonly ILogger<CartController> _logger;
+        private readonly IDataProtector _guestCartProtector;
+        private const string GuestCartCookieName = "shopwave_guest";
+        private const string GuestCartSessionTokenKey = "GuestCartToken";
 
-        public CartController(ShopWaveDbContext context, ILogger<CartController> logger)
+        public CartController(ShopWaveDbContext context, ILogger<CartController> logger, IDataProtectionProvider dataProtectionProvider)
         {
             _context = context;
             _logger = logger;
+            _guestCartProtector = dataProtectionProvider.CreateProtector("ShopWave.GuestCart.v1");
         }
 
         private string? GetSessionIdFromRequest()
         {
-            // Prefer header, then cookie
-            if (Request.Headers.TryGetValue("X-Session-Id", out var hdr) && !string.IsNullOrWhiteSpace(hdr))
-                return hdr.ToString();
-            if (Request.Cookies.TryGetValue("shopwave_session", out var cookie) && !string.IsNullOrWhiteSpace(cookie))
-                return cookie;
-            return null;
+            if (!Request.Cookies.TryGetValue(GuestCartCookieName, out var token) || string.IsNullOrWhiteSpace(token))
+                return null;
+
+            var boundToken = HttpContext.Session.GetString(GuestCartSessionTokenKey);
+            if (string.IsNullOrWhiteSpace(boundToken) || !ConstantTimeEquals(boundToken, token))
+            {
+                _logger.LogWarning("Guest cart token/session mismatch");
+                return null;
+            }
+
+            try
+            {
+                var payload = _guestCartProtector.Unprotect(token);
+                var parts = payload.Split('|');
+                if (parts.Length < 1 || string.IsNullOrWhiteSpace(parts[0]))
+                    return null;
+                return parts[0];
+            }
+            catch
+            {
+                _logger.LogWarning("Invalid guest cart token");
+                return null;
+            }
+        }
+
+        private string CreateAndBindGuestSessionId()
+        {
+            var sessionId = Guid.NewGuid().ToString("N");
+            var payload = $"{sessionId}|{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
+            var token = _guestCartProtector.Protect(payload);
+
+            HttpContext.Session.SetString(GuestCartSessionTokenKey, token);
+            Response.Cookies.Append(GuestCartCookieName, token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                IsEssential = true,
+                Path = "/",
+                MaxAge = TimeSpan.FromDays(7)
+            });
+
+            return sessionId;
+        }
+
+        private static bool ConstantTimeEquals(string a, string b)
+        {
+            var aBytes = Encoding.UTF8.GetBytes(a);
+            var bBytes = Encoding.UTF8.GetBytes(b);
+            return aBytes.Length == bBytes.Length && CryptographicOperations.FixedTimeEquals(aBytes, bBytes);
+        }
+
+        private string? EnsureGuestSessionIfNeeded(Guid? userId, string? sessionId)
+        {
+            if (userId.HasValue || !string.IsNullOrWhiteSpace(sessionId)) return sessionId;
+            return CreateAndBindGuestSessionId();
         }
 
         private Guid? GetUserIdFromClaims()
@@ -239,7 +296,7 @@ namespace ShopWave.Controllers
             try
             {
                 var userId = GetUserIdFromClaims();
-                var sessionId = GetSessionIdFromRequest();
+                var sessionId = EnsureGuestSessionIfNeeded(userId, GetSessionIdFromRequest());
                 if (!userId.HasValue && string.IsNullOrWhiteSpace(sessionId))
                 {
                     // No identity provided - return 401 to encourage client to provide a session id
@@ -305,7 +362,7 @@ namespace ShopWave.Controllers
             try
             {
                 var userId = GetUserIdFromClaims();
-                var sessionId = GetSessionIdFromRequest();
+                var sessionId = EnsureGuestSessionIfNeeded(userId, GetSessionIdFromRequest());
                 if (!userId.HasValue && string.IsNullOrWhiteSpace(sessionId))
                 {
                     return Unauthorized(EnvelopeBuilder.Fail<object>(HttpContext, "UNAUTHORIZED", new[] { new ErrorItem("auth", "Unauthorized", "UNAUTHORIZED") }, 401));
@@ -343,7 +400,7 @@ namespace ShopWave.Controllers
             try
             {
                 var userId = GetUserIdFromClaims();
-                var sessionId = GetSessionIdFromRequest();
+                var sessionId = EnsureGuestSessionIfNeeded(userId, GetSessionIdFromRequest());
                 if (!userId.HasValue && string.IsNullOrWhiteSpace(sessionId))
                 {
                     return Unauthorized(EnvelopeBuilder.Fail<object>(HttpContext, "UNAUTHORIZED", new[] { new ErrorItem("auth", "Unauthorized", "UNAUTHORIZED") }, 401));
@@ -372,7 +429,7 @@ namespace ShopWave.Controllers
             try
             {
                 var userId = GetUserIdFromClaims();
-                var sessionId = GetSessionIdFromRequest();
+                var sessionId = EnsureGuestSessionIfNeeded(userId, GetSessionIdFromRequest());
                 if (!userId.HasValue && string.IsNullOrWhiteSpace(sessionId))
                 {
                     return Unauthorized(EnvelopeBuilder.Fail<object>(HttpContext, "UNAUTHORIZED", new[] { new ErrorItem("auth", "Unauthorized", "UNAUTHORIZED") }, 401));
@@ -400,7 +457,7 @@ namespace ShopWave.Controllers
             try
             {
                 var userId = GetUserIdFromClaims();
-                var sessionId = GetSessionIdFromRequest();
+                var sessionId = EnsureGuestSessionIfNeeded(userId, GetSessionIdFromRequest());
                 if (!userId.HasValue && string.IsNullOrWhiteSpace(sessionId))
                 {
                     return Unauthorized(EnvelopeBuilder.Fail<object>(HttpContext, "UNAUTHORIZED", new[] { new ErrorItem("auth", "Unauthorized", "UNAUTHORIZED") }, 401));
@@ -558,7 +615,7 @@ namespace ShopWave.Controllers
             try
             {
                 var userId = GetUserIdFromClaims();
-                var sessionId = GetSessionIdFromRequest();
+                var sessionId = EnsureGuestSessionIfNeeded(userId, GetSessionIdFromRequest());
                 if (!userId.HasValue && string.IsNullOrWhiteSpace(sessionId))
                 {
                     return Unauthorized(EnvelopeBuilder.Fail<object>(HttpContext, "UNAUTHORIZED", new[] { new ErrorItem("auth", "Unauthorized", "UNAUTHORIZED") }, 401));

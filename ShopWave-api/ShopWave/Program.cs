@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
+using Azure.Extensions.AspNetCore.Configuration.Secrets;
+using Azure.Identity;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ShopWave.Models;
@@ -12,6 +14,12 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var keyVaultUri = builder.Configuration["KeyVault:VaultUri"] ?? builder.Configuration["KEYVAULT_URI"];
+if (!builder.Environment.IsDevelopment() && !string.IsNullOrWhiteSpace(keyVaultUri))
+{
+    builder.Configuration.AddAzureKeyVault(new Uri(keyVaultUri), new DefaultAzureCredential());
+}
 
 // Add services to the container.
 builder.Services.AddControllers(o =>
@@ -78,6 +86,10 @@ var jwtSection = builder.Configuration.GetSection("Jwt");
 var issuer = jwtSection["Issuer"];
 var audience = jwtSection["Audience"];
 var secret = jwtSection["Secret"] ?? throw new InvalidOperationException("Jwt:Secret missing");
+if (secret.Equals("__FROM_ENV__", StringComparison.OrdinalIgnoreCase))
+{
+    throw new InvalidOperationException("Jwt:Secret must be provided via Environment Variables, User Secrets, or Azure Key Vault.");
+}
 var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
 
 builder.Services

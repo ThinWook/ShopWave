@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ShopWave.Models;
@@ -7,6 +8,7 @@ using ShopWave.Models.Responses;
 using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Globalization;
 
 namespace ShopWave.Controllers
 {
@@ -17,11 +19,38 @@ namespace ShopWave.Controllers
     {
         private readonly ShopWaveDbContext _context;
         private readonly ILogger<OrdersController> _logger;
+        private readonly IDataProtector _guestOrderAccessProtector;
+        private const string GuestOrderAccessSessionPrefix = "GuestOrderAccess:";
 
-        public OrdersController(ShopWaveDbContext context, ILogger<OrdersController> logger)
+        public OrdersController(ShopWaveDbContext context, ILogger<OrdersController> logger, IDataProtectionProvider dataProtectionProvider)
         {
             _context = context;
             _logger = logger;
+            _guestOrderAccessProtector = dataProtectionProvider.CreateProtector("ShopWave.GuestOrderAccess.v1");
+        }
+
+        private bool TryValidateGuestOrderAccessToken(Guid orderId, string? token)
+        {
+            if (string.IsNullOrWhiteSpace(token)) return false;
+
+            try
+            {
+                var payload = _guestOrderAccessProtector.Unprotect(token);
+                var parts = payload.Split('|');
+                if (parts.Length < 3) return false;
+
+                if (!Guid.TryParse(parts[0], out var tokenOrderId) || tokenOrderId != orderId)
+                    return false;
+
+                if (!long.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out var expUnix))
+                    return false;
+
+                return DateTimeOffset.UtcNow <= DateTimeOffset.FromUnixTimeSeconds(expUnix);
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         [HttpPost]
@@ -337,19 +366,26 @@ namespace ShopWave.Controllers
                 }
                 else
                 {
-                    // Guest user: verify order ownership through session
-                    var sessionId = Request.Headers["X-Session-Id"].FirstOrDefault();
-                    var lastOrderId = HttpContext.Session.GetString("LastOrderId");
-                    
-                    // Allow access if:
-                    // 1. Order was just created in this session (LastOrderId matches)
-                    // 2. Order has no userId (guest order) - temporary for migration
-                    if (order.Id.ToString() != lastOrderId && order.UserId.HasValue)
+                    // Guest user: require expiring order access token + server-side one-time session binding
+                    var guestAccessToken = Request.Headers["X-Order-Access-Token"].FirstOrDefault();
+                    if (string.IsNullOrWhiteSpace(guestAccessToken))
                     {
-                        _logger.LogWarning("Guest attempted to access order {OrderId} without proper session. SessionId: {SessionId}, LastOrderId: {LastOrderId}", 
-                            id, sessionId, lastOrderId);
+                        guestAccessToken = Request.Query["accessToken"].FirstOrDefault();
+                    }
+
+                    var sessionKey = $"{GuestOrderAccessSessionPrefix}{order.Id:N}";
+                    var tokenInSession = HttpContext.Session.GetString(sessionKey);
+
+                    if (!TryValidateGuestOrderAccessToken(order.Id, guestAccessToken) ||
+                        string.IsNullOrWhiteSpace(tokenInSession) ||
+                        !string.Equals(tokenInSession, guestAccessToken, StringComparison.Ordinal))
+                    {
+                        _logger.LogWarning("Guest attempted unauthorized access to order {OrderId}", id);
                         return StatusCode(403, EnvelopeBuilder.Fail<object>(HttpContext, "FORBIDDEN", new[] { new ErrorItem("auth", "Forbidden", "FORBIDDEN") }, 403));
                     }
+
+                    // One-time token usage
+                    HttpContext.Session.Remove(sessionKey);
                 }
 
                 // === MAP TO DETAILED DTO WITH ALL ENHANCEMENTS ===

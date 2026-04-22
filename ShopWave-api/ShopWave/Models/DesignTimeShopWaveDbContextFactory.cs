@@ -19,11 +19,15 @@ namespace ShopWave.Models
                 .SetBasePath(basePath)
                 .AddJsonFile("appsettings.json", optional: true)
                 .AddJsonFile($"appsettings.{env}.json", optional: true)
+                .AddUserSecrets<DesignTimeShopWaveDbContextFactory>(optional: true)
                 .AddEnvironmentVariables()
                 .Build();
 
             var conn = config.GetConnectionString("DefaultConnection")
                        ?? Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
+
+            if (string.Equals(conn, "__FROM_ENV__", StringComparison.OrdinalIgnoreCase))
+                conn = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
 
             if (string.IsNullOrEmpty(conn))
                 throw new InvalidOperationException("Connection string 'DefaultConnection' not found for design-time DbContext creation.");
