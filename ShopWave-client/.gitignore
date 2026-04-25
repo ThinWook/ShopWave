@@ -1,41 +1,28 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Local env files
+.env
+.env.local
+.env.*.local
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+# Dev certs & proxy
+server/certs/
+server/certs/*
 
-# testing
-/coverage
+# Dev / build artifacts
+.tsbuildinfo
+tsconfig.tsbuildinfo
+.next/
+node_modules/
+dist/
 
-# next.js
-/.next/
-/out/
+# Crash dumps / logs
+bash.exe.stackdump
+*.log
 
-# production
-/build
-
-# misc
+# Editor / OS
+.vscode/
+.idea/
 .DS_Store
+
+# Private keys
 *.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
-.genkit/*
-.env*
+*.key

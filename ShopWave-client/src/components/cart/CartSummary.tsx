@@ -7,7 +7,6 @@ import { useCart } from '@/contexts/CartContext';
 import { ShoppingCart } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import session from '@/lib/session';
 import { Input } from '@/components/ui/input';
 import { formatPrice } from '@/lib/format';
 

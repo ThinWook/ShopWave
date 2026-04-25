@@ -102,6 +102,7 @@ function ThankYouContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const orderId = searchParams.get('orderId');
+  const redirectTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [order, setOrder] = useState<OrderDetailResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -110,15 +111,19 @@ function ThankYouContent() {
   useEffect(() => {
     const abortController = new AbortController();
     const { signal } = abortController;
+
     if (!orderId) {
       router.push('/');
-      return;
+      return () => {
+        abortController.abort();
+      };
     }
 
     const load = async () => {
-      setIsLoading(true); setError(null);
+      setIsLoading(true);
+      setError(null);
       try {
-        const data = await api.orders.getById(orderId!, { signal });
+        const data = await api.orders.getById(orderId, { signal });
         const merged = {
           ...data,
           ...(parseAddressFallback((data as any).shippingAddress)),
@@ -126,13 +131,31 @@ function ThankYouContent() {
         if (!signal.aborted) setOrder(merged);
       } catch (err: any) {
         if (err?.name === 'AbortError') return;
-        if (!signal.aborted) setError(err.message || 'Lỗi tải đơn hàng');
+        const status = Number(err?.status ?? 0);
+        const message = err?.message || 'Loi tai don hang';
+        if (!signal.aborted) {
+          if (status === 403) {
+            setError('Phien truy cap don hang da het hieu luc. Dang chuyen huong...');
+            redirectTimeoutRef.current = setTimeout(() => {
+              router.replace('/checkout/result');
+            }, 1500);
+          } else {
+            setError(message);
+          }
+        }
       } finally {
         if (!signal.aborted) setIsLoading(false);
       }
     };
+
     load();
-    return () => { abortController.abort(); };
+
+    return () => {
+      abortController.abort();
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current);
+      }
+    };
   }, [orderId, router]);
 
   if (isLoading) return <div className="p-10 text-center">Đang tải xác nhận đơn hàng...</div>;

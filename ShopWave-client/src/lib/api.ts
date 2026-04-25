@@ -246,7 +246,8 @@ export interface CartItem extends Product {
 
 // ---------- Helpers ----------
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+// Default to same-origin so Next rewrites can proxy backend in dev/prod.
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
 // ---- Auth token store (prefer in-memory, fallback session/localStorage) ----
 let accessTokenMemory: string | null = null;
@@ -425,30 +426,18 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     }
   }
 
-  // Always include credentials by default so cookies (SessionId) are sent.
+  // Always include credentials by default so backend session cookies are sent.
   // Caller can override by explicitly passing credentials in options.
   const finalCredentials = options.credentials ?? 'include';
   
   // Remove credentials from options to avoid being overwritten when spreading
   const { credentials: _, ...restOptions } = options;
   
-  // Temporary debug log to verify credentials are set correctly
-  if (typeof window !== 'undefined' && path.includes('checkout')) {
-    console.log('[api.request] Checkout request credentials:', finalCredentials, 'url:', url);
-    console.log('[api.request] options.credentials was:', options.credentials);
-    console.log('[api.request] restOptions has credentials?', 'credentials' in restOptions);
-  }
-  
   const fetchOptions = { 
     ...restOptions, 
     headers, 
     credentials: finalCredentials
   };
-  
-  // Log final fetch options for checkout to debug
-  if (typeof window !== 'undefined' && path.includes('checkout')) {
-    console.log('[api.request] Final fetch options.credentials:', fetchOptions.credentials);
-  }
   
   const res = await fetch(url, fetchOptions);
   let json: any = null;
@@ -777,15 +766,9 @@ export const api = {
         { method: 'POST', body: JSON.stringify({ email, password }) }
       );
       setAuthTokens({ accessToken: data.accessToken, refreshToken: data.refreshToken });
-      // If there is a guest session id present, merge guest cart into user cart
+      // Merge any guest cart bound to cookie session on backend.
       try {
-        const sid = session.readSessionId();
-        if (sid) {
-          // Send merge request to backend with auth token attached
-          await request('/api/v1/cart/merge-on-login', { method: 'POST', body: JSON.stringify({ sessionId: sid }), auth: true });
-          // Clear the guest session after successful merge (best-effort)
-          session.clearSessionId();
-        }
+        await request('/api/v1/cart/merge-on-login', { method: 'POST', auth: true, credentials: 'include' });
       } catch (err) {
         try { console.warn('merge-on-login failed', err); } catch {}
       }
@@ -797,13 +780,9 @@ export const api = {
         { method: 'POST', body: JSON.stringify(payload) }
       );
       setAuthTokens({ accessToken: data.accessToken, refreshToken: data.refreshToken });
-      // Merge guest cart if present
+      // Merge any guest cart bound to cookie session on backend.
       try {
-        const sid = session.readSessionId();
-        if (sid) {
-          await request('/api/v1/cart/merge-on-login', { method: 'POST', body: JSON.stringify({ sessionId: sid }), auth: true });
-          session.clearSessionId();
-        }
+        await request('/api/v1/cart/merge-on-login', { method: 'POST', auth: true, credentials: 'include' });
       } catch (err) {
         try { console.warn('merge-on-login failed', err); } catch {}
       }
@@ -840,13 +819,9 @@ export const api = {
         { method: 'POST', body: JSON.stringify({ idToken }), credentials: 'include' }
       );
       setAuthTokens({ accessToken: data.accessToken, refreshToken: data.refreshToken });
-      // Merge guest cart if present
+      // Merge any guest cart bound to cookie session on backend.
       try {
-        const sid = session.readSessionId();
-        if (sid) {
-          await request('/api/v1/cart/merge-on-login', { method: 'POST', body: JSON.stringify({ sessionId: sid }), auth: true });
-          session.clearSessionId();
-        }
+        await request('/api/v1/cart/merge-on-login', { method: 'POST', auth: true, credentials: 'include' });
       } catch (err) {
         try { console.warn('merge-on-login failed', err); } catch {}
       }
@@ -1233,49 +1208,42 @@ export const api = {
   
   cart: {
     get: async () => {
-  const sid = session.ensureSessionId();
-  const data = await request<CartResponseDto>('/api/v1/cart', { headers: { 'X-Session-Id': sid }, credentials: 'include' });
+  const data = await request<CartResponseDto>('/api/v1/cart', { credentials: 'include' });
       const normalized = normalizeCartResponse(data);
       if (normalized) return normalized;
       // Fallback to empty structure if unexpected
       return { items: [], totalItems: 0, subTotal: 0, shippingFee: 0, total: 0 } as any;
     },
     add: async (variantId: string, quantity = 1) => {
-  const sid = session.ensureSessionId();
-  const data = await request<CartResponseDto>('/api/v1/cart/add', { method: 'POST', body: JSON.stringify({ variantId, quantity }), headers: { 'X-Session-Id': sid }, credentials: 'include' });
+  const data = await request<CartResponseDto>('/api/v1/cart/add', { method: 'POST', body: JSON.stringify({ variantId, quantity }), credentials: 'include' });
       const normalized = normalizeCartResponse(data);
       if (normalized) return normalized;
       // If response didn't include cart, reload
       return await api.cart.get();
     },
     update: async (cartItemId: string, quantity: number) => {
-  const sid = session.ensureSessionId();
-  const data = await request<CartResponseDto>(`/api/v1/cart/${cartItemId}`, { method: 'PUT', body: JSON.stringify({ quantity }), headers: { 'X-Session-Id': sid }, credentials: 'include' });
+  const data = await request<CartResponseDto>(`/api/v1/cart/${cartItemId}`, { method: 'PUT', body: JSON.stringify({ quantity }), credentials: 'include' });
       const normalized = normalizeCartResponse(data);
       if (normalized) return normalized;
       return await api.cart.get();
     },
     remove: async (cartItemId: string) => {
-  const sid = session.ensureSessionId();
-  const data = await request<CartResponseDto>(`/api/v1/cart/${cartItemId}`, { method: 'DELETE', headers: { 'X-Session-Id': sid }, credentials: 'include' });
+  const data = await request<CartResponseDto>(`/api/v1/cart/${cartItemId}`, { method: 'DELETE', credentials: 'include' });
       const normalized = normalizeCartResponse(data);
       if (normalized) return normalized;
       return await api.cart.get();
     },
     clear: async () => {
-  const sid = session.ensureSessionId();
-  const data = await request<CartResponseDto>('/api/v1/cart/clear', { method: 'DELETE', headers: { 'X-Session-Id': sid }, credentials: 'include' });
+  const data = await request<CartResponseDto>('/api/v1/cart/clear', { method: 'DELETE', credentials: 'include' });
       const normalized = normalizeCartResponse(data);
       if (normalized) return normalized;
       return { items: [], totalItems: 0, subTotal: 0, shippingFee: 0, total: 0 } as any;
     }
     ,
     applyVoucher: async (code: string) => {
-      const sid = session.ensureSessionId();
       const data = await request<CartResponseDto>('/api/v1/cart/voucher', {
         method: 'POST',
         body: JSON.stringify({ voucherCode: code }),
-        headers: { 'X-Session-Id': sid },
         credentials: 'include'
       });
       const normalized = normalizeCartResponse(data);
@@ -1283,10 +1251,8 @@ export const api = {
       return await api.cart.get();
     },
     removeVoucher: async () => {
-      const sid = session.ensureSessionId();
       const data = await request<CartResponseDto>('/api/v1/cart/voucher', {
         method: 'DELETE',
-        headers: { 'X-Session-Id': sid },
         credentials: 'include'
       });
       const normalized = normalizeCartResponse(data);
@@ -1294,9 +1260,7 @@ export const api = {
       return await api.cart.get();
     },
     getAvailableVouchers: async () => {
-      const sid = session.ensureSessionId();
       const data = await request<Array<{ code: string; description?: string | null; minOrderAmount?: number; discountValue?: number; discountType?: string }>>('/api/v1/cart/available-vouchers', {
-        headers: { 'X-Session-Id': sid },
         credentials: 'include'
       });
       return data;
@@ -1307,20 +1271,24 @@ export const api = {
     /**
      * Create a checkout / place an order. Uses request() so it benefits from
      * centralized error handling, ETag cache logic and auth token refresh.
-     * We include credentials so cookies (session id) are sent, and also send
-     * X-Session-Id header like cart API does.
+     * We include credentials so backend cookie session is sent.
      */
     create: async (payload: any) => {
-      const sid = session.ensureSessionId();
       const data = await request<{ paymentUrl?: string; orderId?: string; [k: string]: any }>(
         '/api/v1/checkout',
         { 
           method: 'POST', 
           body: JSON.stringify(payload), 
-          headers: { 'X-Session-Id': sid },
           credentials: 'include' 
         }
       );
+
+      const guestOrderAccessToken = data?.GuestOrderAccessToken as string | undefined;
+      const guestOrderAccessTokenExpiresAt = data?.GuestOrderAccessTokenExpiresAt as string | undefined;
+      if (guestOrderAccessToken) {
+        session.setGuestOrderAccessToken(guestOrderAccessToken, guestOrderAccessTokenExpiresAt);
+      }
+
       return data;
     }
   }
@@ -1331,7 +1299,38 @@ export const api = {
      * into a flat object with extracted shipping fields when shippingAddress is a JSON string.
      */
     getById: async (id: string, init?: RequestInit) => {
-      const raw = await request<any>(`/api/v1/orders/${id}`, { ...(init || {}), credentials: 'include' });
+      const isLoggedIn = !!getAuthToken();
+
+      let raw: any;
+      if (isLoggedIn) {
+        raw = await request<any>(`/api/v1/orders/${id}`, { ...(init || {}), auth: true, credentials: 'include' });
+      } else {
+        const guestToken = session.getGuestOrderAccessToken();
+        if (!guestToken || session.isGuestOrderAccessTokenExpired()) {
+          session.clearGuestOrderAccessToken();
+          throw new ApiError('Quyen truy cap don hang da het hieu luc. Vui long quay lai trang ket qua thanh toan.', { status: 403 });
+        }
+
+        const guestHeaders = {
+          ...((init?.headers as Record<string, string>) || {}),
+          'X-Order-Access-Token': guestToken,
+        };
+
+        try {
+          raw = await request<any>(`/api/v1/orders/${id}`, {
+            ...(init || {}),
+            headers: guestHeaders,
+            credentials: 'include',
+          });
+        } catch (err: any) {
+          if (err?.status === 403) {
+            session.clearGuestOrderAccessToken();
+            throw new ApiError('Phien truy cap don hang da het hieu luc. Vui long thu lai tu trang checkout/result.', { status: 403 });
+          }
+          throw err;
+        }
+      }
+
       let data: any = raw;
       if (raw && typeof raw === 'object') {
         if ((raw as any).success && (raw as any).data) data = (raw as any).data;

@@ -6,9 +6,9 @@ import { api, ApiEnvelope, CartResponseDto } from "@/lib/api";
 import type { ProvinceDto, DistrictDto, WardDto, CheckoutPayload } from "@/lib/types/checkout";
 import { Field, Select } from "@/components/ui/FormFields";
 
-// Simple fetch wrapper that respects NEXT_PUBLIC_API_BASE_URL so client calls
-// go to the configured backend rather than the frontend origin.
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+// Simple fetch wrapper that optionally respects NEXT_PUBLIC_API_BASE_URL.
+// By default it uses same-origin so Next rewrites proxy backend requests.
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 async function apiGet<T>(url: string, init?: RequestInit): Promise<T> {
   const target = url.startsWith('http') ? url : `${API_BASE}${url.startsWith('/') ? '' : '/'}${url}`;
   // Always include credentials by default to preserve cart session across pages
