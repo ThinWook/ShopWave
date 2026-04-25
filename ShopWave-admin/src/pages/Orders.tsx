@@ -15,6 +15,7 @@ export default function Orders() {
   const [totalPages, setTotalPages] = useState(1);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
   const [statusTab, setStatusTab] = useState<StatusTab>('ALL'); // Show all orders by default
   const [paymentTab, setPaymentTab] = useState<PaymentTab>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,26 +56,59 @@ export default function Orders() {
 
   // totalPages đã được set từ backend response, không cần tính lại
 
-  const handleExportCsv = () => {
-    const header = ['Mã đơn hàng','Khách hàng','Ngày đặt','Tổng cộng','Trạng thái TT','Trạng thái ĐH'];
-    const rows = orders.map(o => [
-      o.orderNumber,
-      o.shippingFullName,
-      formatDateVi(o.orderDate),
-      formatCurrencyVi(o.totalAmount),
-      o.paymentStatus,
-      o.status,
-    ]);
-    const csv = [header, ...rows].map(r => r.map(field => '"' + String(field).replace(/"/g,'""') + '"').join(',')).join('\r\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `orders-export-${new Date().toISOString().slice(0,10)}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const handleExportCsv = async () => {
+    // Export all orders matching current filters (not only current page)
+    try {
+      setExportLoading(true);
+
+      // Fetch first page to learn totalPages
+      const firstPage = await getOrders({ ...params, page: 1, pageSize: PAGE_SIZE });
+      let allOrders = firstPage.orders.slice();
+      const totalPagesFromApi = firstPage.pagination?.totalPages ?? 1;
+
+      if (totalPagesFromApi > 1) {
+        // Fetch remaining pages in parallel
+        const promises = [];
+        for (let p = 2; p <= totalPagesFromApi; p++) {
+          promises.push(getOrders({ ...params, page: p, pageSize: PAGE_SIZE }));
+        }
+        const results = await Promise.all(promises);
+        for (const res of results) {
+          allOrders = allOrders.concat(res.orders);
+        }
+      }
+
+      const header = ['Mã đơn hàng','Khách hàng','Ngày đặt','Tổng cộng','Trạng thái TT','Trạng thái ĐH'];
+      const rows = allOrders.map(o => [
+        o.orderNumber,
+        o.shippingFullName,
+        formatDateVi(o.orderDate),
+        formatCurrencyVi(o.totalAmount),
+        o.paymentStatus,
+        o.status,
+      ]);
+
+      // Add UTF-8 BOM so Excel detects UTF-8/Unicode properly
+      const BOM = '\uFEFF';
+      const csvBody = [header, ...rows]
+        .map(r => r.map(field => '"' + String(field).replace(/"/g,'""') + '"').join(','))
+        .join('\r\n');
+
+      const blob = new Blob([BOM + csvBody], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `orders-export-${new Date().toISOString().slice(0,10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Xuất CSV thất bại', err);
+      // TODO: show toast to user
+    } finally {
+      setExportLoading(false);
+    }
   };
 
   const StatCard: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
@@ -105,9 +139,13 @@ export default function Orders() {
         <div className="mb-6 flex items-center justify-between">
           <h2 className="font-semibold text-gray-800 dark:text-white/90">Tổng quan</h2>
           <div className="flex gap-2">
-            <button onClick={handleExportCsv} className="shadow-sm flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M16.6671 13.3333V15.4166C16.6671 16.1069 16.1074 16.6666 15.4171 16.6666H4.58301C3.89265 16.6666 3.33301 16.1069 3.33301 15.4166V13.3333M10.0013 3.33325L10.0013 13.3333M6.14553 7.18708L9.99958 3.33549L13.8539 7.18708" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
-              Xuất CSV
+            <button disabled={exportLoading} onClick={handleExportCsv} className={`shadow-sm flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 ${exportLoading ? 'opacity-60 cursor-not-allowed hover:bg-white dark:hover:bg-gray-800' : ''}`}>
+              {exportLoading ? (
+                <svg className="animate-spin" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M16.6671 13.3333V15.4166C16.6671 16.1069 16.1074 16.6666 15.4171 16.6666H4.58301C3.89265 16.6666 3.33301 16.1069 3.33301 15.4166V13.3333M10.0013 3.33325L10.0013 13.3333M6.14553 7.18708L9.99958 3.33549L13.8539 7.18708" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+              )}
+              {exportLoading ? 'Đang xuất...' : 'Xuất CSV'}
             </button>
           </div>
         </div>
